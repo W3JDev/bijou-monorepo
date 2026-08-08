@@ -1,8 +1,8 @@
 ﻿# Bijou AI â€” Monorepo
 
-[![Landing CI](https://github.com/mnjbold/bijou-monorepo/actions/workflows/landing.yml/badge.svg)](https://github.com/mnjbold/bijou-monorepo/actions/workflows/landing.yml)
-[![Backend CI](https://github.com/mnjbold/bijou-monorepo/actions/workflows/backend.yml/badge.svg)](https://github.com/mnjbold/bijou-monorepo/actions/workflows/backend.yml)
-[![Bridge CI](https://github.com/mnjbold/bijou-monorepo/actions/workflows/bridge.yml/badge.svg)](https://github.com/mnjbold/bijou-monorepo/actions/workflows/bridge.yml)
+[![Landing CI](https://github.com/W3JDev/bijou-monorepo/actions/workflows/landing.yml/badge.svg)](https://github.com/W3JDev/bijou-monorepo/actions/workflows/landing.yml)
+[![Backend CI](https://github.com/W3JDev/bijou-monorepo/actions/workflows/backend.yml/badge.svg)](https://github.com/W3JDev/bijou-monorepo/actions/workflows/backend.yml)
+[![Bridge CI](https://github.com/W3JDev/bijou-monorepo/actions/workflows/bridge.yml/badge.svg)](https://github.com/W3JDev/bijou-monorepo/actions/workflows/bridge.yml)
 
 **The whole product in one repo.** Marketing site + dashboard + AI backend + WhatsApp bridge, deployable as 3 independent services (Vercel + Fly.io + Fly.io).
 
