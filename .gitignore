@@ -93,3 +93,8 @@ packages/bridge/whatsapp-bridge
 # Legacy (the original 2 repos we moved out of — keep on disk, ignore in git)
 # =============================================================================
 legacy/
+
+# Leftover corrupted .git dirs from filter-repo history rewrites (file-locked, can't delete safely)
+.git.broken/
+.git.broken2/
+
