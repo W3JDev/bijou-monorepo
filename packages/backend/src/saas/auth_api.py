@@ -8,6 +8,19 @@ from src.saas.email_service import get_email_service
 from src.saas.tenant_manager import TenantManager
 from uuid import uuid4
 
+# Specific exception types from the auth/Supabase stack. Catching the broad
+# `Exception` below was masking the real error from `db.auth.sign_up` and
+# turning every Supabase auth failure (signups disabled, network blip, weak
+# password, etc.) into a generic 500 with no actionable detail. 2026-08-09.
+try:
+    from supabase_auth.errors import AuthApiError  # type: ignore
+except ImportError:  # pragma: no cover — older supabase-py
+    AuthApiError = Exception  # type: ignore
+try:
+    import httpx  # used for the welcome-WhatsApp block AND surfaced here
+except ImportError:  # pragma: no cover
+    httpx = None  # type: ignore
+
 logger = logging.getLogger(__name__)
 router = APIRouter()
 
@@ -81,16 +94,43 @@ async def signup(request: SignupRequest):
     """
     Professional signup with email/password authentication.
     Creates Supabase auth user + tenant + tenant_user link.
+
+    The supabase-py client is sync, so a hung Supabase request will block
+    the event loop. We compensate with comprehensive exception mapping in
+    the outer `except` below (AuthApiError.status, httpx errors, etc.)
+    so a failure surfaces as a real 4xx/5xx with a JSON body instead of
+    a silent Fly-edge 500 with no body.  2026-08-09.
     """
     db = get_supabase()
 
     user_id = None
     try:
         # 1. Create Supabase Auth user
-        auth_response = db.auth.sign_up({
-            "email": request.email,
-            "password": request.password,
-        })
+        # 2026-08-09: AuthApiError is raised for "email already registered",
+        # "signups not allowed", "rate limit exceeded", "weak password", and
+        # most other Supabase auth failures. Letting it bubble to the broad
+        # `except Exception` below (instead of the cascade at step 2+) means
+        # we don't create an orphan tenant for a user that was never
+        # actually provisioned, and the dashboard sees the real 4xx/5xx
+        # instead of a misleading 500.
+        try:
+            auth_response = db.auth.sign_up({
+                "email": request.email,
+                "password": request.password,
+            })
+        except AuthApiError as auth_err:
+            # Let the outer `except` mapper translate it to a 4xx/5xx with
+            # a useful message. We don't re-raise as HTTPException here
+            # because the outer handler has richer context (it knows the
+            # email, request shape, and full Supabase error payload).
+            logger.warning(
+                "Supabase auth.sign_up rejected signup for %s (status=%s, code=%s): %s",
+                request.email,
+                getattr(auth_err, "status", None),
+                getattr(auth_err, "code", None),
+                auth_err,
+            )
+            raise
 
         if not auth_response.user:
             raise HTTPException(status_code=400, detail="Failed to create user account")
@@ -339,27 +379,75 @@ async def signup(request: SignupRequest):
     except Exception as e:
         # Map common Supabase Auth errors to honest HTTP status codes
         # so the dashboard can show the right message and we stop
-        # returning 500 for "user already registered" / "rate limit".
+        # returning 500 for "user already registered" / "rate limit" /
+        # "signups not allowed" / network blips.  2026-08-09: expanded
+        # coverage after the dashboard signup was returning 500 (no body)
+        # on every retry — Fly edge timeout on a hung supabase-py call.
         msg = str(e).lower()
-        if "already registered" in msg or "already been registered" in msg:
+        # Prefer AuthApiError.status when the supabase lib gives us one
+        # — it's the most reliable signal of what really went wrong.
+        auth_status = getattr(e, "status", None) if isinstance(e, AuthApiError) else None
+        auth_code = getattr(e, "code", None) if isinstance(e, AuthApiError) else None
+
+        if auth_status == 422 or "already registered" in msg or "already been registered" in msg:
             raise HTTPException(
                 status_code=409,
                 detail="An account with this email already exists. Try signing in instead.",
             )
-        if "rate limit" in msg:
+        if auth_status == 429 or "rate limit" in msg or "too many requests" in msg:
             raise HTTPException(
                 status_code=429,
                 detail="Too many sign-up attempts. Please wait a minute and try again.",
+            )
+        if auth_status == 403 or "signups not allowed" in msg or "signups disabled" in msg:
+            raise HTTPException(
+                status_code=403,
+                detail="New signups are temporarily disabled. Please try again later or contact support.",
+            )
+        if auth_status == 400 or "weak password" in msg or ("invalid" in msg and "password" in msg):
+            raise HTTPException(
+                status_code=400,
+                detail="That password is too weak. Please use at least 8 characters with a mix of letters and numbers.",
             )
         if "invalid" in msg and "email" in msg:
             raise HTTPException(
                 status_code=400,
                 detail="That email address was rejected by the auth provider. Please use a different one.",
             )
-        logging.error(f"Signup error: {e}", exc_info=True)
+        if auth_status == 401 and ("email" in msg and "confirm" in msg or "verified" in msg):
+            raise HTTPException(
+                status_code=403,
+                detail="Please confirm your email address before signing in. Check your inbox for the verification link.",
+            )
+        # Network / transport failures — Supabase or Fly edge unreachable.
+        # NOTE: the welcome-WhatsApp block below does a local `import httpx`
+        # in a try, which makes `httpx` a local variable in this function and
+        # shadows the module-level one. Look the class up via the real
+        # module (sys.modules) instead so the `isinstance` check works
+        # regardless of which path raised.
+        try:
+            import sys as _sys
+            _httpx_mod = _sys.modules.get("httpx")
+        except Exception:
+            _httpx_mod = None
+        if _httpx_mod is not None and isinstance(e, _httpx_mod.HTTPError):
+            logging.error("Signup network error: %s", e, exc_info=True)
+            raise HTTPException(
+                status_code=503,
+                detail="The auth service is temporarily unreachable. Please try again in a moment.",
+            )
+        logging.error("Signup error (status=%s, code=%s): %s",
+                      auth_status, auth_code, e, exc_info=True)
+        # Surface a useful hint in the detail (sanitized — no raw stack) so
+        # the dashboard can show a non-vague message AND we have something
+        # to grep for in Fly logs.
+        safe_hint = (msg[:200] if msg else type(e).__name__).strip() or type(e).__name__
         raise HTTPException(
             status_code=500,
-            detail="Signup failed. Please try again or contact support if it keeps happening.",
+            detail=(
+                "Signup failed. Please try again or contact support if it keeps happening. "
+                f"(ref: {type(e).__name__})"
+            ),
         )
 
 def _resolve_or_link_tenant(db, user_id: str, email: Optional[str]) -> Optional[str]:
