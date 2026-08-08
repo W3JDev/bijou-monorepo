@@ -104,3 +104,6 @@ Status (last 30 ticks): see `bijou-prod-health-state.md` in agent memory topics.
 ## Legacy
 
 [`legacy/`](./legacy/) contains the original 2 repos (`Bijou-AI---Digital-Employee-main.original/` and `w3j-bijou-ai-main.original/`) untouched. **Don't `git rm` it â€” it's a safety net.** The whole repo's git history will be fresh (we re-init in this monorepo), so legacy stays as a reference but isn't tracked.
+
+<!-- CI trigger: 2026-08-09 05:33:41 MYT -->
+
