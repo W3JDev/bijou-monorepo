@@ -1,0 +1,181 @@
+{
+  "status": "complete",
+  "completion_time": "2026-02-18T15:50:00Z",
+  "test_environment": "bijou-staging.fly.dev",
+  "api_version": "2.2.0",
+  
+  "artifacts_created": [
+    "tests/api_test_plan.md",
+    "tests/api_report.json",
+    "tests/postman_run.log",
+    "tests/openapi.json",
+    "tests/api_tester.py",
+    "tests/TESTING_SUMMARY.md"
+  ],
+  
+  "test_statistics": {
+    "endpoints_discovered": 65,
+    "endpoints_tested": 24,
+    "tests_passed": 18,
+    "tests_failed": 3,
+    "tests_skipped": 3,
+    "success_rate": "85.7%",
+    "coverage": "37%"
+  },
+  
+  "critical_failures": [
+    {
+      "endpoint": "GET /api/onboarding/status/{token}",
+      "category": "onboarding_v1",
+      "impact": "Blocks onboarding status tracking for V1 flow",
+      "error": "invalid input syntax for type uuid",
+      "recommendation": "Fix UUID parsing in src/saas/onboarding_api.py or deprecate V1",
+      "estimated_fix_time": "30 minutes"
+    },
+    {
+      "endpoint": "GET /api/onboarding/v2/whatsapp/qr/{tenant_id}",
+      "category": "onboarding_v2",
+      "impact": "Blocks all new tenant WhatsApp connections (CRITICAL)",
+      "error": "WhatsApp device not provisioned yet",
+      "recommendation": "Investigate bridge downtime - bridge_responsive: false",
+      "estimated_fix_time": "1-2 hours"
+    },
+    {
+      "endpoint": "GET /api/tenant/{tenant_id}/device/status",
+      "category": "tenant_management",
+      "impact": "Breaks device status UI in dashboard",
+      "error": "name 'get_supabase' is not defined",
+      "recommendation": "Add import: from src.core.supabase_client import get_supabase",
+      "estimated_fix_time": "5 minutes"
+    }
+  ],
+  
+  "onboarding_status": {
+    "signup": "working",
+    "payment": "unknown (requires Stripe test)",
+    "qr_generation": "failing",
+    "whatsapp_connection": "blocked",
+    "knowledge_upload": "working",
+    "dashboard_access": "working",
+    "overall_health": "broken"
+  },
+  
+  "api_health_by_category": {
+    "health_system": {
+      "tested": 4,
+      "passed": 4,
+      "status": "healthy"
+    },
+    "onboarding": {
+      "tested": 4,
+      "passed": 2,
+      "status": "degraded"
+    },
+    "dashboard": {
+      "tested": 5,
+      "passed": 5,
+      "status": "healthy"
+    },
+    "knowledge_base": {
+      "tested": 2,
+      "passed": 2,
+      "status": "healthy"
+    },
+    "settings": {
+      "tested": 1,
+      "passed": 1,
+      "status": "healthy"
+    },
+    "admin": {
+      "tested": 1,
+      "passed": 1,
+      "status": "healthy"
+    },
+    "proactive_messaging": {
+      "tested": 3,
+      "passed": 3,
+      "status": "healthy"
+    },
+    "tenant_management": {
+      "tested": 1,
+      "passed": 0,
+      "status": "failing"
+    },
+    "webhooks": {
+      "tested": 0,
+      "passed": 0,
+      "status": "untested"
+    }
+  },
+  
+  "bridge_health": {
+    "status": "unhealthy",
+    "bridge_url": "https://bijou-bridge-staging-v2.fly.dev",
+    "responsive": false,
+    "impact": "Cannot provision WhatsApp devices or send/receive messages",
+    "action_required": "Check bridge logs and deployment status"
+  },
+  
+  "key_findings": [
+    "85.7% of tested APIs are working correctly",
+    "WhatsApp bridge is down - blocking all new onboarding",
+    "Dashboard and knowledge management features fully operational",
+    "Proactive messaging system is functional",
+    "3 critical bugs require immediate fixes",
+    "80% of tenants cannot connect WhatsApp (from Phase 1)",
+    "All tenants stuck at payment/details onboarding step"
+  ],
+  
+  "recommendations": {
+    "p0_urgent": [
+      "Fix get_supabase import in bijou.py (5 min)",
+      "Investigate WhatsApp bridge downtime (1-2 hours)",
+      "Restore bridge connectivity to unblock onboarding"
+    ],
+    "p1_this_week": [
+      "Fix onboarding V1 UUID parsing or deprecate V1 (30 min)",
+      "Create webhook integration tests with BRIDGE_API_KEY (2 hours)",
+      "Test payment flow with Stripe test mode (2 hours)"
+    ],
+    "p2_next_sprint": [
+      "Add authentication to admin endpoints (1 day)",
+      "Create automated API test suite with pytest (3 days)",
+      "Implement API performance monitoring (2 days)"
+    ]
+  },
+  
+  "files_for_import": {
+    "postman": "tests/openapi.json",
+    "test_results": "tests/api_report.json",
+    "human_readable": "tests/api_test_plan.md",
+    "executive_summary": "tests/TESTING_SUMMARY.md"
+  },
+  
+  "postman_collection_url": "Not created (Postman MCP tools unavailable)",
+  "postman_collection_note": "OpenAPI spec available for manual import at tests/openapi.json",
+  
+  "test_methodology": {
+    "tool": "Python 3 with curl subprocess",
+    "authentication": "X-Tenant-ID header for tenant-scoped endpoints",
+    "test_tenant_id": "1e63900e-1b83-4dc8-ba55-9d619eae0866",
+    "safety_measures": "Only GET requests tested (no destructive operations)",
+    "skipped_categories": "Webhooks (require BRIDGE_API_KEY auth)"
+  },
+  
+  "next_steps": [
+    "Fix 3 critical bugs (total time: ~2 hours)",
+    "Deploy fixes to staging",
+    "Run health check: python3 tests/api_tester.py",
+    "Investigate bridge logs: flyctl logs --app bijou-bridge-staging-v2",
+    "Test onboarding flow end-to-end manually",
+    "Set up automated API testing in CI/CD"
+  ],
+  
+  "agent_metadata": {
+    "agent_name": "@api-tester",
+    "model_used": "gpt-4o-mini (cost-optimized)",
+    "test_duration": "3 minutes",
+    "thoroughness_level": "medium",
+    "escalation_used": false
+  }
+}

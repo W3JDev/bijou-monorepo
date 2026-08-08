@@ -1,0 +1,85 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Environment variables and secrets
+.env
+.env.local
+.env.production
+.env.development
+# ...but DO track the template so new contributors can copy it
+!.env.example
+*.key
+*.pem
+*.p12
+*credentials*.json
+*config.json
+*secrets*.json
+
+# Sensitive files
+**/*ISSUE*.png
+**/*issue*.png
+**/*TODO*.md
+**/*todo*.md
+**/ORCHESTRATOR_LOG.md
+**/PROJECT_INTELLIGENCE.md
+
+# Temporary and development files
+*.tmp
+*.temp
+.cache
+.temp
+temp/
+tmp/
+
+# OS files
+Thumbs.db
+.AppleDouble
+.LSOverride
+
+# Build artifacts
+build/
+coverage/
+.nyc_output/
+
+# OpenCode agent files (keep structure but not sensitive content)
+.opencode/node_modules
+.opencode/bun.lock
+
+#Media_Folder
+Bijou_AI_Digital_Staff_Media_files_&QR
+
+# Email template suite — standalone dev tool, not deployed to Vercel
+# Contains test scripts that reference env vars; keep out of public repo
+email-templates/
+
+# Internal brand/product docs — not for public repo
+Docs/
+
+# NOTE: public/brand/ is intentionally tracked — Vercel must serve these assets
+# public/brand/logo.png and qr.png are referenced by email templates & the landing page
+.vercel
+.env*
+# ...but DO track the env.example template so new contributors can copy it
+!.env.example

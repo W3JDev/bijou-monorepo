@@ -1,0 +1,52 @@
+{
+  "phase": "2B-supabase-arch",
+  "supabase_url": "https://lrwzlujomukzjykafmic.supabase.co",
+  "new_jwt_key_id": "E72688AB-838C-4EDA-9F3E-B475246426F5",
+  "anon_key_valid": true,
+  "anon_key_prefix": "eyJhbGciOiJIUzI1NiIsInR5cCI6Ik",
+  "service_key_valid": true,
+  "service_key_prefix": "eyJhbGciOiJIUzI1NiIsInR5cCI6Ik",
+  "tables_accessible": {
+    "tenants": true,
+    "conversations": true,
+    "messages": true,
+    "escalations": true,
+    "whatsapp_devices": true
+  },
+  "table_notes": {
+    "whatsapp_devices": "Table exists and is accessible (HTTP 200). Initial probe using '?select=id' returned HTTP 400 with error code 42703 ('column not found') — table uses 'device_id' as PK, not 'id'. Re-probed with SELECT * confirmed table is fully accessible with 1 row returned.",
+    "tenants": "1 row returned (service key, RLS bypassed). Tenants: 'Test Business', 'W3J LLC 2', 'Test Property Agency' visible.",
+    "conversations": "Accessible — 1 row returned with service key.",
+    "messages": "Accessible — 1 row returned with service key.",
+    "escalations": "Accessible — 1 row returned with service key."
+  },
+  "rls_enforced": true,
+  "rls_note": "Anon key (unauthenticated) returned 0 rows for both 'conversations' (HTTP 200, [] body) and 'tenants' (HTTP 200, [] body). Service role key bypassed RLS correctly, returning real tenant rows. RLS is correctly enforced — no data leak to unauthenticated callers.",
+  "rls_detail": {
+    "conversations_anon_rows": 0,
+    "conversations_anon_status": 200,
+    "tenants_anon_rows": 0,
+    "tenants_anon_status": 200,
+    "tenants_service_rows": 3,
+    "tenants_service_status": 200
+  },
+  "schema_drift": false,
+  "schema_drift_note": "All 5 expected tables present and queryable. 'whatsapp_devices' uses 'device_id' as PK (not 'id') — this is consistent with existing schema, not drift. Columns observed: tenant_id, device_id, device_name, phone_number, created_at, updated_at, whatsapp_jid.",
+  "staging_health": {
+    "status": "healthy",
+    "http_code": 200,
+    "service": "bijou-ai-enterprise",
+    "version": "2.2.0",
+    "database": "supabase",
+    "url": "https://bijou-staging.fly.dev/health"
+  },
+  "all_success_criteria_met": true,
+  "success_criteria_detail": {
+    "anon_key_http_200": true,
+    "service_key_http_200_with_data": true,
+    "all_5_tables_http_200": true,
+    "rls_conversations_0_rows_anon": true,
+    "staging_health_healthy": true
+  },
+  "timestamp": "2026-02-21T03:14:49.054936+00:00"
+}

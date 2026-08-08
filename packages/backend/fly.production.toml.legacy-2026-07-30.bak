@@ -1,0 +1,101 @@
+app = "bijou-production"
+primary_region = "sin"
+
+[deploy]
+strategy = "immediate"
+
+[env]
+ENABLE_IMAGE_TOOL = "true"
+DB_TYPE = "supabase"
+MULTI_TENANT_ENABLED = "true"
+DEFAULT_TENANT_ID = "607690ec-4ff7-4ef4-b98e-bfb00442fe95"
+TTS_VOICE = "alloy"
+TENANT_ISOLATION = "true"
+TTS_MODEL = "tts-1"
+WEBHOOK_MAX_MESSAGE_AGE_MINUTES = "15"
+ENABLE_AI_HANDOVER_DETECTION = "true"
+MAX_CONTEXT_MESSAGES = "10"
+HUMANIZER_ENABLED = "true"
+ML_JUDGE_ENABLED = "true"
+MANGLISH_DETECTION = "true"
+ESCALATION_ENABLED = "true"
+ENABLE_AUDIO_TOOL = "true"
+PORT = "8080"
+DISABLE_BUSINESS_HOURS = "true"
+MEDIA_MAX_SIZE_MB = "10"
+MEDIA_TEMP_DIR = "/tmp/bijou_media"
+RATE_LIMIT_WINDOW = "3600"
+BIJOU_DB_PATH = "/data/bijou.db"
+CIRCUIT_BREAKER_ENABLED = "true"
+ENABLE_GMAIL_TOOL = "true"
+LOGS_PATH = "/data/logs"
+AUDIO_MAX_SIZE_MB = "25"
+MEDIA_CLEANUP_AGE_HOURS = "1"
+AI_MODEL = "gemini-2.5-flash"
+WEBHOOK_MODE = "true"
+DASHBOARD_MODE = "strict"
+MEMORY_RETENTION_DAYS = "30"
+TRACE_ENABLED = "false"
+TENANT_DATA_PATH = "/data/tenants"
+POLLING_INTERVAL = "2"
+WORKER_PROCESSES = "2"
+AUTO_RECOVERY_ENABLED = "true"
+MEDIA_DOWNLOAD_TIMEOUT = "30"
+MAX_MESSAGES_PER_POLL = "50"
+REQUIRE_DASHBOARD_TOKEN = "true"
+VERTEX_AI_LOCATION = "us-central1"
+RATE_LIMIT_MESSAGES = "1000"
+GOOGLE_CREDENTIALS_PATH = "/app/credentials/google_service_account.json"
+PRIMARY_LANGUAGES = "ms,zh,ta,en,en-my"
+HEALTH_CHECK_ENABLED = "true"
+ENVIRONMENT = "production"
+ENABLE_WHATSAPP_EVENT_TOOL = "true"
+GOOGLE_CLIENT_ID = "698028267158-74pmib15v7ug5biv4v9vedqutsq2c78a.apps.googleusercontent.com"
+GOOGLE_SHEETS_ENABLED = "false"
+CULTURAL_CONTEXT_ENABLED = "true"
+ENABLE_FUNCTION_CALLING = "true"
+LOG_LEVEL = "INFO"
+WHISPER_MODEL = "whisper-1"
+COST_OPTIMIZATION_ENABLED = "true"
+STRIPE_API_VERSION = "2023-10-16"
+ENABLE_PROACTIVE_MESSAGING = "true"
+PII_MASKING_ENABLED = "true"
+GOOGLE_PROJECT_ID = "gen-lang-client-0423187661"
+IMAGE_SUPPORTED_FORMATS = "jpg,jpeg,png,gif,webp,bmp"
+MAX_TOKENS = "2048"
+AUDIO_SUPPORTED_FORMATS = "ogg,mp3,wav,m4a,opus"
+DEBUG = "false"
+IMAGE_MAX_SIZE_MB = "10"
+LOG_FILE = "/data/logs/bijou.log"
+MAX_CONCURRENT_MESSAGES = "10"
+ENABLE_CALENDAR_TOOL = "true"
+METRICS_ENABLED = "true"
+AGENT_NAME = "Bijou"
+PUBLIC_URL = "https://app.mybijou.xyz"
+
+[http_service]
+auto_start_machines = true
+auto_stop_machines = false
+force_https = true
+internal_port = 8_080
+min_machines_running = 1
+processes = [ "app" ]
+
+  [[http_service.checks]]
+  grace_period = "1m30s"
+  interval = "15s"
+  method = "GET"
+  path = "/health"
+  protocol = "http"
+  timeout = "5s"
+
+[[mounts]]
+destination = "/data"
+initial_size = "2gb"
+source = "production_data_volume"
+
+[[vm]]
+cpu_kind = "shared"
+cpus = 2
+memory = "1gb"
+memory_mb = 1_024

@@ -1,0 +1,410 @@
+<!doctype html>
+<html lang="en">
+  <!-- edge-cache-bust:v=2026-07-28a -->
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Bijou AI - Admin Panel</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        padding: 20px;
+      }
+
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        background: white;
+        border-radius: 16px;
+        padding: 30px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      }
+
+      h1 {
+        color: #333;
+        margin-bottom: 10px;
+        font-size: 28px;
+      }
+
+      .subtitle {
+        color: #666;
+        margin-bottom: 30px;
+        font-size: 14px;
+      }
+
+      .stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 15px;
+        margin-bottom: 30px;
+      }
+
+      .stat-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 20px;
+        border-radius: 8px;
+        text-align: center;
+      }
+
+      .stat-number {
+        font-size: 32px;
+        font-weight: bold;
+        margin-bottom: 5px;
+      }
+
+      .stat-label {
+        font-size: 14px;
+        opacity: 0.9;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+      }
+
+      th {
+        background: #f8f9fa;
+        padding: 12px;
+        text-align: left;
+        font-weight: 600;
+        color: #495057;
+        border-bottom: 2px solid #dee2e6;
+      }
+
+      td {
+        padding: 12px;
+        border-bottom: 1px solid #dee2e6;
+      }
+
+      tr:hover {
+        background: #f8f9fa;
+      }
+
+      .badge {
+        display: inline-block;
+        padding: 4px 8px;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: 500;
+      }
+
+      .badge-success {
+        background: #d4edda;
+        color: #155724;
+      }
+
+      .badge-warning {
+        background: #fff3cd;
+        color: #856404;
+      }
+
+      .badge-secondary {
+        background: #e2e3e5;
+        color: #383d41;
+      }
+
+      .btn {
+        padding: 8px 16px;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 500;
+        transition: all 0.2s;
+      }
+
+      .btn-primary {
+        background: #667eea;
+        color: white;
+      }
+
+      .btn-primary:hover {
+        background: #5568d3;
+        transform: translateY(-1px);
+      }
+
+      .btn-primary:disabled {
+        background: #ccc;
+        cursor: not-allowed;
+        transform: none;
+      }
+
+      .loading {
+        display: inline-block;
+        width: 14px;
+        height: 14px;
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        border-radius: 50%;
+        border-top-color: white;
+        animation: spin 0.6s linear infinite;
+        margin-right: 8px;
+        vertical-align: middle;
+      }
+
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      .modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 1000;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .modal.active {
+        display: flex;
+      }
+
+      .modal-content {
+        background: white;
+        padding: 30px;
+        border-radius: 16px;
+        max-width: 500px;
+        width: 90%;
+        text-align: center;
+      }
+
+      .qr-code {
+        max-width: 300px;
+        margin: 20px auto;
+        border: 2px solid #dee2e6;
+        border-radius: 8px;
+      }
+
+      .close-btn {
+        margin-top: 20px;
+        background: #6c757d;
+        color: white;
+      }
+
+      .error {
+        color: #dc3545;
+        padding: 12px;
+        background: #f8d7da;
+        border-radius: 6px;
+        margin: 10px 0;
+      }
+
+      code {
+        background: #f8f9fa;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-family: monospace;
+        font-size: 12px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>🤖 Bijou AI Admin Panel</h1>
+      <p class="subtitle">Manage tenants and WhatsApp connections</p>
+
+      <div class="stats" id="stats">
+        <div class="stat-card">
+          <div class="stat-number" id="totalTenants">-</div>
+          <div class="stat-label">Total Tenants</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number" id="connectedTenants">-</div>
+          <div class="stat-label">Connected</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number" id="pendingTenants">-</div>
+          <div class="stat-label">Pending Setup</div>
+        </div>
+      </div>
+
+      <div id="errorMessage" style="display: none" class="error"></div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Business Name</th>
+            <th>Email</th>
+            <th>Phone</th>
+            <th>Status</th>
+            <th>Created</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="tenantsTable">
+          <tr>
+            <td colspan="6" style="text-align: center; padding: 40px">
+              <div class="loading"></div>
+              Loading tenants...
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- QR Code Modal -->
+    <div class="modal" id="qrModal">
+      <div class="modal-content">
+        <h2 id="modalTitle">Scan QR Code</h2>
+        <p id="modalSubtitle" style="color: #666; margin: 10px 0"></p>
+        <div id="qrContainer">
+          <div class="loading" style="margin: 40px auto"></div>
+        </div>
+        <button class="btn close-btn" onclick="closeModal()">Close</button>
+      </div>
+    </div>
+
+    <script>
+      let tenants = [];
+
+      async function loadTenants() {
+        try {
+          const response = await fetch("/api/admin/tenants");
+          if (!response.ok) throw new Error("Failed to load tenants");
+
+          const data = await response.json();
+          tenants = data.tenants;
+          renderTenants();
+          updateStats();
+        } catch (error) {
+          console.error("Error loading tenants:", error);
+          showError("Failed to load tenants: " + error.message);
+        }
+      }
+
+      function updateStats() {
+        const total = tenants.length;
+        const connected = tenants.filter((t) => t.whatsapp_connected_at).length;
+        const pending = total - connected;
+
+        document.getElementById("totalTenants").textContent = total;
+        document.getElementById("connectedTenants").textContent = connected;
+        document.getElementById("pendingTenants").textContent = pending;
+      }
+
+      function renderTenants() {
+        const tbody = document.getElementById("tenantsTable");
+
+        if (tenants.length === 0) {
+          tbody.innerHTML = `
+            <tr>
+              <td colspan="6" style="text-align: center; padding: 40px; color: #666">
+                No tenants found
+              </td>
+            </tr>
+          `;
+          return;
+        }
+
+        tbody.innerHTML = tenants
+          .map(
+            (tenant) => `
+          <tr>
+            <td><strong>${tenant.business_name}</strong></td>
+            <td>${tenant.email}</td>
+            <td>${tenant.phone || "-"}</td>
+            <td>
+              ${
+                tenant.whatsapp_connected_at
+                  ? '<span class="badge badge-success">✅ Connected</span>'
+                  : '<span class="badge badge-warning">⏳ Pending</span>'
+              }
+            </td>
+            <td>${new Date(tenant.created_at).toLocaleDateString()}</td>
+            <td>
+              ${
+                tenant.whatsapp_connected_at
+                  ? `<span class="badge badge-secondary">Already connected</span>`
+                  : `<button class="btn btn-primary" onclick="generateQR('${tenant.id}', '${tenant.business_name}')">
+                      Generate QR
+                    </button>`
+              }
+            </td>
+          </tr>
+        `,
+          )
+          .join("");
+      }
+
+      async function generateQR(tenantId, businessName) {
+        const modal = document.getElementById("qrModal");
+        const modalTitle = document.getElementById("modalTitle");
+        const modalSubtitle = document.getElementById("modalSubtitle");
+        const qrContainer = document.getElementById("qrContainer");
+
+        // Show modal with loading state
+        modalTitle.textContent = `Setup WhatsApp for ${businessName}`;
+        modalSubtitle.innerHTML = `Tenant ID: <code>${tenantId}</code>`;
+        qrContainer.innerHTML =
+          '<div class="loading" style="margin: 40px auto"></div>';
+        modal.classList.add("active");
+
+        try {
+          const response = await fetch(`/api/admin/qr/${tenantId}`, {
+            method: "POST",
+          });
+
+          if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.detail || "Failed to generate QR");
+          }
+
+          const blob = await response.blob();
+          const qrUrl = URL.createObjectURL(blob);
+
+          qrContainer.innerHTML = `
+            <img src="${qrUrl}" class="qr-code" alt="WhatsApp QR Code" />
+            <p style="margin-top: 15px; color: #666; font-size: 14px">
+              <strong>Scan this QR code with WhatsApp:</strong><br>
+              Open WhatsApp → Menu → Linked Devices → Link a Device
+            </p>
+          `;
+        } catch (error) {
+          console.error("QR generation error:", error);
+          qrContainer.innerHTML = `
+            <div class="error">
+              ❌ ${error.message}
+            </div>
+          `;
+        }
+      }
+
+      function closeModal() {
+        document.getElementById("qrModal").classList.remove("active");
+        // Reload tenants to update connection status
+        loadTenants();
+      }
+
+      function showError(message) {
+        const errorDiv = document.getElementById("errorMessage");
+        errorDiv.textContent = message;
+        errorDiv.style.display = "block";
+        setTimeout(() => {
+          errorDiv.style.display = "none";
+        }, 5000);
+      }
+
+      // Load tenants on page load
+      loadTenants();
+
+      // Auto-refresh every 30 seconds
+      setInterval(loadTenants, 30000);
+    </script>
+  </body>
+</html>

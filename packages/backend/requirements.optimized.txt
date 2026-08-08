@@ -1,0 +1,80 @@
+# OPTIMIZED REQUIREMENTS - Reduced from 2.9GB to ~500MB
+# Removed heavy packages: torch, torchaudio, ffmpeg, pytesseract
+# These can be added back when needed for specific features
+
+# =================================================================
+# CORE REQUIREMENTS (ESSENTIAL)
+# =================================================================
+
+# Core Web Framework
+fastapi>=0.104.1
+uvicorn[standard]>=0.24.0
+
+# AI Models - Google Gemini (NEW SDK)
+google-genai>=1.56.0
+
+# Database
+supabase>=2.3.0
+postgrest>=0.13.2
+
+# HTTP & API
+requests>=2.31.0
+httpx>=0.25.2
+aiohttp>=3.9.0
+python-multipart>=0.0.6
+
+# Data & Configuration
+pydantic>=2.5.0
+pydantic[email]>=2.5.0
+python-dotenv>=1.0.0
+
+# File Operations
+aiofiles>=23.2.1
+
+# Payment Integration
+stripe>=7.0.0
+
+# Google API & Auth
+google-auth-oauthlib>=1.1.0
+google-auth-httplib2>=0.1.1
+google-api-python-client>=2.108.0
+
+# Telegram (optional)
+python-telegram-bot>=22.0
+
+# Voice TTS - OpenAI API (ESSENTIAL for voice responses)
+openai>=1.12.0
+
+# Basic document parsing (lightweight)
+PyPDF2>=3.0.0
+python-docx>=1.1.0
+
+# =================================================================
+# REMOVED HEAVY PACKAGES (ADD BACK WHEN NEEDED)
+# =================================================================
+# torch>=2.0.0              # ~1.2GB - Voice TTS feature
+# torchaudio>=2.0.0          # ~800MB - Voice TTS feature  
+# chatterbox-tts>=0.1.0      # TTS functionality
+# pytesseract>=0.3.10        # ~30MB + tesseract-ocr ~100MB - OCR
+# Pillow>=10.0.0             # ~50MB - Image processing
+# tiktoken>=0.5.0            # Token counting
+# pgvector>=0.2.0            # Vector operations
+# numpy>=1.24.0              # ~50MB - Vector math
+
+# =================================================================
+# TO RE-ENABLE FEATURES, UNCOMMENT RELEVANT SECTIONS:
+# =================================================================
+# 
+# # Voice TTS Feature (adds ~2GB):
+# torch>=2.0.0
+# torchaudio>=2.0.0
+# chatterbox-tts>=0.1.0
+#
+# # OCR Feature (adds ~130MB):
+# pytesseract>=0.3.10
+# Pillow>=10.0.0
+#
+# # Advanced AI Features (adds ~100MB):
+# tiktoken>=0.5.0
+# pgvector>=0.2.0  
+# numpy>=1.24.0

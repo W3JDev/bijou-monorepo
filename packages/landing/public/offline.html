@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Offline - Bijou AI</title>
+    <meta name="theme-color" content="#10b981">
+    <style>
+        :root {
+            --bg-deep: #030810;
+            --emerald-bright: #10b981;
+            --text-primary: #f0f4ff;
+            --text-secondary: #8892b0;
+            --surface-card: rgba(6, 16, 22, .8);
+            --border-subtle: rgba(16, 185, 129, .15);
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: var(--bg-deep);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-rendering: optimizeLegibility;
+            -webkit-font-smoothing: antialiased;
+        }
+        
+        .offline-container {
+            text-align: center;
+            padding: 2rem;
+            max-width: 500px;
+            background: var(--surface-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 16px;
+            backdrop-filter: blur(12px);
+        }
+        
+        .offline-icon {
+            width: 120px;
+            height: 120px;
+            margin: 0 auto 2rem;
+            background: var(--emerald-bright);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--bg-deep);
+        }
+        .offline-icon img {
+            width: 60px;
+            height: 60px;
+            display: block;
+        }
+        
+        .offline-title {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 1rem;
+        }
+        
+        .offline-subtitle {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            margin-bottom: 2rem;
+            line-height: 1.6;
+        }
+        
+        .offline-actions {
+            display: flex;
+            gap: 1rem;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            border: none;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            display: inline-block;
+            min-width: 200px;
+        }
+        
+        .btn-primary {
+            background: var(--emerald-bright);
+            color: var(--bg-deep);
+        }
+        
+        .btn-primary:hover {
+            background: #059669;
+            transform: translateY(-1px);
+        }
+        
+        .btn-secondary {
+            background: transparent;
+            color: var(--text-secondary);
+            border: 1px solid var(--border-subtle);
+        }
+        
+        .btn-secondary:hover {
+            border-color: var(--emerald-bright);
+            color: var(--emerald-bright);
+        }
+        
+        .network-status {
+            margin-top: 2rem;
+            padding: 1rem;
+            background: rgba(255, 193, 7, 0.1);
+            border: 1px solid rgba(255, 193, 7, 0.3);
+            border-radius: 8px;
+            font-size: 0.9rem;
+            color: #ffc107;
+        }
+        
+        .network-status.online {
+            background: rgba(16, 185, 129, 0.1);
+            border-color: rgba(16, 185, 129, 0.3);
+            color: var(--emerald-bright);
+        }
+        
+        @media (max-width: 640px) {
+            .offline-container {
+                margin: 1rem;
+                padding: 1.5rem;
+            }
+            
+            .offline-title {
+                font-size: 1.5rem;
+            }
+            
+            .btn {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="offline-container">
+        <div class="offline-icon">
+            <img src="/logos/mark-favicon.svg" alt="Bijou AI" />
+        </div>
+        
+        <h1 class="offline-title">Aiyo! No Internet Boss</h1>
+        
+        <p class="offline-subtitle">
+            Wah, looks like you're offline lah. Don't worry, Bijou AI is still here to help you! 
+            Check your connection and we'll be back to closing sales for you in no time.
+        </p>
+        
+        <div class="offline-actions">
+            <button onclick="location.reload()" class="btn btn-primary">
+                Try Again
+            </button>
+            
+            <button onclick="goHome()" class="btn btn-secondary">
+                Go to Homepage
+            </button>
+        </div>
+        
+        <div class="network-status" id="networkStatus">
+            📡 Checking connection status...
+        </div>
+    </div>
+    
+    <script>
+        // Network status monitoring
+        function updateNetworkStatus() {
+            const statusEl = document.getElementById('networkStatus');
+            
+            if (navigator.onLine) {
+                statusEl.textContent = '✅ Connection restored! You can refresh now.';
+                statusEl.className = 'network-status online';
+            } else {
+                statusEl.textContent = '📡 Still offline - check your internet connection';
+                statusEl.className = 'network-status';
+            }
+        }
+        
+        // Listen for network changes
+        window.addEventListener('online', () => {
+            updateNetworkStatus();
+            // Auto-refresh after a short delay
+            setTimeout(() => {
+                location.reload();
+            }, 2000);
+        });
+        
+        window.addEventListener('offline', updateNetworkStatus);
+        
+        // Initial status check
+        updateNetworkStatus();
+        
+        // Helper function to go home
+        function goHome() {
+            try {
+                window.location.href = '/';
+            } catch (e) {
+                console.log('Cannot navigate while offline');
+            }
+        }
+        
+        // Retry connection every 30 seconds
+        setInterval(() => {
+            if (navigator.onLine) {
+                fetch('/', { method: 'HEAD', cache: 'no-cache' })
+                    .then(() => {
+                        location.reload();
+                    })
+                    .catch(() => {
+                        // Still offline
+                    });
+            }
+        }, 30000);
+    </script>
+</body>
+</html>

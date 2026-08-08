@@ -1,0 +1,25 @@
+{
+  "name": "bijou-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Bijou AI Digital Employee — monorepo: landing (Vercel), backend (Fly.io), bridge (Fly.io). Malaysian SME WhatsApp/Telegram AI agent.",
+  "workspaces": [
+    "packages/landing"
+  ],
+  "scripts": {
+    "dev:landing": "npm run dev -w packages/landing",
+    "build:landing": "npm run build -w packages/landing",
+    "typecheck:landing": "cd packages/landing && npx tsc --noEmit",
+    "preview:landing": "npm run preview -w packages/landing",
+    "i18n:audit": "cd packages/landing && python scripts/i18n_audit.py",
+    "i18n:usage": "cd packages/landing && python scripts/i18n_usage.py",
+    "i18n:orphans": "cd packages/landing && python scripts/i18n_orphans.py",
+    "lead:overpass": "cd packages/backend && node app/overpass_scout.cjs",
+    "lead:scorer": "cd packages/backend && node app/run_scorer_now.cjs 150",
+    "lead:outreach": "cd packages/backend && node app/run_outreach_topfit.cjs 60 15",
+    "lead:research": "cd packages/backend && node app/research_scan.cjs"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

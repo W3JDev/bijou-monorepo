@@ -1,0 +1,326 @@
+{
+  "test_suite": "Bijou AI API Automated Tests",
+  "version": "2.2.0",
+  "base_url": "https://bijou-staging.fly.dev",
+  "test_phases": [
+    {
+      "phase": 1,
+      "name": "Health & Documentation",
+      "auth_required": false,
+      "tests": [
+        {
+          "id": "test_01",
+          "name": "Health Check",
+          "endpoint": "/health",
+          "method": "GET",
+          "expected_status": 200,
+          "required_fields": ["status", "service", "version", "timestamp", "database"],
+          "assertions": {
+            "status": "healthy",
+            "version": "2.2.0"
+          }
+        },
+        {
+          "id": "test_02",
+          "name": "Postman Collection Download",
+          "endpoint": "/postman-collection",
+          "method": "GET",
+          "expected_status": 200,
+          "required_headers": {
+            "Content-Type": "application/json",
+            "Content-Disposition": "attachment"
+          },
+          "required_fields": ["info", "item", "variable"],
+          "assertions": {
+            "info.name": "Bijou AI WhatsApp Enterprise",
+            "info.version": "2.2.0"
+          }
+        },
+        {
+          "id": "test_03",
+          "name": "API Documentation",
+          "endpoint": "/api-docs",
+          "method": "GET",
+          "expected_status": 200,
+          "content_contains": ["Postman", "/postman-collection"]
+        },
+        {
+          "id": "test_04",
+          "name": "Changelog",
+          "endpoint": "/changelog",
+          "method": "GET",
+          "expected_status": 200,
+          "response_type": "array"
+        },
+        {
+          "id": "test_05",
+          "name": "OpenAPI Schema",
+          "endpoint": "/openapi.json",
+          "method": "GET",
+          "expected_status": 200,
+          "required_fields": ["openapi", "info", "paths"]
+        }
+      ]
+    },
+    {
+      "phase": 2,
+      "name": "Authentication",
+      "auth_required": false,
+      "tests": [
+        {
+          "id": "test_06",
+          "name": "Google OAuth Login",
+          "endpoint": "/api/auth/google/login",
+          "method": "GET",
+          "expected_status": [302, 307],
+          "follow_redirects": false,
+          "assertions": {
+            "Location_contains": "accounts.google.com"
+          }
+        },
+        {
+          "id": "test_07",
+          "name": "Dashboard Google Auth URL",
+          "endpoint": "/api/dashboard/google/auth-url",
+          "method": "GET",
+          "expected_status": 200,
+          "required_fields": ["auth_url"]
+        }
+      ]
+    },
+    {
+      "phase": 3,
+      "name": "Dashboard API",
+      "auth_required": true,
+      "auth_header": "Authorization: Bearer {{dashboard_token}}",
+      "tests": [
+        {
+          "id": "test_08",
+          "name": "Get Conversations",
+          "endpoint": "/api/dashboard/conversations",
+          "method": "GET",
+          "expected_status": [200, 401],
+          "required_fields_if_200": ["conversations"]
+        },
+        {
+          "id": "test_09",
+          "name": "Get Dashboard Stats",
+          "endpoint": "/api/dashboard/stats",
+          "method": "GET",
+          "expected_status": [200, 401],
+          "numeric_fields_if_200": ["total_conversations", "ai_handled", "human_handled"]
+        },
+        {
+          "id": "test_11",
+          "name": "Send Message",
+          "endpoint": "/api/dashboard/send-message",
+          "method": "POST",
+          "body": {
+            "chat_jid": "60123456789@s.whatsapp.net",
+            "message": "Test message"
+          },
+          "expected_status": [200, 400, 401, 404, 500]
+        },
+        {
+          "id": "test_12",
+          "name": "Takeover Conversation",
+          "endpoint": "/api/dashboard/takeover",
+          "method": "POST",
+          "body": {
+            "customer_jid": "60123456789@s.whatsapp.net",
+            "agent_name": "Test Agent",
+            "reason": "Testing"
+          },
+          "expected_status": [200, 400, 401, 404]
+        },
+        {
+          "id": "test_13",
+          "name": "Release Takeover",
+          "endpoint": "/api/dashboard/release-takeover",
+          "method": "POST",
+          "body": {
+            "customer_jid": "60123456789@s.whatsapp.net"
+          },
+          "expected_status": [200, 400, 401, 404]
+        },
+        {
+          "id": "test_14",
+          "name": "Get Active Takeovers",
+          "endpoint": "/api/dashboard/takeovers",
+          "method": "GET",
+          "expected_status": [200, 401]
+        }
+      ]
+    },
+    {
+      "phase": 4,
+      "name": "Knowledge Base API",
+      "auth_required": true,
+      "auth_header": "Authorization: Bearer {{dashboard_token}}",
+      "tests": [
+        {
+          "id": "test_15",
+          "name": "List Knowledge Items",
+          "endpoint": "/api/knowledge/list",
+          "method": "GET",
+          "expected_status": [200, 401]
+        },
+        {
+          "id": "test_16",
+          "name": "Add Knowledge Item",
+          "endpoint": "/api/knowledge/add",
+          "method": "POST",
+          "body": {
+            "content": "Test knowledge item for automated testing",
+            "source_name": "automated_test"
+          },
+          "expected_status": [200, 201, 401],
+          "save_field": "knowledge_id"
+        },
+        {
+          "id": "test_17",
+          "name": "Update Knowledge Item",
+          "endpoint": "/api/knowledge/update/{{knowledge_id}}",
+          "method": "PUT",
+          "body": {
+            "content": "Updated test knowledge item",
+            "source_name": "automated_test_updated"
+          },
+          "expected_status": [200, 401, 404],
+          "requires_saved": "knowledge_id"
+        },
+        {
+          "id": "test_18",
+          "name": "Delete Knowledge Item",
+          "endpoint": "/api/knowledge/delete/{{knowledge_id}}",
+          "method": "DELETE",
+          "expected_status": [200, 204, 401, 404],
+          "requires_saved": "knowledge_id"
+        }
+      ]
+    },
+    {
+      "phase": 5,
+      "name": "Onboarding API",
+      "auth_required": false,
+      "tests": [
+        {
+          "id": "test_19",
+          "name": "Onboarding Status",
+          "endpoint": "/api/onboarding/status/test_token_12345",
+          "method": "GET",
+          "expected_status": [200, 400, 404]
+        },
+        {
+          "id": "test_20",
+          "name": "Generate QR Code",
+          "endpoint": "/api/onboarding/generate-qr",
+          "method": "POST",
+          "body": {
+            "token": "test_token_12345"
+          },
+          "expected_status": [200, 400, 404]
+        },
+        {
+          "id": "test_21",
+          "name": "Check WhatsApp Connection",
+          "endpoint": "/api/onboarding/check-connection/test_token_12345",
+          "method": "GET",
+          "expected_status": [200, 404]
+        }
+      ]
+    },
+    {
+      "phase": 6,
+      "name": "Webhooks",
+      "auth_required": true,
+      "auth_header": "X-API-Key: {{api_key}}",
+      "tests": [
+        {
+          "id": "test_22",
+          "name": "WhatsApp Message Webhook",
+          "endpoint": "/webhook/whatsapp",
+          "method": "POST",
+          "body": {
+            "from": "60123456789@s.whatsapp.net",
+            "body": "Test message from automated tests",
+            "timestamp": 1708099200,
+            "messageId": "test_msg_123"
+          },
+          "expected_status": [200, 400, 401]
+        },
+        {
+          "id": "test_23",
+          "name": "Google Sheets Webhook",
+          "endpoint": "/webhook/google-sheets",
+          "method": "POST",
+          "body": {
+            "action": "sync_knowledge",
+            "sheet_id": "test_sheet_123",
+            "row_data": {
+              "question": "Test question",
+              "answer": "Test answer"
+            }
+          },
+          "expected_status": [200, 400, 401, 404]
+        },
+        {
+          "id": "test_24",
+          "name": "Zapier Webhook",
+          "endpoint": "/webhook/zapier",
+          "method": "POST",
+          "body": {
+            "trigger": "new_customer",
+            "data": {
+              "phone": "+60123456789",
+              "name": "Test Customer",
+              "source": "Automated Test"
+            }
+          },
+          "expected_status": [200, 400, 401, 404]
+        }
+      ]
+    },
+    {
+      "phase": 7,
+      "name": "System Documentation",
+      "auth_required": false,
+      "tests": [
+        {
+          "id": "test_25",
+          "name": "Swagger UI",
+          "endpoint": "/docs",
+          "method": "GET",
+          "expected_status": 200,
+          "content_type": "text/html"
+        },
+        {
+          "id": "test_26",
+          "name": "ReDoc",
+          "endpoint": "/redoc",
+          "method": "GET",
+          "expected_status": 200,
+          "content_type": "text/html"
+        }
+      ]
+    }
+  ],
+  "test_environment": {
+    "variables": {
+      "base_url": "https://bijou-staging.fly.dev",
+      "dashboard_token": "YOUR_JWT_TOKEN_HERE",
+      "api_key": "YOUR_API_KEY_HERE",
+      "tenant_id": "YOUR_TENANT_UUID_HERE"
+    }
+  },
+  "success_criteria": {
+    "critical_path": {
+      "tests": ["test_01", "test_02", "test_03", "test_08", "test_15"],
+      "minimum_passing": 5
+    },
+    "full_suite": {
+      "minimum_passing": 20,
+      "total_tests": 26
+    }
+  }
+}

@@ -1,0 +1,65 @@
+{
+  "name": "Bijou AI - Digital Employee",
+  "short_name": "Bijou AI",
+  "description": "RM299/month WhatsApp & Telegram AI for Malaysian SMEs. Replies in Manglish, books Cal.com appointments, and captures leads 24/7 while you sleep.",
+  "start_url": "/",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui", "browser"],
+  "background_color": "#072A1F",
+  "theme_color": "#0B3B2E",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "lang": "en-MY",
+  "categories": ["business", "productivity", "ai", "automation"],
+  "icons": [
+    {
+      "src": "/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Start Free Trial",
+      "short_name": "Trial",
+      "description": "Sign up — 30-day money-back guarantee, no credit card",
+      "url": "/?action=signup",
+      "icons": [{ "src": "/icons/icon-192x192.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Chat on WhatsApp",
+      "short_name": "WhatsApp",
+      "description": "Talk to the Bijou team on WhatsApp",
+      "url": "https://wa.me/60174106981",
+      "icons": [{ "src": "/icons/icon-192x192.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Book a Demo",
+      "short_name": "Demo",
+      "description": "Schedule a live product demonstration",
+      "url": "https://cal.com/getbijou",
+      "icons": [{ "src": "/icons/icon-192x192.png", "sizes": "96x96" }]
+    }
+  ],
+  "related_applications": [],
+  "prefer_related_applications": false,
+  "protocol_handlers": [
+    {
+      "protocol": "web+bijouai",
+      "url": "/?action=%s"
+    }
+  ]
+}

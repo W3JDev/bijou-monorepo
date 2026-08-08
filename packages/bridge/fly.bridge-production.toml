@@ -1,0 +1,32 @@
+app = "bijou-bridge-production-v2"
+primary_region = "sin"
+
+[build]
+image = "aldinokemal2104/go-whatsapp-web-multidevice:latest"
+
+[env]
+APP_BASIC_AUTH = "bijou-prod:Zk9mKhN7vP2xQeLw8RtY4jDcXaS6bMfU"
+APP_OS = "BijouAI-Production"
+APP_PORT = "3000"
+WHATSAPP_AUTO_DOWNLOAD_MEDIA = "true"
+WHATSAPP_AUTO_MARK_READ = "false"
+WHATSAPP_AUTO_REJECT_CALL = "true"
+WHATSAPP_WEBHOOK = "https://bijou-production.fly.dev/webhook/message"
+WHATSAPP_WEBHOOK_EVENTS = "message,message.ack,group.participants"
+
+[http_service]
+auto_start_machines = true
+auto_stop_machines = false
+force_https = true
+internal_port = 3_000
+min_machines_running = 1
+processes = [ "app" ]
+
+[[mounts]]
+destination = "/app/storages"
+source = "prod_bridge_data_v2"
+
+[[vm]]
+cpu_kind = "shared"
+cpus = 1
+memory = "1gb"

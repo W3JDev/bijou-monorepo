@@ -1,0 +1,31 @@
+steps:
+  # Build the container image
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['build', '-t', 'asia-southeast1-docker.pkg.dev/$PROJECT_ID/whatsapp-repo/whatsapp-bridge:$BUILD_ID', '.']
+    dir: 'whatsapp-bridge'
+    
+  # Push the container image
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'asia-southeast1-docker.pkg.dev/$PROJECT_ID/whatsapp-repo/whatsapp-bridge:$BUILD_ID']
+    
+  # Deploy to Cloud Run
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: gcloud
+    args:
+      - 'run'
+      - 'deploy'
+      - 'whatsapp-bridge'
+      - '--image=asia-southeast1-docker.pkg.dev/$PROJECT_ID/whatsapp-repo/whatsapp-bridge:$BUILD_ID'
+      - '--region=asia-southeast1'
+      - '--platform=managed'
+      - '--allow-unauthenticated'
+      - '--memory=512Mi'
+      - '--cpu=1'
+      - '--set-env-vars=BRIDGE_DB_PATH=/app/store/messages.db'
+
+images:
+  - 'asia-southeast1-docker.pkg.dev/$PROJECT_ID/whatsapp-repo/whatsapp-bridge:$BUILD_ID'
+
+options:
+  machineType: 'N1_HIGHCPU_8'
+  logging: CLOUD_LOGGING_ONLY

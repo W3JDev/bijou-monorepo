@@ -1,0 +1,770 @@
+<!doctype html>
+<html lang="en">
+  <!-- edge-cache-bust:v=2026-07-28a -->
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Bijou AI - System Health Check</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --primary: #6366f1;
+        --secondary: #a855f7;
+        --accent: #ec4899;
+        --background: #0f172a;
+        --surface: rgba(30, 41, 59, 0.7);
+        --text: #f8fafc;
+        --text-muted: #94a3b8;
+        --success: #10b981;
+        --warning: #f59e0b;
+        --danger: #ef4444;
+        --border: rgba(148, 163, 184, 0.1);
+        --glass: rgba(255, 255, 255, 0.05);
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Outfit", sans-serif;
+        background-color: var(--background);
+        background-image:
+          radial-gradient(
+            at 0% 0%,
+            rgba(99, 102, 241, 0.15) 0px,
+            transparent 50%
+          ),
+          radial-gradient(
+            at 100% 100%,
+            rgba(168, 85, 247, 0.15) 0px,
+            transparent 50%
+          );
+        background-attachment: fixed;
+        color: var(--text);
+        min-height: 100vh;
+        padding: 2rem;
+      }
+
+      .container {
+        max-width: 1000px;
+        margin: 0 auto;
+      }
+
+      header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 3rem;
+        padding: 1.5rem 2rem;
+        background: var(--glass);
+        backdrop-filter: blur(12px);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+      }
+
+      .logo {
+        font-size: 1.5rem;
+        font-weight: 700;
+        background: linear-gradient(135deg, var(--primary), var(--accent));
+        background-clip: text;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+      }
+
+      .logo i {
+        -webkit-text-fill-color: initial;
+        color: var(--primary);
+      }
+
+      .refresh-btn {
+        background: linear-gradient(135deg, var(--primary), var(--accent));
+        color: white;
+        border: none;
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: transform 0.2s;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .refresh-btn:hover {
+        transform: translateY(-2px);
+      }
+
+      .refresh-btn i {
+        transition: transform 0.3s;
+      }
+
+      .refresh-btn.loading i {
+        animation: spin 1s linear infinite;
+      }
+
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      .card {
+        background: var(--glass);
+        backdrop-filter: blur(12px);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+      }
+
+      .card-header {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid var(--border);
+      }
+
+      .card-icon {
+        width: 3rem;
+        height: 3rem;
+        background: linear-gradient(135deg, var(--primary), var(--accent));
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.5rem;
+      }
+
+      .card-title {
+        font-size: 1.5rem;
+        font-weight: 600;
+      }
+
+      .check-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 1.5rem;
+      }
+
+      .check-item {
+        padding: 1.5rem;
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        transition: all 0.3s;
+      }
+
+      .check-item:hover {
+        border-color: var(--primary);
+        transform: translateY(-2px);
+      }
+
+      .check-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 1rem;
+      }
+
+      .check-label {
+        font-weight: 500;
+        color: var(--text);
+      }
+
+      .status-icon {
+        width: 2rem;
+        height: 2rem;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.875rem;
+      }
+
+      .status-icon.ok {
+        background: rgba(16, 185, 129, 0.2);
+        color: var(--success);
+      }
+
+      .status-icon.warning {
+        background: rgba(245, 158, 11, 0.2);
+        color: var(--warning);
+      }
+
+      .status-icon.error {
+        background: rgba(239, 68, 68, 0.2);
+        color: var(--danger);
+      }
+
+      .status-icon.loading {
+        background: rgba(99, 102, 241, 0.2);
+        color: var(--primary);
+      }
+
+      .check-details {
+        color: var(--text-muted);
+        font-size: 0.875rem;
+        line-height: 1.6;
+      }
+
+      .check-details code {
+        background: rgba(0, 0, 0, 0.3);
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+        font-family: "Courier New", monospace;
+        font-size: 0.8rem;
+        color: var(--primary);
+      }
+
+      .tenant-info {
+        background: rgba(99, 102, 241, 0.1);
+        border: 1px solid rgba(99, 102, 241, 0.2);
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+      }
+
+      .tenant-info h3 {
+        margin-bottom: 1rem;
+        color: var(--primary);
+      }
+
+      .tenant-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+      }
+
+      .tenant-field {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+      }
+
+      .tenant-field label {
+        font-size: 0.75rem;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+
+      .tenant-field value {
+        font-weight: 500;
+        color: var(--text);
+      }
+
+      .badge {
+        display: inline-block;
+        padding: 0.25rem 0.75rem;
+        border-radius: 9999px;
+        font-size: 0.75rem;
+        font-weight: 500;
+      }
+
+      .badge.success {
+        background: rgba(16, 185, 129, 0.2);
+        color: var(--success);
+      }
+
+      .badge.warning {
+        background: rgba(245, 158, 11, 0.2);
+        color: var(--warning);
+      }
+
+      .badge.danger {
+        background: rgba(239, 68, 68, 0.2);
+        color: var(--danger);
+      }
+
+      .action-buttons {
+        display: flex;
+        gap: 1rem;
+        margin-top: 1.5rem;
+      }
+
+      .btn {
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: transform 0.2s;
+        border: none;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        text-decoration: none;
+      }
+
+      .btn:hover {
+        transform: translateY(-2px);
+      }
+
+      .btn-primary {
+        background: linear-gradient(135deg, var(--primary), var(--accent));
+        color: white;
+      }
+
+      .btn-secondary {
+        background: rgba(255, 255, 255, 0.1);
+        color: var(--text);
+        border: 1px solid var(--border);
+      }
+
+      @media (max-width: 768px) {
+        .check-grid,
+        .tenant-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .action-buttons {
+          flex-direction: column;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <div class="logo">
+          <i class="fas fa-heartbeat"></i>
+          <span>System Health Check</span>
+        </div>
+        <button class="refresh-btn" onclick="runHealthChecks()">
+          <i class="fas fa-sync-alt"></i>
+          Refresh
+        </button>
+      </header>
+
+      <!-- Tenant Information -->
+      <div class="tenant-info" id="tenantInfo" style="display: none">
+        <h3><i class="fas fa-building"></i> Tenant Information</h3>
+        <div class="tenant-grid">
+          <div class="tenant-field">
+            <label>Tenant ID</label>
+            <value id="tenantId">-</value>
+          </div>
+          <div class="tenant-field">
+            <label>Business Name</label>
+            <value id="businessName">-</value>
+          </div>
+          <div class="tenant-field">
+            <label>Onboarding Step</label>
+            <value id="onboardingStep">-</value>
+          </div>
+          <div class="tenant-field">
+            <label>Connection Status</label>
+            <value id="connectionStatus">-</value>
+          </div>
+        </div>
+      </div>
+
+      <!-- Backend Health -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-icon">
+            <i class="fas fa-server"></i>
+          </div>
+          <div class="card-title">Backend Services</div>
+        </div>
+        <div class="check-grid">
+          <div class="check-item">
+            <div class="check-header">
+              <div class="check-label">Main API</div>
+              <div class="status-icon loading" id="status-backend">
+                <i class="fas fa-circle-notch fa-spin"></i>
+              </div>
+            </div>
+            <div class="check-details" id="details-backend">
+              Checking backend health...
+            </div>
+          </div>
+
+          <div class="check-item">
+            <div class="check-header">
+              <div class="check-label">Database (Supabase)</div>
+              <div class="status-icon loading" id="status-database">
+                <i class="fas fa-circle-notch fa-spin"></i>
+              </div>
+            </div>
+            <div class="check-details" id="details-database">
+              Checking database connectivity...
+            </div>
+          </div>
+
+          <div class="check-item">
+            <div class="check-header">
+              <div class="check-label">WhatsApp Bridge</div>
+              <div class="status-icon loading" id="status-bridge">
+                <i class="fas fa-circle-notch fa-spin"></i>
+              </div>
+            </div>
+            <div class="check-details" id="details-bridge">
+              Checking WhatsApp bridge...
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Onboarding Flow -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-icon">
+            <i class="fas fa-route"></i>
+          </div>
+          <div class="card-title">Onboarding Flow</div>
+        </div>
+        <div class="check-grid">
+          <div class="check-item">
+            <div class="check-header">
+              <div class="check-label">V2 Signup API</div>
+              <div class="status-icon loading" id="status-signup">
+                <i class="fas fa-circle-notch fa-spin"></i>
+              </div>
+            </div>
+            <div class="check-details" id="details-signup">
+              Testing onboarding endpoints...
+            </div>
+          </div>
+
+          <div class="check-item">
+            <div class="check-header">
+              <div class="check-label">QR Generation</div>
+              <div class="status-icon loading" id="status-qr">
+                <i class="fas fa-circle-notch fa-spin"></i>
+              </div>
+            </div>
+            <div class="check-details" id="details-qr">
+              Testing QR code generation...
+            </div>
+          </div>
+
+          <div class="check-item">
+            <div class="check-header">
+              <div class="check-label">Device Status</div>
+              <div class="status-icon loading" id="status-device">
+                <i class="fas fa-circle-notch fa-spin"></i>
+              </div>
+            </div>
+            <div class="check-details" id="details-device">
+              Testing device status endpoint...
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div class="action-buttons">
+        <a href="/static/onboarding.html" class="btn btn-primary">
+          <i class="fas fa-rocket"></i>
+          Test Onboarding Flow
+        </a>
+        <a href="/static/dashboard.html" class="btn btn-secondary">
+          <i class="fas fa-chart-line"></i>
+          View Dashboard
+        </a>
+        <a href="/api-docs" class="btn btn-secondary" target="_blank">
+          <i class="fas fa-book"></i>
+          API Documentation
+        </a>
+      </div>
+    </div>
+
+    <script>
+      const API_BASE = window.location.origin;
+      const TEST_TENANT_ID = "1e63900e-1b83-4dc8-ba55-9d619eae0866"; // Test tenant from Phase 2
+
+      // Auto-run on page load
+      window.addEventListener("load", () => {
+        runHealthChecks();
+      });
+
+      async function runHealthChecks() {
+        // Update button state
+        const btn = document.querySelector(".refresh-btn");
+        btn.classList.add("loading");
+        btn.disabled = true;
+
+        // Reset all status icons to loading
+        document.querySelectorAll(".status-icon").forEach((icon) => {
+          icon.className = "status-icon loading";
+          icon.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i>';
+        });
+
+        // Run checks in parallel
+        await Promise.all([
+          checkBackendHealth(),
+          checkDatabaseHealth(),
+          checkBridgeHealth(),
+          checkSignupAPI(),
+          checkQRGeneration(),
+          checkDeviceStatus(),
+          loadTenantInfo(),
+        ]);
+
+        // Re-enable button
+        btn.classList.remove("loading");
+        btn.disabled = false;
+      }
+
+      async function checkBackendHealth() {
+        const statusEl = document.getElementById("status-backend");
+        const detailsEl = document.getElementById("details-backend");
+
+        try {
+          const response = await fetch(`${API_BASE}/health`);
+          const data = await response.json();
+
+          if (response.ok && data.status === "healthy") {
+            setStatus(statusEl, "ok");
+            detailsEl.innerHTML = `
+              ✅ <strong>Online</strong><br>
+              Version: <code>${data.version || "unknown"}</code><br>
+              Service: <code>${data.service || "bijou-ai"}</code>
+            `;
+          } else {
+            throw new Error("Unhealthy response");
+          }
+        } catch (error) {
+          setStatus(statusEl, "error");
+          detailsEl.innerHTML = `❌ <strong>Offline</strong><br>${error.message}`;
+        }
+      }
+
+      async function checkDatabaseHealth() {
+        const statusEl = document.getElementById("status-database");
+        const detailsEl = document.getElementById("details-database");
+
+        try {
+          const response = await fetch(`${API_BASE}/status`);
+          const data = await response.json();
+
+          if (response.ok && data.database === "supabase") {
+            setStatus(statusEl, "ok");
+            detailsEl.innerHTML = `
+              ✅ <strong>Connected</strong><br>
+              Database: <code>${data.database}</code><br>
+              Environment: <code>${data.environment || "unknown"}</code>
+            `;
+          } else {
+            throw new Error("Database not configured");
+          }
+        } catch (error) {
+          setStatus(statusEl, "error");
+          detailsEl.innerHTML = `❌ <strong>Disconnected</strong><br>${error.message}`;
+        }
+      }
+
+      async function checkBridgeHealth() {
+        const statusEl = document.getElementById("status-bridge");
+        const detailsEl = document.getElementById("details-bridge");
+
+        try {
+          const response = await fetch(`${API_BASE}/bridge/health`);
+          const data = await response.json();
+
+          if (response.ok) {
+            const isHealthy = data.bridge_responsive && data.devices?.total > 0;
+            setStatus(statusEl, isHealthy ? "ok" : "warning");
+            detailsEl.innerHTML = `
+              ${isHealthy ? "✅" : "⚠️"} <strong>${data.bridge_responsive ? "Connected" : "Disconnected"}</strong><br>
+              Devices: <code>${data.devices?.total || 0} total, ${data.devices?.connected || 0} connected</code><br>
+              Bridge URL: <code>${data.bridge_url || "unknown"}</code>
+            `;
+          } else {
+            throw new Error("Bridge unreachable");
+          }
+        } catch (error) {
+          setStatus(statusEl, "error");
+          detailsEl.innerHTML = `❌ <strong>Offline</strong><br>${error.message}`;
+        }
+      }
+
+      async function checkSignupAPI() {
+        const statusEl = document.getElementById("status-signup");
+        const detailsEl = document.getElementById("details-signup");
+
+        try {
+          const response = await fetch(`${API_BASE}/api/onboarding/health`);
+          const data = await response.json();
+
+          if (response.ok) {
+            const isHealthy = data.status !== "unhealthy";
+            setStatus(statusEl, isHealthy ? "ok" : "warning");
+            detailsEl.innerHTML = `
+              ${isHealthy ? "✅" : "⚠️"} <strong>${data.status}</strong><br>
+              Checks: ${Object.entries(data.checks || {})
+                .map(([k, v]) => `<code>${k}: ${v}</code>`)
+                .join("<br>")}
+            `;
+          } else {
+            throw new Error("API unreachable");
+          }
+        } catch (error) {
+          setStatus(statusEl, "error");
+          detailsEl.innerHTML = `❌ <strong>Failed</strong><br>${error.message}`;
+        }
+      }
+
+      async function checkQRGeneration() {
+        const statusEl = document.getElementById("status-qr");
+        const detailsEl = document.getElementById("details-qr");
+
+        try {
+          const response = await fetch(
+            `${API_BASE}/api/onboarding/v2/whatsapp/qr/${TEST_TENANT_ID}`,
+          );
+
+          if (response.ok) {
+            const data = await response.json();
+            setStatus(statusEl, "ok");
+            detailsEl.innerHTML = `
+              ✅ <strong>Working</strong><br>
+              Code: <code>${data.code || "SUCCESS"}</code><br>
+              Device ID: <code>${data.results?.device_id?.slice(0, 12)}...</code>
+            `;
+          } else if (response.status === 404) {
+            setStatus(statusEl, "warning");
+            detailsEl.innerHTML = `⚠️ <strong>Device Not Provisioned</strong><br>Test tenant needs WhatsApp setup`;
+          } else {
+            throw new Error(`HTTP ${response.status}`);
+          }
+        } catch (error) {
+          setStatus(statusEl, "error");
+          detailsEl.innerHTML = `❌ <strong>Failed</strong><br>${error.message}`;
+        }
+      }
+
+      async function checkDeviceStatus() {
+        const statusEl = document.getElementById("status-device");
+        const detailsEl = document.getElementById("details-device");
+
+        try {
+          const response = await fetch(
+            `${API_BASE}/api/tenant/${TEST_TENANT_ID}/device/status`,
+          );
+          const data = await response.json();
+
+          if (response.ok) {
+            const hasDevice = data.status !== "no_device";
+            setStatus(statusEl, hasDevice ? "ok" : "warning");
+            detailsEl.innerHTML = `
+              ${hasDevice ? "✅" : "⚠️"} <strong>${data.status}</strong><br>
+              ${data.message || "No additional info"}<br>
+              ${data.device_id ? `Device: <code>${data.device_id.slice(0, 12)}...</code>` : ""}
+            `;
+          } else {
+            throw new Error(`HTTP ${response.status}`);
+          }
+        } catch (error) {
+          setStatus(statusEl, "error");
+          detailsEl.innerHTML = `❌ <strong>Failed</strong><br>${error.message}`;
+        }
+      }
+
+      async function loadTenantInfo() {
+        const tenantInfoEl = document.getElementById("tenantInfo");
+
+        try {
+          const response = await fetch(
+            `${API_BASE}/api/onboarding/v2/status/${TEST_TENANT_ID}`,
+          );
+
+          if (response.ok) {
+            const data = await response.json();
+            const progress = data.progress || {};
+
+            document.getElementById("tenantId").textContent =
+              TEST_TENANT_ID.slice(0, 8) + "...";
+            document.getElementById("businessName").textContent =
+              progress.business_name || "Test Tenant";
+            document.getElementById("onboardingStep").textContent =
+              data.current_step || "unknown";
+
+            const isConnected = progress.step_whatsapp_completed;
+            const statusBadge = isConnected
+              ? '<span class="badge success">✅ Connected</span>'
+              : '<span class="badge warning">⚠️ Not Connected</span>';
+            document.getElementById("connectionStatus").innerHTML = statusBadge;
+
+            tenantInfoEl.style.display = "block";
+          }
+        } catch (error) {
+          console.error("Failed to load tenant info:", error);
+        }
+      }
+
+      function setStatus(element, status) {
+        element.className = `status-icon ${status}`;
+        const icons = {
+          ok: '<i class="fas fa-check"></i>',
+          warning: '<i class="fas fa-exclamation-triangle"></i>',
+          error: '<i class="fas fa-times"></i>',
+        };
+        element.innerHTML = icons[status] || icons.error;
+      }
+    </script>
+
+    <!-- ── Bijou floating WhatsApp support button ────────────────────────
+       UPDATE: set SUPPORT_WA to your WhatsApp number (digits only, no +)
+       Example: "60189201885"
+  ──────────────────────────────────────────────────────────────────── -->
+    <script>
+      (function () {
+        var SUPPORT_WA = "601741006981"; // Bijou AI support number
+        var msg = encodeURIComponent("Hi Bijou Support! System check issue: ");
+        var btn = document.createElement("a");
+        btn.href = "https://wa.me/" + SUPPORT_WA + "?text=" + msg;
+        btn.target = "_blank";
+        btn.rel = "noopener noreferrer";
+        btn.title = "Chat with Bijou Support on WhatsApp";
+        btn.style.cssText = [
+          "position:fixed",
+          "bottom:24px",
+          "right:24px",
+          "z-index:9999",
+          "display:flex",
+          "align-items:center",
+          "gap:8px",
+          "background:#25D366",
+          "color:#fff",
+          "padding:12px 20px",
+          "border-radius:50px",
+          "font-family:sans-serif",
+          "font-size:14px",
+          "font-weight:600",
+          "text-decoration:none",
+          "box-shadow:0 4px 20px rgba(37,211,102,0.5)",
+          "transition:transform 0.2s,box-shadow 0.2s",
+        ].join(";");
+        btn.innerHTML =
+          '<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>' +
+          "<span>Chat Support</span>";
+        btn.onmouseover = function () {
+          btn.style.transform = "translateY(-2px)";
+          btn.style.boxShadow = "0 6px 28px rgba(37,211,102,0.65)";
+        };
+        btn.onmouseout = function () {
+          btn.style.transform = "translateY(0)";
+          btn.style.boxShadow = "0 4px 20px rgba(37,211,102,0.5)";
+        };
+        document.body.appendChild(btn);
+      })();
+    </script>
+  </body>
+</html>

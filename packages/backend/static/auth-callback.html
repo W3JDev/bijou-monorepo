@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+  <!-- edge-cache-bust:v=2026-08-03c -->
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Signing you in… · Bijou AI</title>
+    <style>
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #04302b;
+        color: #e5e7eb;
+        font-family: "Inter", system-ui, sans-serif;
+      }
+      .card {
+        text-align: center;
+        padding: 32px;
+        max-width: 380px;
+      }
+      .spinner {
+        width: 34px;
+        height: 34px;
+        border: 3px solid rgba(255, 255, 255, 0.2);
+        border-top-color: #10b981;
+        border-radius: 50%;
+        margin: 0 auto 18px;
+        animation: spin 0.9s linear infinite;
+      }
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+      a {
+        color: #34d399;
+      }
+      .err {
+        color: #fca5a5;
+        font-size: 14px;
+        margin-top: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <div class="spinner" id="spinner"></div>
+      <div id="msg">Completing your Google sign-in…</div>
+      <div class="err" id="err"></div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+      const SUPABASE_URL = "https://lrwzlujomukzjykafmic.supabase.co";
+      const SUPABASE_ANON_KEY =
+        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imxyd3psdWpvbXVremp5a2FmbWljIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkwNzA2ODMsImV4cCI6MjA4NDY0NjY4M30.ZJSvmh0Oa_51rfr0TrTSjS4OdszrUCe5Fmsnfk9X-6U";
+
+      function fail(text) {
+        document.getElementById("spinner").style.display = "none";
+        document.getElementById("msg").textContent = "Sign-in failed";
+        document.getElementById("err").innerHTML =
+          text + '<br/><br/><a href="/login">← Back to login</a>';
+      }
+
+      (async () => {
+        try {
+          const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+          // Supabase JS parses the session from the URL hash automatically.
+          let {
+            data: { session },
+          } = await sb.auth.getSession();
+          if (!session) {
+            // give detectSessionInUrl a beat, then retry once
+            await new Promise((r) => setTimeout(r, 400));
+            ({
+              data: { session },
+            } = await sb.auth.getSession());
+          }
+          if (!session) return fail("No session returned from Google.");
+
+          // Resolve/auto-link tenant on the backend, then land in the dashboard.
+          const resp = await fetch("/api/auth/oauth-session", {
+            method: "POST",
+            headers: { Authorization: "Bearer " + session.access_token },
+          });
+          const data = await resp.json();
+          if (!resp.ok) {
+            return fail(data.detail || "Could not resolve your account.");
+          }
+
+          // Defensive: only store tokens if we got a real JWT (3 dot-separated segments).
+          // Without this guard, a partial/failed oauth-session response would store
+          // the string "undefined" / "" / null, which the dashboard then sends as
+          // Authorization: Bearer undefined and the engine rejects with
+          // "token contains an invalid number of segments".
+          const at = data && data.access_token;
+          const rt = session.refresh_token || (data && data.refresh_token) || "";
+          if (!at || typeof at !== "string" || at.split(".").length !== 3) {
+            return fail("Sign-in returned an invalid session token. Please try again or contact support.");
+          }
+          if (!data.tenant_id) {
+            return fail("Sign-in did not return a tenant. Please contact support.");
+          }
+
+          localStorage.setItem("access_token", at);
+          localStorage.setItem("refresh_token", rt);
+          localStorage.setItem("tenant_id", data.tenant_id);
+          localStorage.setItem("business_name", data.business_name || "");
+          localStorage.setItem("email", data.email || "");
+          localStorage.setItem("session_login_at", Date.now().toString());
+
+          document.getElementById("msg").textContent = "Success! Redirecting…";
+          window.location.href = "/dashboard";
+        } catch (e) {
+          fail(String(e && e.message ? e.message : e));
+        }
+      })();
+    </script>
+  </body>
+</html>

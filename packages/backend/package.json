@@ -1,0 +1,21 @@
+{
+  "name": "w3j-bijou-enterprise",
+  "version": "1.0.0",
+  "description": "**Last Updated:** 2026-02-11   **Version:** 2.2.3   **Status:** ✅ **FULLY OPERATIONAL** | End-to-End Message Flow Working",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs",
+    "example": "examples",
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "@playwright/test": "^1.58.2"
+  }
+}

@@ -1,0 +1,63 @@
+# =============================================================================
+# WARNING: DO NOT RUN `pip install -r requirements.txt` LOCALLY.
+# This file includes torch, CUDA, and ML packages (3+ GB download).
+#
+# For local dev setup use:  make setup   (installs requirements-dev.txt only)
+# This file is used ONLY by:  Docker build / Fly.io deployment
+# =============================================================================
+
+# Core Web Framework
+fastapi>=0.104.1
+uvicorn[standard]>=0.24.0
+
+# AI Models - Google Gemini (NEW SDK)
+google-genai>=1.56.0
+
+# Database
+supabase>=2.3.0
+postgrest>=0.13.2
+
+# HTTP & API
+requests>=2.31.0
+httpx>=0.25.2
+aiohttp>=3.9.0
+python-multipart>=0.0.6
+
+# Data & Configuration
+pydantic>=2.5.0
+pydantic[email]>=2.5.0
+python-dotenv>=1.0.0
+
+# File Operations
+aiofiles>=23.2.1
+
+# REMOVED: google-generativeai (deprecated Dec 16, 2025)
+# REMOVED: openai (not used - we use Gemini only)
+openai>=1.12.0
+
+# Telegram channel (optional - for TelegramAdapter)
+python-telegram-bot>=22.0
+
+# Payment Integration
+stripe>=7.0.0
+
+# Google API & Auth
+google-auth-oauthlib>=1.1.0
+google-auth-httplib2>=0.1.1
+google-api-python-client>=2.108.0
+
+# Document Parsing & Knowledge Upload
+PyPDF2>=3.0.0
+python-docx>=1.1.0
+Pillow>=10.0.0
+pytesseract>=0.3.10
+
+# Voice TTS (Phase 7: Voice Response)
+torch>=2.0.0
+torchaudio>=2.0.0
+chatterbox-tts>=0.1.0
+
+# Phase 2: Knowledge Base System
+tiktoken>=0.5.0  # Token counting for chunking
+pgvector>=0.2.0  # PostgreSQL vector extension support
+numpy>=1.24.0  # Vector operations

@@ -1,0 +1,741 @@
+<!doctype html>
+<html lang="en">
+  <!-- edge-cache-bust:v=2026-07-28a -->
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Bijou AI - WhatsApp AI Assistant Setup</title>
+    <link rel="icon" type="image/png" href="/static/favicon.png" />
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body {
+        font-family:
+          "Inter",
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          Tahoma,
+          Geneva,
+          Verdana,
+          sans-serif;
+        background: #0a1e1c;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+      }
+
+      /* Subtle radial glow behind card — matches logo glow */
+      body::before {
+        content: "";
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 600px;
+        height: 600px;
+        background: radial-gradient(
+          circle,
+          rgba(46, 241, 157, 0.06) 0%,
+          transparent 70%
+        );
+        pointer-events: none;
+        z-index: 0;
+      }
+
+      .container {
+        background: #0a1e1c;
+        border: 2px solid #c9a961; /* Gold border — matches logo ring */
+        border-radius: 16px;
+        padding: 40px;
+        box-shadow:
+          0 0 40px rgba(0, 0, 0, 0.6),
+          0 0 80px rgba(46, 241, 157, 0.08);
+        max-width: 500px;
+        width: 100%;
+        text-align: center;
+        position: relative;
+        z-index: 1;
+      }
+      .logo {
+        margin-bottom: 20px;
+      }
+      .logo img {
+        height: 80px;
+        width: auto;
+        max-width: 300px;
+      }
+      h1 {
+        color: #ffffff;
+        margin-bottom: 10px;
+        font-weight: 600;
+        font-size: 28px;
+        text-shadow: 0 0 20px rgba(46, 241, 157, 0.3);
+      }
+      h2 {
+        color: #ffffff;
+        margin-bottom: 20px;
+        font-weight: 600;
+        font-size: 20px;
+        text-align: center;
+      }
+      p {
+        color: #ffffff;
+        line-height: 1.5;
+        margin-bottom: 10px;
+      }
+      ol,
+      ul {
+        color: #ffffff;
+      }
+      ol li,
+      ul li {
+        margin-bottom: 8px;
+        line-height: 1.4;
+      }
+      strong {
+        color: #2ef19d;
+        font-weight: 600;
+      }
+      code {
+        background: rgba(255, 255, 255, 0.1);
+        padding: 4px 8px;
+        border-radius: 4px;
+        color: #00f5e4;
+        font-family: "Monaco", "Menlo", monospace;
+      }
+      .subtitle {
+        color: #c9a961;
+        margin-bottom: 30px;
+        font-size: 16px;
+        font-weight: 500;
+      }
+      .step {
+        display: none;
+        animation: fadeIn 0.5s ease-in;
+      }
+      .step.active {
+        display: block;
+      }
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      .form-group {
+        margin-bottom: 20px;
+        text-align: left;
+      }
+      label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 500;
+        color: #ffffff;
+        font-size: 14px;
+      }
+      input[type="text"],
+      input[type="email"],
+      input[type="tel"] {
+        width: 100%;
+        padding: 12px 16px;
+        border: 2px solid #2ef19d;
+        border-radius: 10px;
+        font-size: 16px;
+        background: rgba(255, 255, 255, 0.05);
+        color: #ffffff;
+        transition: all 0.3s ease;
+        backdrop-filter: blur(10px);
+      }
+      input:focus {
+        outline: none;
+        border-color: #00f5e4;
+        box-shadow: 0 0 15px rgba(46, 241, 157, 0.3);
+        background: rgba(255, 255, 255, 0.1);
+      }
+      input::placeholder {
+        color: #888;
+      }
+      .btn {
+        background: linear-gradient(135deg, #2ef19d 0%, #00f5e4 100%);
+        color: #0a1e1c;
+        border: none;
+        padding: 15px 30px;
+        border-radius: 10px;
+        font-size: 16px;
+        font-weight: 700;
+        cursor: pointer;
+        width: 100%;
+        margin-top: 20px;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(46, 241, 157, 0.25);
+        letter-spacing: 0.5px;
+      }
+      .btn:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 6px 25px rgba(46, 241, 157, 0.4);
+      }
+      .btn:disabled {
+        background: #444;
+        color: #888;
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: none;
+      }
+      .qr-container {
+        margin: 20px 0;
+        padding: 20px;
+        border: 2px dashed #c9a961;
+        border-radius: 10px;
+        background: rgba(255, 255, 255, 0.02);
+        backdrop-filter: blur(5px);
+      }
+      .qr-code {
+        max-width: 300px;
+        width: 100%;
+        height: auto;
+        margin: 0 auto;
+        display: block;
+      }
+      .status {
+        padding: 12px;
+        border-radius: 8px;
+        margin: 15px 0;
+        font-weight: 500;
+        backdrop-filter: blur(10px);
+      }
+      .status.success {
+        background: rgba(46, 241, 157, 0.15);
+        color: #2ef19d;
+        border: 1px solid #2ef19d;
+      }
+      .status.error {
+        background: rgba(255, 107, 107, 0.15);
+        color: #ff6b6b;
+        border: 1px solid #ff6b6b;
+      }
+      .status.warning {
+        background: rgba(201, 169, 97, 0.15);
+        color: #c9a961;
+        border: 1px solid #c9a961;
+      }
+      .loading {
+        display: inline-block;
+        width: 20px;
+        height: 20px;
+        border: 3px solid rgba(255, 255, 255, 0.1);
+        border-top: 3px solid #2ef19d;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+      }
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+      .progress-bar {
+        width: 100%;
+        height: 6px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 3px;
+        margin-bottom: 30px;
+        overflow: hidden;
+      }
+      .progress-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #2ef19d 0%, #00f5e4 100%);
+        border-radius: 3px;
+        transition: width 0.5s ease;
+        box-shadow: 0 0 10px rgba(46, 241, 157, 0.5);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="logo">
+        <img src="/static/logos/mark.svg" alt="Bijou AI" />
+      </div>
+      <h1>Bijou AI Setup</h1>
+      <p class="subtitle">WhatsApp AI Assistant for Your Business</p>
+
+      <div class="progress-bar">
+        <div class="progress-fill" style="width: 33%"></div>
+      </div>
+
+      <!-- Step 1: Business Info -->
+      <div class="step active" id="step1">
+        <h2>Step 1: Business Information</h2>
+        <form id="signupForm">
+          <div class="form-group">
+            <label for="businessName">Business Name *</label>
+            <input
+              type="text"
+              id="businessName"
+              name="businessName"
+              required
+              placeholder="e.g. ABC Property Agency"
+            />
+          </div>
+          <div class="form-group">
+            <label for="contactPerson">Contact Person</label>
+            <input
+              type="text"
+              id="contactPerson"
+              name="contactPerson"
+              placeholder="Your name"
+            />
+          </div>
+          <div class="form-group">
+            <label for="email">Email Address *</label>
+            <input
+              type="email"
+              id="email"
+              name="email"
+              required
+              autocomplete="email"
+              placeholder="your@email.com"
+            />
+          </div>
+          <div class="form-group">
+            <label for="whatsappNumber">WhatsApp Number *</label>
+            <input
+              type="tel"
+              id="whatsappNumber"
+              name="whatsappNumber"
+              required
+              placeholder="e.g. +601X-XXXX XXXX (your number, not ours)"
+            />
+          </div>
+          <button type="submit" class="btn" id="signupBtn">
+            Setup WhatsApp AI Assistant
+          </button>
+        </form>
+      </div>
+
+      <!-- Step 2: QR Code Scanning -->
+      <div class="step" id="step2">
+        <h2>Step 2: Connect WhatsApp</h2>
+        <p>Scan this QR code with your WhatsApp to connect:</p>
+        <div class="qr-container">
+          <div class="loading" id="qrLoading"></div>
+          <img
+            id="qrCode"
+            class="qr-code"
+            style="display: none"
+            alt="WhatsApp QR Code"
+          />
+          <p id="qrError" class="status error" style="display: none">
+            Failed to load QR code. Please refresh.
+          </p>
+          <p
+            id="qrCountdown"
+            style="
+              display: none;
+              font-size: 12px;
+              color: #aaa;
+              margin: 6px 0 0 0;
+            "
+          >
+            Auto-refreshing in <span id="qrCountdownSec">25</span>s
+          </p>
+        </div>
+        <p><strong>Instructions:</strong></p>
+        <ol style="text-align: left; padding-left: 20px; margin-top: 10px">
+          <li>Open WhatsApp on your phone</li>
+          <li>Tap <strong>Menu</strong> (⋮) or <strong>Settings</strong></li>
+          <li>Tap <strong>Linked Devices</strong></li>
+          <li>Tap <strong>Link a Device</strong></li>
+          <li>Point your phone camera at this QR code</li>
+        </ol>
+        <div id="connectionStatus" class="status warning">
+          <span class="loading"></span> Waiting for WhatsApp connection...
+        </div>
+        <!-- Skip button appears after 30s -->
+        <button
+          id="skipBtn"
+          onclick="skipToDashboard()"
+          class="btn"
+          style="
+            display: none;
+            margin-top: 10px;
+            background: linear-gradient(135deg, #2ef19d 0%, #00f5e4 100%);
+            color: #0a1e1c;
+          "
+        >
+          Skip — Go to Dashboard
+        </button>
+        <button
+          onclick="refreshQR()"
+          class="btn"
+          id="refreshBtn"
+          style="
+            margin-top: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            color: #ffffff;
+            border: 1px solid #c9a961;
+          "
+        >
+          Refresh QR Code
+        </button>
+      </div>
+
+      <!-- Step 3: Success -->
+      <div class="step" id="step3">
+        <h2>🎉 Setup Complete!</h2>
+        <div class="status success">
+          WhatsApp AI Assistant is now active for
+          <strong id="finalBusinessName"></strong>
+        </div>
+        <p>Your AI assistant is now ready to:</p>
+        <ul style="text-align: left; padding-left: 20px; margin: 20px 0">
+          <li>✅ Respond to customer inquiries automatically</li>
+          <li>✅ Detect multiple languages (English, Malay, Chinese, Tamil)</li>
+          <li>✅ Escalate complex queries to you</li>
+          <li>✅ Learn from your business context</li>
+        </ul>
+        <div
+          style="
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid #c9a961;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            backdrop-filter: blur(10px);
+          "
+        >
+          <h4 style="color: #2ef19d; margin-bottom: 10px">Next Steps:</h4>
+          <p>• Send a test message to your WhatsApp number</p>
+          <p>• Customize AI responses in your dashboard</p>
+          <p>• Add business FAQs and knowledge base</p>
+        </div>
+        <button
+          id="dashboardBtn"
+          onclick="
+            window.open(
+              sessionStorage.getItem('dashboardUrl') || '/dashboard',
+              '_blank',
+            )
+          "
+          class="btn"
+        >
+          Open Dashboard
+        </button>
+      </div>
+    </div>
+
+    <script>
+      let tenantId = null; // Use tenant_id (UUID) instead of signup_token
+      let signupToken = null; // Store actual signup_token for dashboard auth
+      let statusInterval = null;
+      let qrRefreshInterval = null; // Auto-refresh QR every 25s (WhatsApp QR expires in ~30s)
+      let qrCountdownTimer = null;
+      let pollAttempts = 0; // ✅ BUG 4 FIX: Track polling attempts
+      const MAX_POLL_ATTEMPTS = 60; // ✅ BUG 4 FIX: 5 minutes max (60 * 5s = 300s)
+      const QR_REFRESH_INTERVAL = 25; // seconds before QR auto-refresh
+
+      // Handle signup form (V2 API)
+      document
+        .getElementById("signupForm")
+        .addEventListener("submit", async (e) => {
+          e.preventDefault();
+
+          const btn = document.getElementById("signupBtn");
+          const originalText = btn.textContent;
+          btn.disabled = true;
+          btn.innerHTML =
+            '<span class="loading"></span> Creating your AI assistant...';
+
+          const formData = {
+            business_name: document.getElementById("businessName").value,
+            email: document.getElementById("email").value,
+            phone: document.getElementById("whatsappNumber").value,
+            plan: "free", // Default plan
+          };
+
+          try {
+            // Use V2 signup endpoint
+            const response = await fetch("/api/onboarding/v2/signup", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(formData),
+            });
+
+            if (!response.ok) {
+              const errorData = await response.json();
+              throw new Error(errorData.detail || `HTTP ${response.status}`);
+            }
+
+            const result = await response.json();
+            tenantId = result.tenant_id; // Store tenant UUID
+
+            console.log("✅ Tenant created:", tenantId);
+
+            signupToken = result.signup_token;
+            showStep(2);
+            loadQRCode();
+            startStatusChecking();
+          } catch (error) {
+            console.error("Signup error:", error);
+            alert("Failed to create AI assistant: " + error.message);
+          } finally {
+            btn.disabled = false;
+            btn.textContent = originalText;
+          }
+        });
+
+      function stopQRAutoRefresh() {
+        if (qrRefreshInterval) {
+          clearInterval(qrRefreshInterval);
+          qrRefreshInterval = null;
+        }
+        if (qrCountdownTimer) {
+          clearInterval(qrCountdownTimer);
+          qrCountdownTimer = null;
+        }
+        const countdown = document.getElementById("qrCountdown");
+        if (countdown) countdown.style.display = "none";
+      }
+
+      function startQRAutoRefresh() {
+        stopQRAutoRefresh(); // clear any existing timers
+        let secsLeft = QR_REFRESH_INTERVAL;
+        const countdownEl = document.getElementById("qrCountdown");
+        const countdownSec = document.getElementById("qrCountdownSec");
+        if (countdownEl) {
+          countdownEl.style.display = "block";
+          countdownSec.textContent = secsLeft;
+        }
+        // Tick countdown every second
+        qrCountdownTimer = setInterval(() => {
+          secsLeft--;
+          if (countdownSec) countdownSec.textContent = secsLeft;
+        }, 1000);
+        // Reload QR when timer fires
+        qrRefreshInterval = setTimeout(() => {
+          console.log("🔄 Auto-refreshing QR code (25s expiry)");
+          loadQRCode();
+        }, QR_REFRESH_INTERVAL * 1000);
+      }
+
+      async function loadQRCode() {
+        stopQRAutoRefresh(); // clear stale timers before each load
+        document.getElementById("qrLoading").style.display = "block";
+        document.getElementById("qrCode").style.display = "none";
+        document.getElementById("qrError").style.display = "none";
+
+        try {
+          // Use V2 QR endpoint with tenant_id
+          const response = await fetch(
+            `/api/onboarding/v2/whatsapp/qr/${tenantId}`,
+          );
+
+          if (response.ok) {
+            const data = await response.json();
+
+            // V2 API returns JSON with results.qr_link (base64 image)
+            if (data.results?.qr_link) {
+              document.getElementById("qrLoading").style.display = "none";
+              const qrImg = document.getElementById("qrCode");
+              qrImg.src = data.results.qr_link; // Set base64 data URL
+              qrImg.style.display = "block";
+
+              console.log(
+                "✅ QR code loaded, device_id:",
+                data.results?.device_id,
+              );
+              startQRAutoRefresh(); // ✅ Phase 4: auto-refresh before QR expires
+            } else {
+              throw new Error("No QR code in response");
+            }
+          } else if (response.status === 404) {
+            // Device not provisioned yet
+            showManualSetupMessage(
+              "Device not provisioned yet. Please wait or contact support.",
+            );
+          } else {
+            const errorData = await response.json();
+            throw new Error(errorData.detail || "QR generation failed");
+          }
+        } catch (error) {
+          console.error("QR load error:", error);
+          showManualSetupMessage(error.message);
+        }
+      }
+
+      function showManualSetupMessage(message) {
+        document.getElementById("qrLoading").style.display = "none";
+        document.querySelector(".qr-container").style.display = "none";
+        document.querySelector("#step2 p:nth-of-type(1)").textContent =
+          "✅ Account Created Successfully!";
+        document.querySelector("#step2 ol").style.display = "none";
+        document.getElementById("refreshBtn").style.display = "none";
+
+        const statusDiv = document.getElementById("connectionStatus");
+        statusDiv.className = "status success";
+        statusDiv.style.fontSize = "16px";
+        statusDiv.style.padding = "30px";
+        statusDiv.innerHTML =
+          "<h3 style='margin:0 0 15px 0'>✅ Tenant Created!</h3>" +
+          "<p style='margin:10px 0'><strong>Tenant ID:</strong><br>" +
+          "<code style='background:#f0f0f0;padding:8px 12px;border-radius:4px;display:inline-block;margin-top:5px'>" +
+          tenantId +
+          "</code></p>" +
+          "<p style='margin:15px 0 0 0;color:#666'>" +
+          message +
+          "</p>";
+        clearInterval(statusInterval);
+        stopQRAutoRefresh(); // ✅ Phase 4: stop auto-refresh when QR is no longer needed
+      }
+
+      function startStatusChecking() {
+        // Poll V2 status endpoint every 3 seconds (faster feedback)
+        pollAttempts = 0;
+        statusInterval = setInterval(checkConnectionStatus, 3000);
+
+        // Show "Skip to Dashboard" button after 30 seconds
+        setTimeout(() => {
+          if (tenantId) {
+            const skipBtn = document.getElementById("skipBtn");
+            if (skipBtn) skipBtn.style.display = "block";
+          }
+        }, 30000);
+      }
+
+      function skipToDashboard() {
+        clearInterval(statusInterval);
+        const dashboardUrl = `/static/dashboard.html?tenant_id=${tenantId}&token=${signupToken}`;
+        sessionStorage.setItem("dashboardUrl", dashboardUrl);
+        window.location.href = dashboardUrl;
+      }
+
+      async function checkConnectionStatus() {
+        try {
+          pollAttempts++;
+
+          // Stop polling after max attempts
+          if (pollAttempts > MAX_POLL_ATTEMPTS) {
+            clearInterval(statusInterval);
+            const statusDiv = document.getElementById("connectionStatus");
+            statusDiv.className = "status error";
+            statusDiv.innerHTML =
+              "⚠️ Connection is taking longer than expected.<br>" +
+              "<button onclick='location.reload()' style='margin-top:10px;padding:8px 16px;background:#4285f4;color:white;border:none;border-radius:4px;cursor:pointer'>Retry</button>";
+            return;
+          }
+
+          // Use V2 status endpoint
+          const response = await fetch(`/api/onboarding/v2/status/${tenantId}`);
+          if (!response.ok) return;
+
+          const data = await response.json();
+          const statusDiv = document.getElementById("connectionStatus");
+
+          // BUG-3 FIX: Multiple fallback checks for connected state
+          const isConnected =
+            data.progress?.step_whatsapp_completed === true ||
+            data.status === "connected" ||
+            data.whatsapp_connected === true ||
+            data.progress?.whatsapp_connected === true;
+
+          if (isConnected) {
+            clearInterval(statusInterval);
+            stopQRAutoRefresh(); // ✅ Phase 4: stop QR refresh once connected
+            statusDiv.className = "status success";
+            statusDiv.innerHTML = "✅ WhatsApp connected successfully!";
+
+            // POST to mark whatsapp step complete (belt-and-suspenders)
+            try {
+              await fetch(`/api/onboarding/v2/whatsapp/connected/${tenantId}`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+              });
+            } catch (_) {}
+
+            // Update progress
+            document.querySelector(".progress-fill").style.width = "100%";
+
+            // Complete onboarding
+            await completeOnboarding();
+
+            setTimeout(() => {
+              document.getElementById("finalBusinessName").textContent =
+                data.progress?.business_name || "Your Business";
+              showStep(3);
+            }, 1500);
+          } else {
+            // Still waiting
+            console.log(
+              "⏳ Waiting for WhatsApp connection...",
+              data.current_step,
+            );
+          }
+        } catch (error) {
+          console.error("Status check error:", error);
+        }
+      }
+
+      async function completeOnboarding() {
+        try {
+          // Use V2 complete endpoint
+          const response = await fetch(
+            `/api/onboarding/v2/complete/${tenantId}`,
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({}),
+            },
+          );
+
+          if (response.ok) {
+            const result = await response.json();
+            console.log("✅ Onboarding completed:", result);
+
+            // Store dashboard URL for success step
+            const dashboardUrl = `/static/dashboard.html?tenant_id=${tenantId}&token=${signupToken}`;
+            sessionStorage.setItem("dashboardUrl", dashboardUrl);
+
+            const dashboardBtn = document.getElementById("dashboardBtn");
+            if (dashboardBtn) {
+              dashboardBtn.onclick = () => window.open(dashboardUrl, "_blank");
+            }
+          }
+        } catch (error) {
+          console.error("Complete onboarding error:", error);
+        }
+      }
+
+      function refreshQR() {
+        loadQRCode();
+      }
+
+      function showStep(stepNum) {
+        document
+          .querySelectorAll(".step")
+          .forEach((step) => step.classList.remove("active"));
+        document.getElementById(`step${stepNum}`).classList.add("active");
+
+        // Update progress bar
+        const progress = stepNum === 1 ? 33 : stepNum === 2 ? 66 : 100;
+        document.querySelector(".progress-fill").style.width = `${progress}%`;
+      }
+
+      // Clean up all intervals on page unload
+      window.addEventListener("beforeunload", () => {
+        if (statusInterval) clearInterval(statusInterval);
+        stopQRAutoRefresh();
+      });
+    </script>
+  </body>
+</html>

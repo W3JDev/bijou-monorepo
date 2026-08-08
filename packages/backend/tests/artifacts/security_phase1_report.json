@@ -1,0 +1,88 @@
+{
+  "phase": "1B-security",
+  "filter_repo_installed": true,
+  "filter_repo_version": "2.47.0",
+  "filter_repo_runs": 2,
+  "filter_repo_run_notes": [
+    "Run 1: Purged paths at repo-root level (e.g. 'appscript/appscript_token.pickle'). Rewrote 305 commits.",
+    "Run 2: Discovered older commits stored paths under 'w3j-bijou-enterprise/' prefix (committed from parent dir). Ran second pass to purge those. Rewrote 305 commits again."
+  ],
+  "files_purged": [
+    ".env.backup.20260202_000823",
+    "appscript/appscript_token.pickle",
+    "supabase/samples/",
+    "market_validation/data/pilot_customers.json",
+    "tests/postman/environments/bijou-staging.postman_environment.json",
+    "tests/postman/environments/bijou-staging.postman_environment.json.backup.json",
+    ".git_backup/",
+    "static/_archive_old_html/",
+    "supabase/_whatsapp_device_result.json",
+    "w3j-bijou-enterprise/.env.backup.20260202_000823",
+    "w3j-bijou-enterprise/appscript/appscript_token.pickle",
+    "w3j-bijou-enterprise/supabase/samples/",
+    "w3j-bijou-enterprise/market_validation/data/pilot_customers.json",
+    "w3j-bijou-enterprise/tests/postman/environments/bijou-staging.postman_environment.json",
+    "w3j-bijou-enterprise/tests/postman/environments/bijou-staging.postman_environment.json.backup.json",
+    "w3j-bijou-enterprise/.git_backup/",
+    "w3j-bijou-enterprise/static/_archive_old_html/",
+    "w3j-bijou-enterprise/supabase/_whatsapp_device_result.json"
+  ],
+  "verification_results": {
+    ".env.backup.20260202_000823": {
+      "git_log_count_root": 0,
+      "git_log_count_prefixed": 0,
+      "status": "CLEAN"
+    },
+    "appscript/appscript_token.pickle": {
+      "git_log_count_root": 0,
+      "git_log_count_prefixed": 0,
+      "status": "CLEAN"
+    },
+    "supabase/samples": {
+      "git_log_count_root": 0,
+      "git_log_count_prefixed": 0,
+      "status": "CLEAN"
+    },
+    "market_validation/data/pilot_customers.json": {
+      "git_log_count_root": 0,
+      "git_log_count_prefixed": 0,
+      "status": "CLEAN"
+    },
+    "tests/postman/environments/bijou-staging.postman_environment.json": {
+      "git_log_count_root": 0,
+      "git_log_count_prefixed": 0,
+      "status": "CLEAN"
+    },
+    "tests/postman/environments/bijou-staging.postman_environment.json.backup.json": {
+      "git_log_count_root": 0,
+      "git_log_count_prefixed": 0,
+      "status": "CLEAN"
+    },
+    ".git_backup": {
+      "git_log_count_root": 0,
+      "git_log_count_prefixed": 0,
+      "status": "CLEAN"
+    },
+    "static/_archive_old_html": {
+      "git_log_count_root": 0,
+      "git_log_count_prefixed": 0,
+      "status": "CLEAN"
+    },
+    "supabase/_whatsapp_device_result.json": {
+      "git_log_count_root": 0,
+      "git_log_count_prefixed": 0,
+      "status": "CLEAN"
+    }
+  },
+  "history_verified_clean": true,
+  "force_push_status": "success",
+  "force_push_method": "--force (--force-with-lease rejected as expected after history rewrite)",
+  "remote_push_summary": "03a8304...02c0688 fix/dashboard-all-issues -> fix/dashboard-all-issues (forced update)",
+  "new_head_commit": "02c0688",
+  "previous_head_commit": "03a8304",
+  "branch": "fix/dashboard-all-issues",
+  "remote": "https://github.com/W3JDev/w3j-bijou-ai.git",
+  "commits_rewritten": 305,
+  "critical_note": "Two filter-repo passes were required. Commits from before the repo was moved to w3j-bijou-enterprise/ stored files under a 'w3j-bijou-enterprise/' path prefix. Both pass 1 (root paths) and pass 2 (prefixed paths) verified clean with 0 git log entries.",
+  "timestamp": "2026-02-21T10:30:00+08:00"
+}

@@ -1,0 +1,38 @@
+# Developer tooling only — used by `make setup`
+# Does NOT include torch/CUDA/ML packages (those are production-only).
+# Production uses requirements.txt (installed by Docker/Fly.io, not locally).
+
+# Pre-commit hooks
+pre-commit>=3.6.0
+
+# Test runner
+pytest>=7.4.0
+pytest-asyncio>=0.23.0
+pytest-mock>=3.12.0
+httpx>=0.25.2          # For FastAPI TestClient
+
+# Linting/formatting (run by pre-commit, but useful standalone too)
+ruff>=0.3.0
+black>=24.1.1
+isort>=5.13.2
+bandit>=1.7.6
+
+# Minimal runtime deps needed to import src/ for tests
+fastapi>=0.104.1
+uvicorn>=0.24.0
+pydantic>=2.5.0
+pydantic[email]>=2.5.0   # email-validator: required to import src/saas/google_oauth.py
+python-dotenv>=1.0.0
+supabase>=2.3.0
+httpx>=0.25.2
+aiohttp>=3.9.0
+aiofiles>=23.2.1
+requests>=2.31.0
+
+# Runtime deps that test modules import at collection time.
+# Without these, `make setup` produces an env where pytest ABORTS the whole
+# run on a collection error (ModuleNotFoundError). Kept lightweight — the
+# heavy ML stack (torch/TTS) stays production-only in requirements.txt.
+python-multipart>=0.0.6  # FastAPI Form parsing — required to import src/core/bijou.py (app)
+Pillow>=10.0.0           # PIL — imported by tests/e2e/test_media_processing.py
+stripe>=7.0.0            # imported via src/saas/payment_api.py (test_payment_webhook_endpoint.py)

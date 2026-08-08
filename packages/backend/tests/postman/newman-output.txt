@@ -1,0 +1,430 @@
+newman
+
+Bijou AI WhatsApp Enterprise Copy
+
+□ Authentication
+└ Google Login
+  GET https://bijou-staging.fly.dev/api/auth/google/login [200 OK, 1.24MB, 15.4s]
+  √  Status is 200 OK
+  1. Response time is acceptable
+
+└ Google Callback
+  GET https://bijou-staging.fly.dev/api/auth/google/callback?code=&state= [500 Internal Server Error, 440B, 105ms]
+  2. Status is 200 OK
+  √  Response time is acceptable
+
+□ Dashboard API
+└ Get Dashboard Stats
+  GET https://bijou-staging.fly.dev/api/dashboard/stats [200 OK, 420B, 499ms]
+  √  Status is 200 OK
+  √  Response time is acceptable
+
+└ Get Active Conversations
+  GET https://bijou-staging.fly.dev/api/dashboard/conversations [200 OK, 1.36kB, 170ms]
+  √  Status is 200 OK
+  √  Response time is acceptable
+
+└ Get Conversation Detail
+  GET https://bijou-staging.fly.dev/api/dashboard/conversation/+60123456789@s.whatsapp.net [404 Not Found, 298B, 238ms]
+  3. Status is 200 OK
+  √  Response time is acceptable
+
+└ Takeover Conversation
+  POST https://bijou-staging.fly.dev/api/dashboard/takeover [500 Internal Server Error, 310B, 167ms]
+  4. Status is 200 OK
+  √  Response time is acceptable
+
+└ Return To Ai
+  POST https://bijou-staging.fly.dev/api/dashboard/return-to-ai/+60123456789@s.whatsapp.net?agent_name= [500 Internal Server Error, 310B, 164ms]
+  5. Status is 200 OK
+  √  Response time is acceptable
+
+└ Send Message As Agent
+  POST https://bijou-staging.fly.dev/api/dashboard/send-message [500 Internal Server Error, 319B, 98ms]
+  6. Status is 200 OK
+  √  Response time is acceptable
+
+└ Add Knowledge
+  POST https://bijou-staging.fly.dev/api/dashboard/knowledge [200 OK, 257B, 78ms]
+  √  Status is 200 OK
+  √  Response time is acceptable
+
+└ Get Escalations
+  GET https://bijou-staging.fly.dev/api/dashboard/escalations [200 OK, 241B, 158ms]
+  √  Status is 200 OK
+  √  Response time is acceptable
+
+└ Claim Escalation
+  POST https://bijou-staging.fly.dev/api/dashboard/escalations//claim [404 Not Found, 268B, 17ms]
+  7. Status is 200 OK
+  √  Response time is acceptable
+
+└ Resolve Escalation
+  POST https://bijou-staging.fly.dev/api/dashboard/escalations//resolve [404 Not Found, 268B, 17ms]
+  8. Status is 200 OK
+  √  Response time is acceptable
+
+└ Get Whatsapp Qr
+  GET https://bijou-staging.fly.dev/api/dashboard/whatsapp/qr [200 OK, 345B, 173ms]
+  √  Status is 200 OK
+  √  Response time is acceptable
+
+└ Init Whatsapp
+  POST https://bijou-staging.fly.dev/api/dashboard/whatsapp/init [200 OK, 311B, 104ms]
+  √  Status is 200 OK
+  √  Response time is acceptable
+
+└ Get Whatsapp Status
+  GET https://bijou-staging.fly.dev/api/dashboard/whatsapp/status [200 OK, 284B, 146ms]
+  √  Status is 200 OK
+  √  Response time is acceptable
+
+└ Get Google Auth Url
+  GET https://bijou-staging.fly.dev/api/dashboard/google/auth-url [500 Internal Server Error, 288B, 150ms]
+  9. Status is 200 OK
+  √  Response time is acceptable
+
+└ Google Callback
+  GET https://bijou-staging.fly.dev/api/dashboard/google/callback?code=&state= [500 Internal Server Error, 334B, 18ms]
+ 10. Status is 200 OK
+  √  Response time is acceptable
+
+└ Get Agents
+  GET https://bijou-staging.fly.dev/api/dashboard/agents [200 OK, 241B, 169ms]
+  √  Status is 200 OK
+  √  Response time is acceptable
+
+└ Create Agent
+  POST https://bijou-staging.fly.dev/api/dashboard/agents [500 Internal Server Error, 443B, 152ms]
+ 11. Status is 200 OK
+  √  Response time is acceptable
+
+└ Delete Agent
+  DELETE https://bijou-staging.fly.dev/api/dashboard/agents/ [200 OK, 241B, 213ms]
+  √  Status is 200 OK
+  √  Response time is acceptable
+
+□ Knowledge Base API
+└ Upload Knowledge Document
+  POST https://bijou-staging.fly.dev/api/knowledge/upload [422 Unprocessable Entity, 346B, 17ms]
+ 12. Status is 200 OK
+  √  Response time is acceptable
+
+└ List Knowledge Documents
+  GET https://bijou-staging.fly.dev/api/knowledge/list [200 OK, 337B, 101ms]
+  √  Status is 200 OK
+  √  Response time is acceptable
+
+└ Delete Knowledge Document
+  DELETE https://bijou-staging.fly.dev/api/knowledge/ [404 Not Found, 268B, 15ms]
+ 13. Status is 200 OK
+  √  Response time is acceptable
+
+└ Get Combined Knowledge
+  GET https://bijou-staging.fly.dev/api/knowledge/combined [200 OK, 361B, 133ms]
+  √  Status is 200 OK
+  √  Response time is acceptable
+
+└ Knowledge Api Health
+  GET https://bijou-staging.fly.dev/api/knowledge/health [200 OK, 311B, 26ms]
+  √  Status is 200 OK
+  √  Response time is acceptable
+
+□ Onboarding API
+└ Signup Property Agent
+  POST https://bijou-staging.fly.dev/api/onboarding/signup [400 Bad Request, 330B, 123ms]
+ 14. Status is 200 OK
+  √  Response time is acceptable
+
+└ Get Onboarding Status
+  GET https://bijou-staging.fly.dev/api/onboarding/status/ [404 Not Found, 268B, 16ms]
+ 15. Status is 200 OK
+  √  Response time is acceptable
+
+└ Get Qr Code
+  GET https://bijou-staging.fly.dev/api/onboarding/qr/ [404 Not Found, 268B, 17ms]
+ 16. Status is 200 OK
+  √  Response time is acceptable
+
+└ Complete Onboarding
+  POST https://bijou-staging.fly.dev/api/onboarding/complete/ [404 Not Found, 268B, 16ms]
+ 17. Status is 200 OK
+  √  Response time is acceptable
+
+└ Onboarding Health
+  GET https://bijou-staging.fly.dev/api/onboarding/health [200 OK, 331B, 798ms]
+  √  Status is 200 OK
+  √  Response time is acceptable
+
+□ Other Endpoints
+└ Get Status
+  GET https://bijou-staging.fly.dev/api/proactive/status [200 OK, 327B, 55ms]
+  √  Status is 200 OK
+  √  Response time is acceptable
+
+└ Schedule Message
+  POST https://bijou-staging.fly.dev/api/proactive/schedule [200 OK, 574B, 64ms]
+  √  Status is 200 OK
+  √  Response time is acceptable
+  ┌
+  │ '✅ Set message_id:', '00000000-0000-0000-0000-00000000
+  │ 0001_+60123456789@s.whatsapp.net_1771268059'
+  └
+
+└ Create Campaign
+  POST https://bijou-staging.fly.dev/api/proactive/campaign [200 OK, 583B, 111ms]
+  √  Status is 200 OK
+  √  Response time is acceptable
+  ┌
+  │ '✅ Set campaign_id:', 'campaign_00000000-0000-0000-000
+  │ 0-000000000001_1771268059'
+  └
+
+└ Set Silence Rule
+  POST https://bijou-staging.fly.dev/api/proactive/silence-rule [200 OK, 336B, 59ms]
+  √  Status is 200 OK
+  √  Response time is acceptable
+
+└ List Campaigns
+  GET https://bijou-staging.fly.dev/api/proactive/campaigns [200 OK, 599B, 18ms]
+  √  Status is 200 OK
+  √  Response time is acceptable
+
+└ List Scheduled Messages
+  GET https://bijou-staging.fly.dev/api/proactive/scheduled [200 OK, 589B, 19ms]
+  √  Status is 200 OK
+  √  Response time is acceptable
+
+└ Cancel Scheduled Message
+  DELETE https://bijou-staging.fly.dev/api/proactive/scheduled/00000000-0000-0000-0000-000000000001_+60123456789@s.whatsapp.net_1771268059 [200 OK, 365B, 20ms]
+  √  Status is 200 OK
+  √  Response time is acceptable
+
+└ External Webhook
+  POST https://bijou-staging.fly.dev/api/webhook [500 Internal Server Error, 312B, 17ms]
+ 18. Status is 200 OK
+  √  Response time is acceptable
+
+└ Serve Onboarding
+  GET https://bijou-staging.fly.dev/onboard/ [404 Not Found, 268B, 16ms]
+ 19. Status is 200 OK
+  √  Response time is acceptable
+
+└ Update Testing Mode
+  PUT https://bijou-staging.fly.dev/api/settings/testing-mode [200 OK, 391B, 132ms]
+  √  Status is 200 OK
+  √  Response time is acceptable
+
+└ Update Ignore List
+  PUT https://bijou-staging.fly.dev/api/settings/ignore-list [200 OK, 438B, 121ms]
+  √  Status is 200 OK
+  √  Response time is acceptable
+
+└ Update Business Hours
+  PUT https://bijou-staging.fly.dev/api/settings/business-hours [200 OK, 888B, 147ms]
+  √  Status is 200 OK
+  √  Response time is acceptable
+
+└ Update Auto Reply
+  PUT https://bijou-staging.fly.dev/api/settings/auto-reply [200 OK, 430B, 119ms]
+  √  Status is 200 OK
+  √  Response time is acceptable
+
+└ Settings Api Health
+  GET https://bijou-staging.fly.dev/api/settings/health [200 OK, 310B, 28ms]
+  √  Status is 200 OK
+  √  Response time is acceptable
+
+□ System & Documentation
+└ Root
+  GET https://bijou-staging.fly.dev/ [200 OK, 878B, 18ms]
+  √  Status is 200 OK
+  √  Response time is acceptable
+ 20. Content-Type is JSON
+
+└ Api Documentation
+  GET https://bijou-staging.fly.dev/api-docs [200 OK, 228.26kB, 51ms]
+  √  Status is 200 OK
+  √  Response time is acceptable
+ 21. Content-Type is JSON
+
+└ Changelog
+  GET https://bijou-staging.fly.dev/changelog [200 OK, 8.55kB, 19ms]
+  √  Status is 200 OK
+  √  Response time is acceptable
+ 22. Content-Type is JSON
+
+└ Health Check
+  GET https://bijou-staging.fly.dev/health [200 OK, 372B, 16ms]
+  √  Status is 200 OK
+  √  Response time is acceptable
+  √  Content-Type is JSON
+
+└ Status
+  GET https://bijou-staging.fly.dev/status [200 OK, 555B, 16ms]
+  √  Status is 200 OK
+  √  Response time is acceptable
+  √  Content-Type is JSON
+
+□ Webhooks
+└ Webhook Message
+  POST https://bijou-staging.fly.dev/webhook/message [500 Internal Server Error, 312B, 24ms]
+ 23. Status is 200 OK
+  √  Response time is acceptable
+
+└ Webhook Connection Status
+  POST https://bijou-staging.fly.dev/webhook/connection [500 Internal Server Error, 312B, 19ms]
+ 24. Status is 200 OK
+  √  Response time is acceptable
+
+└ Webhook Telegram
+  POST https://bijou-staging.fly.dev/webhook/telegram [400 Bad Request, 273B, 20ms]
+ 25. Status is 200 OK
+  √  Response time is acceptable
+
+┌─────────────────────────┬────────────────────┬───────────────────┐
+│                         │           executed │            failed │
+├─────────────────────────┼────────────────────┼───────────────────┤
+│              iterations │                  1 │                 0 │
+├─────────────────────────┼────────────────────┼───────────────────┤
+│                requests │                 52 │                 0 │
+├─────────────────────────┼────────────────────┼───────────────────┤
+│            test-scripts │                 52 │                 0 │
+├─────────────────────────┼────────────────────┼───────────────────┤
+│      prerequest-scripts │                  1 │                 0 │
+├─────────────────────────┼────────────────────┼───────────────────┤
+│              assertions │                109 │                25 │
+├─────────────────────────┴────────────────────┴───────────────────┤
+│ total run duration: 25s                                          │
+├──────────────────────────────────────────────────────────────────┤
+│ total data received: 1.49MB (approx)                             │
+├──────────────────────────────────────────────────────────────────┤
+│ average response time: 396ms [min: 15ms, max: 15.4s, s.d.: 2.1s] │
+└──────────────────────────────────────────────────────────────────┘
+
+[31m   # [39m[31m failure        [39m[31m detail                                                            [39m
+[90m     [39m[90m                [39m[90m                                                                   [39m
+ 01.  AssertionError  Response time is acceptable                                       
+                      expected 15405 to be below 3000                                   
+                      at assertion:1 in test-script                                     
+                      inside "Authentication / Google Login"                            
+[90m     [39m[90m                [39m[90m                                                                   [39m
+ 02.  AssertionError  Status is 200 OK                                                  
+                      expected response to have status code 200 but got 500             
+                      at assertion:0 in test-script                                     
+                      inside "Authentication / Google Callback"                         
+[90m     [39m[90m                [39m[90m                                                                   [39m
+ 03.  AssertionError  Status is 200 OK                                                  
+                      expected response to have status code 200 but got 404             
+                      at assertion:0 in test-script                                     
+                      inside "Dashboard API / Get Conversation Detail"                  
+[90m     [39m[90m                [39m[90m                                                                   [39m
+ 04.  AssertionError  Status is 200 OK                                                  
+                      expected response to have status code 200 but got 500             
+                      at assertion:0 in test-script                                     
+                      inside "Dashboard API / Takeover Conversation"                    
+[90m     [39m[90m                [39m[90m                                                                   [39m
+ 05.  AssertionError  Status is 200 OK                                                  
+                      expected response to have status code 200 but got 500             
+                      at assertion:0 in test-script                                     
+                      inside "Dashboard API / Return To Ai"                             
+[90m     [39m[90m                [39m[90m                                                                   [39m
+ 06.  AssertionError  Status is 200 OK                                                  
+                      expected response to have status code 200 but got 500             
+                      at assertion:0 in test-script                                     
+                      inside "Dashboard API / Send Message As Agent"                    
+[90m     [39m[90m                [39m[90m                                                                   [39m
+ 07.  AssertionError  Status is 200 OK                                                  
+                      expected response to have status code 200 but got 404             
+                      at assertion:0 in test-script                                     
+                      inside "Dashboard API / Claim Escalation"                         
+[90m     [39m[90m                [39m[90m                                                                   [39m
+ 08.  AssertionError  Status is 200 OK                                                  
+                      expected response to have status code 200 but got 404             
+                      at assertion:0 in test-script                                     
+                      inside "Dashboard API / Resolve Escalation"                       
+[90m     [39m[90m                [39m[90m                                                                   [39m
+ 09.  AssertionError  Status is 200 OK                                                  
+                      expected response to have status code 200 but got 500             
+                      at assertion:0 in test-script                                     
+                      inside "Dashboard API / Get Google Auth Url"                      
+[90m     [39m[90m                [39m[90m                                                                   [39m
+ 10.  AssertionError  Status is 200 OK                                                  
+                      expected response to have status code 200 but got 500             
+                      at assertion:0 in test-script                                     
+                      inside "Dashboard API / Google Callback"                          
+[90m     [39m[90m                [39m[90m                                                                   [39m
+ 11.  AssertionError  Status is 200 OK                                                  
+                      expected response to have status code 200 but got 500             
+                      at assertion:0 in test-script                                     
+                      inside "Dashboard API / Create Agent"                             
+[90m     [39m[90m                [39m[90m                                                                   [39m
+ 12.  AssertionError  Status is 200 OK                                                  
+                      expected response to have status code 200 but got 422             
+                      at assertion:0 in test-script                                     
+                      inside "Knowledge Base API / Upload Knowledge Document"           
+[90m     [39m[90m                [39m[90m                                                                   [39m
+ 13.  AssertionError  Status is 200 OK                                                  
+                      expected response to have status code 200 but got 404             
+                      at assertion:0 in test-script                                     
+                      inside "Knowledge Base API / Delete Knowledge Document"           
+[90m     [39m[90m                [39m[90m                                                                   [39m
+ 14.  AssertionError  Status is 200 OK                                                  
+                      expected response to have status code 200 but got 400             
+                      at assertion:0 in test-script                                     
+                      inside "Onboarding API / Signup Property Agent"                   
+[90m     [39m[90m                [39m[90m                                                                   [39m
+ 15.  AssertionError  Status is 200 OK                                                  
+                      expected response to have status code 200 but got 404             
+                      at assertion:0 in test-script                                     
+                      inside "Onboarding API / Get Onboarding Status"                   
+[90m     [39m[90m                [39m[90m                                                                   [39m
+ 16.  AssertionError  Status is 200 OK                                                  
+                      expected response to have status code 200 but got 404             
+                      at assertion:0 in test-script                                     
+                      inside "Onboarding API / Get Qr Code"                             
+[90m     [39m[90m                [39m[90m                                                                   [39m
+ 17.  AssertionError  Status is 200 OK                                                  
+                      expected response to have status code 200 but got 404             
+                      at assertion:0 in test-script                                     
+                      inside "Onboarding API / Complete Onboarding"                     
+[90m     [39m[90m                [39m[90m                                                                   [39m
+ 18.  AssertionError  Status is 200 OK                                                  
+                      expected response to have status code 200 but got 500             
+                      at assertion:0 in test-script                                     
+                      inside "Other Endpoints / External Webhook"                       
+[90m     [39m[90m                [39m[90m                                                                   [39m
+ 19.  AssertionError  Status is 200 OK                                                  
+                      expected response to have status code 200 but got 404             
+                      at assertion:0 in test-script                                     
+                      inside "Other Endpoints / Serve Onboarding"                       
+[90m     [39m[90m                [39m[90m                                                                   [39m
+ 20.  AssertionError  Content-Type is JSON                                              
+                      expected 'text/html; charset=utf-8' to include 'application/json' 
+                      at assertion:2 in test-script                                     
+                      inside "System & Documentation / Root"                            
+[90m     [39m[90m                [39m[90m                                                                   [39m
+ 21.  AssertionError  Content-Type is JSON                                              
+                      expected 'text/html; charset=utf-8' to include 'application/json' 
+                      at assertion:2 in test-script                                     
+                      inside "System & Documentation / Api Documentation"               
+[90m     [39m[90m                [39m[90m                                                                   [39m
+ 22.  AssertionError  Content-Type is JSON                                              
+                      expected 'text/html; charset=utf-8' to include 'application/json' 
+                      at assertion:2 in test-script                                     
+                      inside "System & Documentation / Changelog"                       
+[90m     [39m[90m                [39m[90m                                                                   [39m
+ 23.  AssertionError  Status is 200 OK                                                  
+                      expected response to have status code 200 but got 500             
+                      at assertion:0 in test-script                                     
+                      inside "Webhooks / Webhook Message"                               
+[90m     [39m[90m                [39m[90m                                                                   [39m
+ 24.  AssertionError  Status is 200 OK                                                  
+                      expected response to have status code 200 but got 500             
+                      at assertion:0 in test-script                                     
+                      inside "Webhooks / Webhook Connection Status"                     
+[90m     [39m[90m                [39m[90m                                                                   [39m
+ 25.  AssertionError  Status is 200 OK                                                  
+                      expected response to have status code 200 but got 400             
+                      at assertion:0 in test-script                                     
+                      inside "Webhooks / Webhook Telegram"                              

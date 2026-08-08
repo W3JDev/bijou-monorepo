@@ -1,0 +1,1234 @@
+<!DOCTYPE html>
+<html lang="en">
+  <!-- edge-cache-bust:v=2026-07-28a -->
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bijou AI User Guide - Getting Started</title>
+  <link rel="icon" type="image/png" href="/static/favicon.png" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+    
+    * {
+      font-family: 'Inter', system-ui, sans-serif;
+    }
+    
+    body {
+      background: #0A1E1C;
+      min-height: 100vh;
+    }
+    
+    /* Subtle radial glow behind content */
+    body::before {
+      content: '';
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 800px;
+      height: 800px;
+      background: radial-gradient(circle, rgba(46,241,157,0.04) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+    
+    .container {
+      position: relative;
+      z-index: 1;
+    }
+    
+    .prose {
+      max-width: none;
+    }
+    .code-block {
+      background: rgba(255, 255, 255, 0.05);
+      color: #2EF19D;
+      padding: 1rem;
+      border-radius: 0.5rem;
+      border: 1px solid #2EF19D;
+      font-family: 'Monaco', 'Menlo', monospace;
+      overflow-x: auto;
+      backdrop-filter: blur(10px);
+    }
+    .step-number {
+      background: linear-gradient(135deg, #2EF19D 0%, #00F5E4 100%);
+      color: #0A1E1C;
+      width: 2rem;
+      height: 2rem;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      margin-right: 1rem;
+      box-shadow: 0 4px 15px rgba(46,241,157,0.25);
+    }
+    
+    .glass-card {
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(20px);
+      border: 1px solid #C9A961;
+      border-radius: 16px;
+      box-shadow: 0 0 40px rgba(0,0,0,0.6), 0 0 80px rgba(46,241,157,0.08);
+    }
+    
+    .glass-nav-card {
+      background: rgba(255, 255, 255, 0.03);
+      backdrop-filter: blur(15px);
+      border: 1px solid rgba(201, 169, 97, 0.3);
+      border-radius: 12px;
+      transition: all 0.3s ease;
+    }
+    
+    .glass-nav-card:hover {
+      background: rgba(46, 241, 157, 0.05);
+      border-color: #2EF19D;
+      transform: translateY(-2px);
+    }
+    
+    .screenshot-placeholder {
+      background: rgba(46, 241, 157, 0.08);
+      border: 2px dashed rgba(46, 241, 157, 0.3);
+      border-radius: 12px;
+      padding: 32px 16px;
+      text-align: center;
+      color: rgba(46, 241, 157, 0.7);
+      margin: 16px 0;
+      font-size: 14px;
+      line-height: 1.4;
+    }
+    
+    .screenshot-placeholder:hover {
+      background: rgba(46, 241, 157, 0.12);
+      border-color: rgba(46, 241, 157, 0.5);
+    }
+  </style>
+</head>
+<body class="bg-0A1E1C font-inter">
+  <div class="container max-w-4xl mx-auto py-8 px-6">
+    
+    <!-- Header -->
+    <div class="text-center mb-12">
+      <img src="/static/bijou-logo-transparent.png" alt="Bijou AI" class="h-20 mx-auto mb-6" />
+      <h1 class="text-5xl font-bold text-white mb-4">
+        <span data-lang="en">Bijou AI User Guide</span>
+        <span data-lang="ms" style="display:none;">Panduan Pengguna Bijou AI</span>
+        <span data-lang="zh" style="display:none;">Bijou AI 用户指南</span>
+        <span data-lang="ta" style="display:none;">Bijou AI பயனர் வழிகாட்டி</span>
+      </h1>
+      <p class="text-xl text-C9A961 mb-6">
+        <span data-lang="en">Complete setup and usage documentation for your WhatsApp AI Assistant</span>
+        <span data-lang="ms" style="display:none;">Dokumentasi lengkap setup dan penggunaan untuk Asisten AI WhatsApp anda</span>
+        <span data-lang="zh" style="display:none;">您的 WhatsApp AI 助手的完整设置和使用文档</span>
+        <span data-lang="ta" style="display:none;">உங்கள் WhatsApp AI உதவியாளருக்கான முழுமையான அமைப்பு மற்றும் பயன்பாட்டு ஆவணம்</span>
+      </p>
+      
+      <!-- Language Selector -->
+      <div class="flex justify-center mb-8">
+        <select id="languageSelector" class="bg-gray-800 border border-C9A961 text-white px-4 py-2 rounded-lg">
+          <option value="en">🇺🇸 English</option>
+          <option value="ms">🇲🇾 Bahasa Malaysia</option>
+          <option value="zh">🇨🇳 中文 (简体)</option>
+          <option value="ta">🇮🇳 தமிழ்</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Quick Navigation -->
+    <div class="glass-card p-8 mb-8">
+      <h2 class="text-3xl font-bold mb-6 text-white">
+        <span data-lang="en">Quick Navigation</span>
+        <span data-lang="ms" style="display:none;">Navigasi Pantas</span>
+        <span data-lang="zh" style="display:none;">快速导航</span>
+        <span data-lang="ta" style="display:none;">விரைவு வழிசெலுத்தல்</span>
+      </h2>
+      <div class="grid md:grid-cols-2 gap-6">
+        <a href="#getting-started" class="glass-nav-card block p-6">
+          <h3 class="font-semibold text-2EF19D text-lg mb-2">🚀 
+            <span data-lang="en">Getting Started</span>
+            <span data-lang="ms" style="display:none;">Memulakan</span>
+            <span data-lang="zh" style="display:none;">开始使用</span>
+            <span data-lang="ta" style="display:none;">தொடங்குவது</span>
+          </h3>
+          <p class="text-sm text-gray-300">
+            <span data-lang="en">Initial setup and account creation</span>
+            <span data-lang="ms" style="display:none;">Setup awal dan pembuatan akaun</span>
+            <span data-lang="zh" style="display:none;">初始设置和账户创建</span>
+            <span data-lang="ta" style="display:none;">ஆரம்ப அமைப்பு மற்றும் கணக்கு உருவாக்கம்</span>
+          </p>
+        </a>
+        <a href="#whatsapp-setup" class="glass-nav-card block p-6">
+          <h3 class="font-semibold text-2EF19D text-lg mb-2">📱 
+            <span data-lang="en">WhatsApp Setup</span>
+            <span data-lang="ms" style="display:none;">Setup WhatsApp</span>
+            <span data-lang="zh" style="display:none;">WhatsApp 设置</span>
+            <span data-lang="ta" style="display:none;">WhatsApp அமைப்பு</span>
+          </h3>
+          <p class="text-sm text-gray-300">
+            <span data-lang="en">Connect your WhatsApp Business account</span>
+            <span data-lang="ms" style="display:none;">Sambung akaun WhatsApp Business anda</span>
+            <span data-lang="zh" style="display:none;">连接您的 WhatsApp Business 账户</span>
+            <span data-lang="ta" style="display:none;">உங்கள் WhatsApp Business கணக்கை இணைக்கவும்</span>
+          </p>
+        </a>
+        <a href="#dashboard-guide" class="glass-nav-card block p-6">
+          <h3 class="font-semibold text-2EF19D text-lg mb-2">📊 
+            <span data-lang="en">Dashboard Guide</span>
+            <span data-lang="ms" style="display:none;">Panduan Dashboard</span>
+            <span data-lang="zh" style="display:none;">仪表板指南</span>
+            <span data-lang="ta" style="display:none;">டாஷ்போர்டு வழிகாட்டி</span>
+          </h3>
+          <p class="text-sm text-gray-300">
+            <span data-lang="en">Navigate and use dashboard features</span>
+            <span data-lang="ms" style="display:none;">Navigasi dan guna ciri-ciri dashboard</span>
+            <span data-lang="zh" style="display:none;">导航和使用仪表板功能</span>
+            <span data-lang="ta" style="display:none;">டாஷ்போர்டு அம்சங்களை வழிசெலுத்தி பயன்படுத்தவும்</span>
+          </p>
+        </a>
+        <a href="#ai-features" class="glass-nav-card block p-6">
+          <h3 class="font-semibold text-2EF19D text-lg mb-2">🤖 
+            <span data-lang="en">AI Features</span>
+            <span data-lang="ms" style="display:none;">Ciri-ciri AI</span>
+            <span data-lang="zh" style="display:none;">AI 功能</span>
+            <span data-lang="ta" style="display:none;">AI அம்சங்கள்</span>
+          </h3>
+          <p class="text-sm text-gray-300">
+            <span data-lang="en">Understanding AI capabilities and settings</span>
+            <span data-lang="ms" style="display:none;">Memahami keupayaan dan tetapan AI</span>
+            <span data-lang="zh" style="display:none;">了解 AI 功能和设置</span>
+            <span data-lang="ta" style="display:none;">AI திறன்கள் மற்றும் அமைப்புகளை புரிந்துகொள்ளுதல்</span>
+          </p>
+        </a>
+      </div>
+    </div>
+    </div>
+
+    <!-- Getting Started Section -->
+    <section id="getting-started" class="glass-card p-8 mb-8">
+      <h2 class="text-3xl font-bold mb-6 flex items-center text-white">
+        <span class="step-number">1</span>
+        <span data-lang="en">Getting Started with Bijou AI</span>
+        <span data-lang="ms" style="display:none;">Memulakan dengan Bijou AI</span>
+        <span data-lang="zh" style="display:none;">开始使用 Bijou AI</span>
+        <span data-lang="ta" style="display:none;">Bijou AI உடன் தொடங்குதல்</span>
+      </h2>
+      
+      <div class="space-y-6">
+        <div>
+          <h3 class="text-xl font-semibold mb-3 text-2EF19D">
+            <span data-lang="en">What is Bijou AI?</span>
+            <span data-lang="ms" style="display:none;">Apakah itu Bijou AI?</span>
+            <span data-lang="zh" style="display:none;">什么是 Bijou AI？</span>
+            <span data-lang="ta" style="display:none;">Bijou AI என்றால் என்ன?</span>
+          </h3>
+          <p class="text-gray-300 leading-relaxed">
+            <span data-lang="en">
+              Bijou AI is Malaysia's premier WhatsApp AI Assistant designed specifically for local businesses. 
+              It handles customer inquiries in multiple languages (English, Malay, Chinese, Tamil) and even Manglish, 
+              providing 24/7 customer support that understands Malaysian culture and business practices.
+            </span>
+            <span data-lang="ms" style="display:none;">
+              Bijou AI adalah Pembantu AI WhatsApp utama Malaysia yang direka khusus untuk perniagaan tempatan. 
+              Ia mengendalikan pertanyaan pelanggan dalam pelbagai bahasa (Bahasa Inggeris, Melayu, Cina, Tamil) dan juga Manglish, 
+              menyediakan sokongan pelanggan 24/7 yang memahami budaya dan amalan perniagaan Malaysia.
+            </span>
+            <span data-lang="zh" style="display:none;">
+              Bijou AI 是马来西亚首屈一指的 WhatsApp AI 助手，专为本地企业设计。
+              它能处理多语言客户咨询（英语、马来语、中文、泰米尔语）甚至马式英语，
+              提供24/7客户支持，深度理解马来西亚文化和商业实践。
+            </span>
+            <span data-lang="ta" style="display:none;">
+              Bijou AI என்பது மலேசியாவின் முன்னணி WhatsApp AI உதவியாளராகும், இது உள்ளூர் வணிகங்களுக்காக சிறப்பாக வடிவமைக்கப்பட்டுள்ளது।
+              இது பல மொழிகளில் (ஆங்கிலம், மலாய், சீன, தமிழ்) மற்றும் மங்கிலீஷ் மொழியிலும் வாடிக்கையாளர் விசாரணைகளை கையாள்கிறது,
+              மலேசிய கலாச்சாரம் மற்றும் வணிக நடைமுறைகளை புரிந்துகொள்ளும் 24/7 வாடிக்கையாளர் ஆதரவை வழங்குகிறது.
+            </span>
+          </p>
+        </div>
+
+        <div>
+          <h3 class="text-xl font-semibold mb-3 text-2EF19D">
+            <span data-lang="en">Key Features</span>
+            <span data-lang="ms" style="display:none;">Ciri-ciri Utama</span>
+            <span data-lang="zh" style="display:none;">主要功能</span>
+            <span data-lang="ta" style="display:none;">முக்கிய அம்சங்கள்</span>
+          </h3>
+          <ul class="list-disc list-inside text-gray-300 space-y-2">
+            <li>
+              <strong class="text-C9A961">
+                <span data-lang="en">Multi-language Support:</span>
+                <span data-lang="ms" style="display:none;">Sokongan Pelbagai Bahasa:</span>
+                <span data-lang="zh" style="display:none;">多语言支持：</span>
+                <span data-lang="ta" style="display:none;">பல மொழி ஆதரவு:</span>
+              </strong> 
+              <span data-lang="en">English, Bahasa Malaysia, Mandarin, Tamil, and Manglish</span>
+              <span data-lang="ms" style="display:none;">Bahasa Inggeris, Bahasa Malaysia, Mandarin, Tamil, dan Manglish</span>
+              <span data-lang="zh" style="display:none;">英语、马来语、普通话、泰米尔语和马式英语</span>
+              <span data-lang="ta" style="display:none;">ஆங்கிலம், பஹாசா மலேசியா, மாண்டரின், தமிழ் மற்றும் மங்கிலீஷ்</span>
+            </li>
+            <li>
+              <strong class="text-C9A961">
+                <span data-lang="en">24/7 Customer Service:</span>
+                <span data-lang="ms" style="display:none;">Perkhidmatan Pelanggan 24/7:</span>
+                <span data-lang="zh" style="display:none;">24/7 客户服务：</span>
+                <span data-lang="ta" style="display:none;">24/7 வாடிக்கையாளர் சேவை:</span>
+              </strong> 
+              <span data-lang="en">Never miss a customer inquiry</span>
+              <span data-lang="ms" style="display:none;">Tidak pernah terlepas pertanyaan pelanggan</span>
+              <span data-lang="zh" style="display:none;">绝不错过客户咨询</span>
+              <span data-lang="ta" style="display:none;">வாடிக்கையாளர் விசாரணையை தவறவிடாதீர்கள்</span>
+            </li>
+            <li>
+              <strong class="text-C9A961">
+                <span data-lang="en">Smart Escalation:</span>
+                <span data-lang="ms" style="display:none;">Peningkatan Pintar:</span>
+                <span data-lang="zh" style="display:none;">智能升级：</span>
+                <span data-lang="ta" style="display:none;">புத்திசாலி மேம்பாடு:</span>
+              </strong> 
+              <span data-lang="en">Automatically notifies you when human intervention is needed</span>
+              <span data-lang="ms" style="display:none;">Secara automatik memberitahu anda apabila campur tangan manusia diperlukan</span>
+              <span data-lang="zh" style="display:none;">需要人工干预时自动通知您</span>
+              <span data-lang="ta" style="display:none;">மனித தலையீடு தேவைப்படும்போது தானாகவே உங்களுக்கு அறிவிக்கிறது</span>
+            </li>
+            <li>
+              <strong class="text-C9A961">
+                <span data-lang="en">Appointment Booking:</span>
+                <span data-lang="ms" style="display:none;">Tempahan Temujanji:</span>
+                <span data-lang="zh" style="display:none;">预约预订：</span>
+                <span data-lang="ta" style="display:none;">நியமன முன்பதிவு:</span>
+              </strong> 
+              <span data-lang="en">Integrates with Google Calendar for seamless scheduling</span>
+              <span data-lang="ms" style="display:none;">Bersepadu dengan Google Calendar untuk penjadualan yang lancar</span>
+              <span data-lang="zh" style="display:none;">与Google日历集成，实现无缝安排</span>
+              <span data-lang="ta" style="display:none;">Google Calendar உடன் ஒருங்கிணைத்து சீராக அட்டவணை</span>
+            </li>
+            <li>
+              <strong class="text-C9A961">
+                <span data-lang="en">Business Intelligence:</span>
+                <span data-lang="ms" style="display:none;">Kecerdasan Perniagaan:</span>
+                <span data-lang="zh" style="display:none;">商业智能：</span>
+                <span data-lang="ta" style="display:none;">வணிக நுண்ணறிவு:</span>
+              </strong> 
+              <span data-lang="en">Real-time analytics and customer insights</span>
+              <span data-lang="ms" style="display:none;">Analitik masa nyata dan pandangan pelanggan</span>
+              <span data-lang="zh" style="display:none;">实时分析和客户洞察</span>
+              <span data-lang="ta" style="display:none;">நிகழ்நேர பகுப்பாய்வு மற்றும் வாடிக்கையாளர் நுண்ணறிவு</span>
+            </li>
+            <li>
+              <strong class="text-C9A961">
+                <span data-lang="en">WhatsApp Business Integration:</span>
+                <span data-lang="ms" style="display:none;">Integrasi WhatsApp Business:</span>
+                <span data-lang="zh" style="display:none;">WhatsApp Business 集成：</span>
+                <span data-lang="ta" style="display:none;">WhatsApp Business ஒருங்கிணைப்பு:</span>
+              </strong> 
+              <span data-lang="en">Works directly within WhatsApp</span>
+              <span data-lang="ms" style="display:none;">Berfungsi secara langsung dalam WhatsApp</span>
+              <span data-lang="zh" style="display:none;">直接在 WhatsApp 内工作</span>
+              <span data-lang="ta" style="display:none;">WhatsApp க்குள் நேரடியாக வேலை செய்கிறது</span>
+            </li>
+          </ul>
+        </div>
+
+        <div>
+          <h3 class="text-xl font-semibold mb-3 text-2EF19D">
+            <span data-lang="en">Account Creation</span>
+            <span data-lang="ms" style="display:none;">Pembukaan Akaun</span>
+            <span data-lang="zh" style="display:none;">账户创建</span>
+            <span data-lang="ta" style="display:none;">கணக்கு உருவாக்கம்</span>
+          </h3>
+          <ol class="list-decimal list-inside text-gray-300 space-y-2">
+            <li>
+              <span data-lang="en">Visit <strong class="text-C9A961">app.mybijou.xyz</strong> and click "Sign up here"</span>
+              <span data-lang="ms" style="display:none;">Lawati <strong class="text-C9A961">app.mybijou.xyz</strong> dan klik "Daftar di sini"</span>
+              <span data-lang="zh" style="display:none;">访问 <strong class="text-C9A961">app.mybijou.xyz</strong> 并点击"在此注册"</span>
+              <span data-lang="ta" style="display:none;"><strong class="text-C9A961">app.mybijou.xyz</strong> ஐ பார்வையிட்டு "இங்கே பதிவுசெய்யவும்" ஐ கிளிக் செய்யவும்</span>
+            </li>
+            <li>
+              <span data-lang="en">Enter your business email address</span>
+              <span data-lang="ms" style="display:none;">Masukkan alamat e-mel perniagaan anda</span>
+              <span data-lang="zh" style="display:none;">输入您的商业邮箱地址</span>
+              <span data-lang="ta" style="display:none;">உங்கள் வணிக மின்னஞ்சல் முகவரியை உள்ளிடவும்</span>
+            </li>
+            <li>
+              <span data-lang="en">Check your email for a verification link</span>
+              <span data-lang="ms" style="display:none;">Semak e-mel anda untuk pautan pengesahan</span>
+              <span data-lang="zh" style="display:none;">检查您的邮件验证链接</span>
+              <span data-lang="ta" style="display:none;">சரிபார்ப்பு இணைப்புக்காக உங்கள் மின்னஞ்சலைச் சரிபார்க்கவும்</span>
+            </li>
+            <li>
+              <span data-lang="en">Complete the onboarding process with your business details</span>
+              <span data-lang="ms" style="display:none;">Lengkapkan proses onboarding dengan butiran perniagaan anda</span>
+              <span data-lang="zh" style="display:none;">用您的业务详情完成入职流程</span>
+              <span data-lang="ta" style="display:none;">உங்கள் வணிக விவரங்களுடன் வரவேற்பு செயல்முறையை நிறைவு செய்யவும்</span>
+            </li>
+            <li>
+              <span data-lang="en">Choose your subscription plan (Free Trial available)</span>
+              <span data-lang="ms" style="display:none;">Pilih pelan langganan anda (Percubaan Percuma tersedia)</span>
+              <span data-lang="zh" style="display:none;">选择您的订阅计划（提供免费试用）</span>
+              <span data-lang="ta" style="display:none;">உங்கள் சந்தா திட்டத்தைத் தேர்ந்தெடுக்கவும் (இலவச சோதனை கிடைக்கிறது)</span>
+            </li>
+          </ol>
+        </div>
+      </div>
+    </section>
+
+    <!-- WhatsApp Setup Section -->
+    <section id="whatsapp-setup" class="glass-card p-8 mb-8">
+      <h2 class="text-3xl font-bold mb-6 flex items-center">
+        <span class="step-number">2</span>
+        <span data-lang="en">WhatsApp Business Integration</span>
+        <span data-lang="ms" style="display:none;">Integrasi WhatsApp Business</span>
+        <span data-lang="zh" style="display:none;">WhatsApp Business 集成</span>
+        <span data-lang="ta" style="display:none;">WhatsApp Business ஒருங்கிணைப்பு</span>
+      </h2>
+
+      <div class="space-y-6">
+        <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6">
+          <div class="flex">
+            <div class="ml-3">
+              <p class="text-sm text-yellow-700">
+                <strong>
+                  <span data-lang="en">Important:</span>
+                  <span data-lang="ms" style="display:none;">Penting:</span>
+                  <span data-lang="zh" style="display:none;">重要提示：</span>
+                  <span data-lang="ta" style="display:none;">முக்கியம்:</span>
+                </strong> 
+                <span data-lang="en">You need a WhatsApp Business account (free) to use Bijou AI. Regular WhatsApp personal accounts are not supported.</span>
+                <span data-lang="ms" style="display:none;">Anda memerlukan akaun WhatsApp Business (percuma) untuk menggunakan Bijou AI. Akaun peribadi WhatsApp biasa tidak disokong.</span>
+                <span data-lang="zh" style="display:none;">您需要 WhatsApp Business 账户（免费）才能使用 Bijou AI。不支持常规的 WhatsApp 个人账户。</span>
+                <span data-lang="ta" style="display:none;">Bijou AI ஐ பயன்படுத்த WhatsApp Business கணக்கு (இலவசம்) தேவை। வழக்கமான WhatsApp தனிப்பட்ட கணக்குகள் ஆதரிக்கப்படவில்லை.</span>
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <h3 class="text-xl font-semibold mb-3 text-white">
+            <span data-lang="en">Step 1: WhatsApp Business Setup</span>
+            <span data-lang="ms" style="display:none;">Langkah 1: Setup WhatsApp Business</span>
+            <span data-lang="zh" style="display:none;">步骤1：WhatsApp Business 设置</span>
+            <span data-lang="ta" style="display:none;">படி 1: WhatsApp Business அமைப்பு</span>
+          </h3>
+          
+          <div class="screenshot-placeholder">
+            <span data-lang="en">📸 Screenshot Guide: WhatsApp Business Download<br>Shows App Store/Google Play search for "WhatsApp Business"<br><small>Look for the official Meta app with green logo</small></span>
+            <span data-lang="ms" style="display:none;">📸 Panduan Screenshot: Muat Turun WhatsApp Business<br>Menunjukkan carian App Store/Google Play untuk "WhatsApp Business"<br><small>Cari aplikasi rasmi Meta dengan logo hijau</small></span>
+            <span data-lang="zh" style="display:none;">📸 截图指南：WhatsApp Business 下载<br>显示在 App Store/Google Play 搜索 "WhatsApp Business"<br><small>寻找带有绿色标志的官方 Meta 应用</small></span>
+            <span data-lang="ta" style="display:none;">📸 ஸ்கிரீன்ஷாட் வழிகாட்டி: WhatsApp Business பதிவிறக்கம்<br>App Store/Google Play இல் "WhatsApp Business" தேடுவதைக் காட்டுகிறது<br><small>பச்சை லோகோவுடன் கூடிய அதிகாரப்பூர்வ Meta பயன்பாட்டைத் தேடுங்கள்</small></span>
+          </div>
+          
+          <ol class="list-decimal list-inside text-gray-300 space-y-3">
+            <li>
+              <strong>
+                <span data-lang="en">Download WhatsApp Business</span>
+                <span data-lang="ms" style="display:none;">Muat turun WhatsApp Business</span>
+                <span data-lang="zh" style="display:none;">下载 WhatsApp Business</span>
+                <span data-lang="ta" style="display:none;">WhatsApp Business ஐ பதிவிறக்கவும்</span>
+              </strong> 
+              <span data-lang="en">from App Store or Google Play</span>
+              <span data-lang="ms" style="display:none;">dari App Store atau Google Play</span>
+              <span data-lang="zh" style="display:none;">从 App Store 或 Google Play</span>
+              <span data-lang="ta" style="display:none;">App Store அல்லது Google Play இல் இருந்து</span>
+            </li>
+            <li>
+              <strong>
+                <span data-lang="en">Set up your business profile</span>
+                <span data-lang="ms" style="display:none;">Sediakan profil perniagaan anda</span>
+                <span data-lang="zh" style="display:none;">设置您的商业档案</span>
+                <span data-lang="ta" style="display:none;">உங்கள் வணிக விவரத்தை அமைக்கவும்</span>
+              </strong> 
+              <span data-lang="en">with:</span>
+              <span data-lang="ms" style="display:none;">dengan:</span>
+              <span data-lang="zh" style="display:none;">包含：</span>
+              <span data-lang="ta" style="display:none;">உடன்:</span>
+              <div class="screenshot-placeholder mt-2">
+                <span data-lang="en">📸 Screenshot: WhatsApp Business Profile Setup<br>Shows business name, description, hours, and category fields</span>
+                <span data-lang="ms" style="display:none;">📸 Screenshot: Setup Profil WhatsApp Business<br>Menunjukkan nama perniagaan, penerangan, waktu, dan bidang kategori</span>
+                <span data-lang="zh" style="display:none;">📸 截图：WhatsApp Business 档案设置<br>显示企业名称、描述、营业时间和类别字段</span>
+                <span data-lang="ta" style="display:none;">📸 ஸ்கிரீன்ஷாட்: WhatsApp Business விவர அமைப்பு<br>வணிக பெயர், விவரணை, மணிநேரம் மற்றும் வகைப் புலங்களைக் காட்டுகிறது</span>
+              </div>
+              <ul class="list-disc list-inside ml-6 space-y-1 mt-2">
+                <li>
+                  <span data-lang="en">Business name and description</span>
+                  <span data-lang="ms" style="display:none;">Nama perniagaan dan penerangan</span>
+                  <span data-lang="zh" style="display:none;">企业名称和描述</span>
+                  <span data-lang="ta" style="display:none;">வணிக பெயர் மற்றும் விவரணை</span>
+                </li>
+                <li>
+                  <span data-lang="en">Business hours (very important for AI responses)</span>
+                  <span data-lang="ms" style="display:none;">Waktu perniagaan (sangat penting untuk respons AI)</span>
+                  <span data-lang="zh" style="display:none;">营业时间（对AI回复非常重要）</span>
+                  <span data-lang="ta" style="display:none;">வணிக நேரம் (AI பதில்களுக்கு மிக முக்கியம்)</span>
+                </li>
+                <li>
+                  <span data-lang="en">Contact information</span>
+                  <span data-lang="ms" style="display:none;">Maklumat hubungan</span>
+                  <span data-lang="zh" style="display:none;">联系信息</span>
+                  <span data-lang="ta" style="display:none;">தொடர்பு தகவல்</span>
+                </li>
+                <li>
+                  <span data-lang="en">Business category</span>
+                  <span data-lang="ms" style="display:none;">Kategori perniagaan</span>
+                  <span data-lang="zh" style="display:none;">业务类别</span>
+                  <span data-lang="ta" style="display:none;">வணிக வகை</span>
+                </li>
+              </ul>
+            </li>
+            <li>
+              <strong>
+                <span data-lang="en">Enable "Business Tools"</span>
+                <span data-lang="ms" style="display:none;">Aktifkan "Alat Perniagaan"</span>
+                <span data-lang="zh" style="display:none;">启用"商业工具"</span>
+                <span data-lang="ta" style="display:none;">"வணிக கருவிகள்" ஐ இயக்கவும்</span>
+              </strong> 
+              <span data-lang="en">in WhatsApp Business settings</span>
+              <span data-lang="ms" style="display:none;">dalam tetapan WhatsApp Business</span>
+              <span data-lang="zh" style="display:none;">在 WhatsApp Business 设置中</span>
+              <span data-lang="ta" style="display:none;">WhatsApp Business அமைப்புகளில்</span>
+              <div class="screenshot-placeholder mt-2">
+                <span data-lang="en">📸 Screenshot: WhatsApp Business → Settings → Business Tools<br>Shows toggle switches for automated messages and business features</span>
+                <span data-lang="ms" style="display:none;">📸 Screenshot: WhatsApp Business → Tetapan → Alat Perniagaan<br>Menunjukkan suis togol untuk mesej automatik dan ciri perniagaan</span>
+                <span data-lang="zh" style="display:none;">📸 截图：WhatsApp Business → 设置 → 商业工具<br>显示自动消息和商业功能的切换开关</span>
+                <span data-lang="ta" style="display:none;">📸 ஸ்கிரீன்ஷாட்: WhatsApp Business → அமைப்புகள் → வணிக கருவிகள்<br>தானியங்கு செய்திகள் மற்றும் வணிக அம்சங்களுக்கான டாகிள் சுவிட்சுகளைக் காட்டுகிறது</span>
+              </div>
+            </li>
+          </ol>
+        </div>
+
+        <div>
+          <h3 class="text-xl font-semibold mb-3 text-white">
+            <span data-lang="en">Step 2: Connect to Bijou AI</span>
+            <span data-lang="ms" style="display:none;">Langkah 2: Sambung ke Bijou AI</span>
+            <span data-lang="zh" style="display:none;">步骤2：连接到 Bijou AI</span>
+            <span data-lang="ta" style="display:none;">படி 2: Bijou AI உடன் இணைக்கவும்</span>
+          </h3>
+          
+          <div class="screenshot-placeholder">
+            <span data-lang="en">📸 Screenshot: Bijou Dashboard → Settings Tab → WhatsApp Connection<br>Shows the "Connect WhatsApp Business" button and connection status</span>
+            <span data-lang="ms" style="display:none;">📸 Screenshot: Dashboard Bijou → Tab Tetapan → Sambungan WhatsApp<br>Menunjukkan butang "Sambung WhatsApp Business" dan status sambungan</span>
+            <span data-lang="zh" style="display:none;">📸 截图：Bijou 仪表板 → 设置选项卡 → WhatsApp 连接<br>显示"连接 WhatsApp Business"按钮和连接状态</span>
+            <span data-lang="ta" style="display:none;">📸 ஸ்கிரீன்ஷாட்: Bijou டாஷ்போர்டு → அமைப்புகள் தாவல் → WhatsApp இணைப்பு<br>"WhatsApp Business ஐ இணைக்கவும்" பட்டன் மற்றும் இணைப்பு நிலையைக் காட்டுகிறது</span>
+          </div>
+          
+          <ol class="list-decimal list-inside text-gray-300 space-y-3">
+            <li>
+              <strong>
+                <span data-lang="en">In your Bijou AI dashboard</span>
+                <span data-lang="ms" style="display:none;">Dalam dashboard Bijou AI anda</span>
+                <span data-lang="zh" style="display:none;">在您的 Bijou AI 仪表板中</span>
+                <span data-lang="ta" style="display:none;">உங்கள் Bijou AI டாஷ்போர்டில்</span>
+              </strong>, 
+              <span data-lang="en">go to "Settings" tab</span>
+              <span data-lang="ms" style="display:none;">pergi ke tab "Tetapan"</span>
+              <span data-lang="zh" style="display:none;">转到"设置"选项卡</span>
+              <span data-lang="ta" style="display:none;">"அமைப்புகள்" தாவலுக்குச் செல்லவும்</span>
+            </li>
+            <li>
+              <strong>
+                <span data-lang="en">Click "Connect WhatsApp Business"</span>
+                <span data-lang="ms" style="display:none;">Klik "Sambung WhatsApp Business"</span>
+                <span data-lang="zh" style="display:none;">点击"连接 WhatsApp Business"</span>
+                <span data-lang="ta" style="display:none;">"WhatsApp Business ஐ இணைக்கவும்" என்பதைக் கிளிக் செய்யவும்</span>
+              </strong>
+            </li>
+            <li>
+              <strong>
+                <span data-lang="en">Enter your WhatsApp Business phone number</span>
+                <span data-lang="ms" style="display:none;">Masukkan nombor telefon WhatsApp Business anda</span>
+                <span data-lang="zh" style="display:none;">输入您的 WhatsApp Business 电话号码</span>
+                <span data-lang="ta" style="display:none;">உங்கள் WhatsApp Business தொலைபேசி எண்ணை உள்ளிடவும்</span>
+              </strong> 
+              <span data-lang="en">(with country code: +60xxxxxxxxx)</span>
+              <span data-lang="ms" style="display:none;">(dengan kod negara: +60xxxxxxxxx)</span>
+              <span data-lang="zh" style="display:none;">（带国家代码：+60xxxxxxxxx）</span>
+              <span data-lang="ta" style="display:none;">(நாட்டு குறியீட்டுடன்: +60xxxxxxxxx)</span>
+              <div class="screenshot-placeholder mt-2">
+                <span data-lang="en">📸 Screenshot: Phone Number Input Field<br>Shows correct format: +60174106981 (Malaysia example)</span>
+                <span data-lang="ms" style="display:none;">📸 Screenshot: Medan Input Nombor Telefon<br>Menunjukkan format yang betul: +60174106981 (contoh Malaysia)</span>
+                <span data-lang="zh" style="display:none;">📸 截图：电话号码输入字段<br>显示正确格式：+60174106981（马来西亚示例）</span>
+                <span data-lang="ta" style="display:none;">📸 ஸ்கிரீன்ஷாட்: தொலைபேசி எண் உள்ளீட்டுப் புலம்<br>சரியான வடிவத்தைக் காட்டுகிறது: +60174106981 (மலேசிய உதாரணம்)</span>
+              </div>
+            </li>
+            <li>
+              <strong>
+                <span data-lang="en">Follow the QR code scanning process</span>
+                <span data-lang="ms" style="display:none;">Ikuti proses imbasan kod QR</span>
+                <span data-lang="zh" style="display:none;">按照二维码扫描流程</span>
+                <span data-lang="ta" style="display:none;">QR குறியீடு ஸ்கேனிங் செயல்முறையைப் பின்பற்றவும்</span>
+              </strong>
+              <div class="screenshot-placeholder mt-2">
+                <span data-lang="en">📸 Screenshot: QR Code Scanning<br>Shows QR code on screen and WhatsApp Business scan option</span>
+                <span data-lang="ms" style="display:none;">📸 Screenshot: Imbasan Kod QR<br>Menunjukkan kod QR di skrin dan pilihan imbas WhatsApp Business</span>
+                <span data-lang="zh" style="display:none;">📸 截图：二维码扫描<br>显示屏幕上的二维码和 WhatsApp Business 扫描选项</span>
+                <span data-lang="ta" style="display:none;">📸 ஸ்கிரீன்ஷாட்: QR குறியீடு ஸ்கேனிங்<br>திரையில் QR குறியீடு மற்றும் WhatsApp Business ஸ்கேன் விருப்பத்தைக் காட்டுகிறது</span>
+              </div>
+            </li>
+            <li>
+              <strong>
+                <span data-lang="en">Verify the connection</span>
+                <span data-lang="ms" style="display:none;">Sahkan sambungan</span>
+                <span data-lang="zh" style="display:none;">验证连接</span>
+                <span data-lang="ta" style="display:none;">இணைப்பைச் சரிபார்க்கவும்</span>
+              </strong> 
+              <span data-lang="en">in the dashboard</span>
+              <span data-lang="ms" style="display:none;">dalam dashboard</span>
+              <span data-lang="zh" style="display:none;">在仪表板中</span>
+              <span data-lang="ta" style="display:none;">டாஷ்போர்டில்</span>
+              <div class="screenshot-placeholder mt-2">
+                <span data-lang="en">📸 Screenshot: Success Connection Status<br>Shows green "Connected" status and active session info</span>
+                <span data-lang="ms" style="display:none;">📸 Screenshot: Status Sambungan Berjaya<br>Menunjukkan status "Disambung" hijau dan maklumat sesi aktif</span>
+                <span data-lang="zh" style="display:none;">📸 截图：成功连接状态<br>显示绿色"已连接"状态和活动会话信息</span>
+                <span data-lang="ta" style="display:none;">📸 ஸ்கிரீன்ஷாட்: வெற்றிகரமான இணைப்பு நிலை<br>பச்சை "இணைக்கப்பட்டுள்ளது" நிலை மற்றும் செயலில் உள்ள அமர்வு தகவலைக் காட்டுகிறது</span>
+              </div>
+            </li>
+          </ol>
+        </div>
+
+        <div>
+          <h3 class="text-xl font-semibold mb-3 text-white">
+            <span data-lang="en">Step 3: Test Your Setup</span>
+            <span data-lang="ms" style="display:none;">Langkah 3: Uji Setup Anda</span>
+            <span data-lang="zh" style="display:none;">步骤3：测试您的设置</span>
+            <span data-lang="ta" style="display:none;">படி 3: உங்கள் அமைப்பை சோதிக்கவும்</span>
+          </h3>
+          
+          <div class="glass-nav-card p-4 mb-4">
+            <h4 class="font-semibold text-2EF19D mb-2">
+              📱 
+              <span data-lang="en">Send Test Message:</span>
+              <span data-lang="ms" style="display:none;">Hantar Mesej Ujian:</span>
+              <span data-lang="zh" style="display:none;">发送测试消息：</span>
+              <span data-lang="ta" style="display:none;">சோதனை செய்தி அனுப்பவும்:</span>
+            </h4>
+            <div class="bg-gray-900 p-3 rounded font-mono text-sm text-gray-300">
+              <span data-lang="en">"Hello, I'm interested in your services"</span>
+              <span data-lang="ms" style="display:none;">"Hello, saya berminat dengan perkhidmatan anda"</span>
+              <span data-lang="zh" style="display:none;">"您好，我对您的服务感兴趣"</span>
+              <span data-lang="ta" style="display:none;">"வணக்கம், உங்கள் சேவைகளில் எனக்கு ஆர்வம் உள்ளது"</span>
+            </div>
+            <p class="text-xs text-gray-400 mt-2">
+              <span data-lang="en">Send this from another phone to your WhatsApp Business number</span>
+              <span data-lang="ms" style="display:none;">Hantar ini dari telefon lain ke nombor WhatsApp Business anda</span>
+              <span data-lang="zh" style="display:none;">从另一部手机发送此消息到您的 WhatsApp Business 号码</span>
+              <span data-lang="ta" style="display:none;">இதை மற்றொரு தொலைபேசியிலிருந்து உங்கள் WhatsApp Business எண்ணுக்கு அனுப்பவும்</span>
+            </p>
+          </div>
+          
+          <div class="screenshot-placeholder">
+            <span data-lang="en">📸 Screenshot: Successful AI Response<br>Shows customer message and Bijou AI automatic reply within seconds<br><small>AI should respond with business information and helpful greeting</small></span>
+            <span data-lang="ms" style="display:none;">📸 Screenshot: Respons AI Berjaya<br>Menunjukkan mesej pelanggan dan balasan automatik Bijou AI dalam beberapa saat<br><small>AI sepatutnya membalas dengan maklumat perniagaan dan ucapan membantu</small></span>
+            <span data-lang="zh" style="display:none;">📸 截图：成功的AI回复<br>显示客户消息和Bijou AI在几秒内的自动回复<br><small>AI应该用商业信息和有用的问候回复</small></span>
+            <span data-lang="ta" style="display:none;">📸 ஸ்கிரீன்ஷாட்: வெற்றிகரமான AI பதில்<br>வாடிக்கையாளர் செய்தி மற்றும் Bijou AI தானியங்கு பதிலை விநாடிகளில் காட்டுகிறது<br><small>AI வணிக தகவல் மற்றும் பயனுள்ள வாழ்த்துடன் பதிலளிக்க வேண்டும்</small></span>
+          </div>
+          
+          <div class="screenshot-placeholder">
+            <span data-lang="en">📸 Screenshot: Dashboard Inbox View<br>Shows the test conversation appearing in your Bijou AI dashboard inbox<br><small>You can see the conversation, AI response, and take over if needed</small></span>
+            <span data-lang="ms" style="display:none;">📸 Screenshot: Paparan Inbox Dashboard<br>Menunjukkan perbualan ujian yang muncul dalam inbox dashboard Bijou AI anda<br><small>Anda boleh lihat perbualan, respons AI, dan mengambil alih jika perlu</small></span>
+            <span data-lang="zh" style="display:none;">📸 截图：仪表板收件箱视图<br>显示测试对话出现在您的Bijou AI仪表板收件箱中<br><small>您可以看到对话、AI回复，并在需要时接管</small></span>
+            <span data-lang="ta" style="display:none;">📸 ஸ்கிரீன்ஷாட்: டாஷ்போர்டு இன்பாக்ஸ் பார்வை<br>உங்கள் Bijou AI டாஷ்போர்டு இன்பாக்ஸில் தோன்றும் சோதனை உரையாடலைக் காட்டுகிறது<br><small>நீங்கள் உரையாடல், AI பதில் மற்றும் தேவைப்பட்டால் பொறுப்பேற்க முடியும்</small></span>
+          </div>
+          
+          <p class="text-gray-300 mt-4">
+            <strong>
+              <span data-lang="en">Expected Result:</span>
+              <span data-lang="ms" style="display:none;">Keputusan Dijangka:</span>
+              <span data-lang="zh" style="display:none;">预期结果：</span>
+              <span data-lang="ta" style="display:none;">எதிர்பார்க்கப்படும் முடிவு:</span>
+            </strong> 
+            <span data-lang="en">Bijou AI should respond within 10 seconds with a helpful message. The conversation should also appear in your dashboard inbox.</span>
+            <span data-lang="ms" style="display:none;">Bijou AI sepatutnya membalas dalam 10 saat dengan mesej yang membantu. Perbualan juga sepatutnya muncul dalam inbox dashboard anda.</span>
+            <span data-lang="zh" style="display:none;">Bijou AI应该在10秒内用有用的消息回复。对话也应该出现在您的仪表板收件箱中。</span>
+            <span data-lang="ta" style="display:none;">Bijou AI 10 விநாடிகளுக்குள் பயனுள்ள செய்தியுடன் பதிலளிக்க வேண்டும். உரையாடல் உங்கள் டாஷ்போர்டு இன்பாக்ஸிலும் தோன்ற வேண்டும்.</span>
+          </p>
+          <p class="text-gray-300 mt-2">
+            <span data-lang="en">If you don't receive a response, check your connection status in the dashboard or</span>
+            <span data-lang="ms" style="display:none;">Jika anda tidak menerima respons, semak status sambungan anda dalam dashboard atau</span>
+            <span data-lang="zh" style="display:none;">如果您没有收到回复，请检查仪表板中的连接状态或</span>
+            <span data-lang="ta" style="display:none;">நீங்கள் பதிலைப் பெறவில்லை என்றால், டாஷ்போர்டில் உங்கள் இணைப்பு நிலையைச் சரிபார்க்கவும் அல்லது</span>
+            <a href="/static/help.html" class="text-2EF19D hover:text-00F5E4 transition-colors">
+              <span data-lang="en">visit our troubleshooting guide</span>
+              <span data-lang="ms" style="display:none;">lawati panduan penyelesaian masalah kami</span>
+              <span data-lang="zh" style="display:none;">访问我们的故障排除指南</span>
+              <span data-lang="ta" style="display:none;">எங்கள் சிக்கல் தீர்க்கும் வழிகாட்டியைப் பார்வையிடவும்</span>
+            </a>.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Dashboard Guide Section -->
+    <section id="dashboard-guide" class="glass-card p-8 mb-8">
+      <h2 class="text-3xl font-bold mb-6 bg-gradient-to-r from-2EF19D to-00F5E4 bg-clip-text text-transparent">
+        📊 
+        <span data-lang="en">Dashboard Guide</span>
+        <span data-lang="ms" style="display:none;">Panduan Dashboard</span>
+        <span data-lang="zh" style="display:none;">仪表板指南</span>
+        <span data-lang="ta" style="display:none;">டாஷ்போர்டு வழிகாட்டி</span>
+      </h2>
+      
+      <div class="space-y-6">
+        <div>
+          <h3 class="text-xl font-semibold mb-3 text-white">
+            <span data-lang="en">Main Dashboard Features</span>
+            <span data-lang="ms" style="display:none;">Ciri-ciri Utama Dashboard</span>
+            <span data-lang="zh" style="display:none;">主要仪表板功能</span>
+            <span data-lang="ta" style="display:none;">முக்கிய டாஷ்போர்டு அம்சங்கள்</span>
+          </h3>
+          <p class="text-gray-300 mb-4">
+            <span data-lang="en">Your Bijou AI dashboard provides a comprehensive view of all customer interactions and system performance. Here's how to navigate the key features:</span>
+            <span data-lang="ms" style="display:none;">Dashboard Bijou AI anda menyediakan pandangan komprehensif semua interaksi pelanggan dan prestasi sistem. Berikut cara untuk menavigasi ciri-ciri utama:</span>
+            <span data-lang="zh" style="display:none;">您的 Bijou AI 仪表板提供所有客户交互和系统性能的全面视图。以下是如何导航主要功能：</span>
+            <span data-lang="ta" style="display:none;">உங்கள் Bijou AI டாஷ்போர்டு அனைத்து வாடிக்கையாளர் தொடர்புகள் மற்றும் சிஸ்டம் செயல்திறனின் விரிவான காட்சியை வழங்குகிறது. முக்கிய அம்சங்களை எவ்வாறு வழிசெலுத்துவது என்பது இங்கே:</span>
+          </p>
+          
+          <div class="screenshot-placeholder mb-6">
+            <span data-lang="en">📸 Screenshot: Complete Dashboard Overview<br>Shows main dashboard with all tabs: Inbox, Analytics, AI Status, Settings<br><small>Full dashboard layout with navigation and main content areas</small></span>
+            <span data-lang="ms" style="display:none;">📸 Screenshot: Gambaran Keseluruhan Dashboard Lengkap<br>Menunjukkan dashboard utama dengan semua tab: Inbox, Analytics, Status AI, Tetapan<br><small>Susun atur dashboard penuh dengan navigasi dan kawasan kandungan utama</small></span>
+            <span data-lang="zh" style="display:none;">📸 截图：完整仪表板概览<br>显示包含所有选项卡的主仪表板：收件箱、分析、AI状态、设置<br><small>带导航和主要内容区域的完整仪表板布局</small></span>
+            <span data-lang="ta" style="display:none;">📸 ஸ்கிரீன்ஷாட்: முழுமையான டாஷ்போர்டு கண்ணோட்டம்<br>அனைத்து தாவல்களுடன் முக்கிய டாஷ்போர்டைக் காட்டுகிறது: இன்பாக்ஸ், பகுப்பாய்வு, AI நிலை, அமைப்புகள்<br><small>வழிசெலுத்தல் மற்றும் முக்கிய உள்ளடக்கப் பகுதிகளுடன் முழு டாஷ்போர்டு அமைப்பு</small></span>
+          </div>
+          
+          <div class="grid md:grid-cols-2 gap-4">
+            <div class="glass-nav-card p-4">
+              <h4 class="font-semibold text-2EF19D mb-2">
+                📥 
+                <span data-lang="en">Inbox</span>
+                <span data-lang="ms" style="display:none;">Peti Masuk</span>
+                <span data-lang="zh" style="display:none;">收件箱</span>
+                <span data-lang="ta" style="display:none;">இன்பாக்ஸ்</span>
+              </h4>
+              <div class="screenshot-placeholder mb-2">
+                <span data-lang="en">📸 Inbox Tab View<br><small>Conversation list, chat interface, take-over controls</small></span>
+                <span data-lang="ms" style="display:none;">📸 Paparan Tab Inbox<br><small>Senarai perbualan, antara muka chat, kawalan ambil alih</small></span>
+                <span data-lang="zh" style="display:none;">📸 收件箱选项卡视图<br><small>对话列表、聊天界面、接管控件</small></span>
+                <span data-lang="ta" style="display:none;">📸 இன்பாக்ஸ் தாவல் பார்வை<br><small>உரையாடல் பட்டியல், அரட்டை இடைமுகம், கையகப்படுத்தல் கட்டுப்பாடுகள்</small></span>
+              </div>
+              <p class="text-sm text-gray-300">
+                <span data-lang="en">View all active conversations, take control of AI conversations, and respond manually when needed.</span>
+                <span data-lang="ms" style="display:none;">Lihat semua perbualan aktif, ambil kawalan perbualan AI, dan membalas secara manual apabila diperlukan.</span>
+                <span data-lang="zh" style="display:none;">查看所有活跃对话，控制AI对话，并在需要时手动回复。</span>
+                <span data-lang="ta" style="display:none;">அனைத்து செயலில் உள்ள உரையாடல்களையும் பார்க்கவும், AI உரையாடல்களை கட்டுப்படுத்தவும், தேவைப்படும்போது கைமுறையாக பதிலளிக்கவும்.</span>
+              </p>
+            </div>
+            <div class="glass-nav-card p-4">
+              <h4 class="font-semibold text-2EF19D mb-2">
+                📊 
+                <span data-lang="en">Analytics</span>
+                <span data-lang="ms" style="display:none;">Analitik</span>
+                <span data-lang="zh" style="display:none;">分析</span>
+                <span data-lang="ta" style="display:none;">பகுப்பாய்வு</span>
+              </h4>
+              <div class="screenshot-placeholder mb-2">
+                <span data-lang="en">📸 Analytics Dashboard<br><small>Charts, metrics, performance graphs</small></span>
+                <span data-lang="ms" style="display:none;">📸 Dashboard Analitik<br><small>Carta, metrik, graf prestasi</small></span>
+                <span data-lang="zh" style="display:none;">📸 分析仪表板<br><small>图表、指标、性能图形</small></span>
+                <span data-lang="ta" style="display:none;">📸 பகுப்பாய்வு டாஷ்போர்டு<br><small>விளக்கப்படங்கள், அளவீடுகள், செயல்திறன் வரைபடங்கள்</small></span>
+              </div>
+              <p class="text-sm text-gray-300">
+                <span data-lang="en">Track response times, customer satisfaction, conversation volume, and AI performance metrics.</span>
+                <span data-lang="ms" style="display:none;">Jejak masa respons, kepuasan pelanggan, volum perbualan, dan metrik prestasi AI.</span>
+                <span data-lang="zh" style="display:none;">跟踪响应时间、客户满意度、对话量和AI性能指标。</span>
+                <span data-lang="ta" style="display:none;">பதில் நேரங்கள், வாடிக்கையாளர் திருப்தி, உரையாடல் அளவு மற்றும் AI செயல்திறன் அளவீடுகளைக் கண்காணிக்கவும்.</span>
+              </p>
+            </div>
+            <div class="glass-nav-card p-4">
+              <h4 class="font-semibold text-2EF19D mb-2">
+                🤖 
+                <span data-lang="en">AI Status</span>
+                <span data-lang="ms" style="display:none;">Status AI</span>
+                <span data-lang="zh" style="display:none;">AI 状态</span>
+                <span data-lang="ta" style="display:none;">AI நிலை</span>
+              </h4>
+              <div class="screenshot-placeholder mb-2">
+                <span data-lang="en">📸 AI Status Panel<br><small>Connection status, AI toggle, performance indicators</small></span>
+                <span data-lang="ms" style="display:none;">📸 Panel Status AI<br><small>Status sambungan, suis AI, penunjuk prestasi</small></span>
+                <span data-lang="zh" style="display:none;">📸 AI状态面板<br><small>连接状态、AI切换、性能指标</small></span>
+                <span data-lang="ta" style="display:none;">📸 AI நிலை பேனல்<br><small>இணைப்பு நிலை, AI டாக்கிள், செயல்திறன் குறிகாட்டிகள்</small></span>
+              </div>
+              <p class="text-sm text-gray-300">
+                <span data-lang="en">Monitor AI performance, configure auto-responses, and set business hours for automated replies.</span>
+                <span data-lang="ms" style="display:none;">Pantau prestasi AI, konfigurasi auto-respons, dan tetapkan waktu perniagaan untuk balasan automatik.</span>
+                <span data-lang="zh" style="display:none;">监控AI性能，配置自动回复，并设置自动回复的营业时间。</span>
+                <span data-lang="ta" style="display:none;">AI செயல்திறனைக் கண்காணிக்கவும், தானியங்கு பதில்களை உள்ளமைக்கவும், தானியங்கு பதில்களுக்கு வணிக நேரத்தை அமைக்கவும்.</span>
+              </p>
+            </div>
+            <div class="glass-nav-card p-4">
+              <h4 class="font-semibold text-2EF19D mb-2">
+                ⚙️ 
+                <span data-lang="en">Settings</span>
+                <span data-lang="ms" style="display:none;">Tetapan</span>
+                <span data-lang="zh" style="display:none;">设置</span>
+                <span data-lang="ta" style="display:none;">அமைப்புகள்</span>
+              </h4>
+              <div class="screenshot-placeholder mb-2">
+                <span data-lang="en">📸 Settings Page<br><small>Business info, integrations, WhatsApp connection</small></span>
+                <span data-lang="ms" style="display:none;">📸 Halaman Tetapan<br><small>Maklumat perniagaan, integrasi, sambungan WhatsApp</small></span>
+                <span data-lang="zh" style="display:none;">📸 设置页面<br><small>商业信息、集成、WhatsApp连接</small></span>
+                <span data-lang="ta" style="display:none;">📸 அமைப்புகள் பக்கம்<br><small>வணிக தகவல், ஒருங்கிணைப்புகள், WhatsApp இணைப்பு</small></span>
+              </div>
+              <p class="text-sm text-gray-300">
+                <span data-lang="en">Customize AI personality, update business information, manage integrations, and configure escalation rules.</span>
+                <span data-lang="ms" style="display:none;">Sesuaikan personaliti AI, kemaskini maklumat perniagaan, urus integrasi, dan konfigurasi peraturan peningkatan.</span>
+                <span data-lang="zh" style="display:none;">自定义AI个性，更新商业信息，管理集成，并配置升级规则。</span>
+                <span data-lang="ta" style="display:none;">AI ஆளுமையை தனிப்பயனாக்கவும், வணிக தகவலை புதுப்பிக்கவும், ஒருங்கிணைப்புகளை நிர்வகிக்கவும், மற்றும் மேம்பாட்டு விதிகளை உள்ளமைக்கவும்.</span>
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <h3 class="text-xl font-semibold mb-3 text-white">
+            <span data-lang="en">Taking Control of Conversations</span>
+            <span data-lang="ms" style="display:none;">Mengambil Kawalan Perbualan</span>
+            <span data-lang="zh" style="display:none;">控制对话</span>
+            <span data-lang="ta" style="display:none;">உரையாடல்களின் கட்டுப்பாட்டை எடுத்துக்கொள்ளுதல்</span>
+          </h3>
+          <div class="glass-nav-card p-4">
+            <p class="text-sm font-medium mb-2 text-C9A961">
+              💡 
+              <span data-lang="en">Pro Tip: Use these dashboard controls</span>
+              <span data-lang="ms" style="display:none;">Tip Pro: Gunakan kawalan dashboard ini</span>
+              <span data-lang="zh" style="display:none;">专业提示：使用这些仪表板控件</span>
+              <span data-lang="ta" style="display:none;">நிபுணர் குறிப்பு: இந்த டாஷ்போர்டு கட்டுப்பாடுகளைப் பயன்படுத்தவும்</span>
+            </p>
+            <ul class="text-sm text-gray-300 space-y-1">
+              <li>
+                • 
+                <span data-lang="en">Click "Take Over" to manually respond to any conversation</span>
+                <span data-lang="ms" style="display:none;">Klik "Ambil Alih" untuk membalas secara manual kepada mana-mana perbualan</span>
+                <span data-lang="zh" style="display:none;">点击"接管"手动回复任何对话</span>
+                <span data-lang="ta" style="display:none;">எந்தவொரு உரையாடலுக்கும் கைமுறையாக பதிலளிக்க "கையகப்படுத்து" என்பதைக் கிளிக் செய்யவும்</span>
+              </li>
+              <li>
+                • 
+                <span data-lang="en">Use "Return to AI" to hand conversation back to Bijou AI</span>
+                <span data-lang="ms" style="display:none;">Gunakan "Kembali ke AI" untuk menyerahkan perbualan kembali kepada Bijou AI</span>
+                <span data-lang="zh" style="display:none;">使用"返回AI"将对话交还给 Bijou AI</span>
+                <span data-lang="ta" style="display:none;">உரையாடலை Bijou AI க்கு திரும்ப ஒப்படைக்க "AI க்கு திரும்பு" ஐ பயன்படுத்தவும்</span>
+              </li>
+              <li>
+                • 
+                <span data-lang="en">Set custom away messages during business hours</span>
+                <span data-lang="ms" style="display:none;">Tetapkan mesej tidak ada yang disesuaikan semasa waktu perniagaan</span>
+                <span data-lang="zh" style="display:none;">在营业时间设置自定义离开消息</span>
+                <span data-lang="ta" style="display:none;">வணிக நேரத்தில் தனிப்பயன் வெளியேறும் செய்திகளை அமைக்கவும்</span>
+              </li>
+              <li>
+                • 
+                <span data-lang="en">Monitor escalation alerts for urgent customer issues</span>
+                <span data-lang="ms" style="display:none;">Pantau amaran peningkatan untuk isu pelanggan yang mendesak</span>
+                <span data-lang="zh" style="display:none;">监控紧急客户问题的升级警报</span>
+                <span data-lang="ta" style="display:none;">அவசர வாடிக்கையாளர் பிரச்சினைகளுக்கான மேம்பாட்டு எச்சரிக்கைகளைக் கண்காணிக்கவும்</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <div>
+          <h3 class="text-xl font-semibold mb-3 text-white">
+            <span data-lang="en">Analytics & Insights</span>
+            <span data-lang="ms" style="display:none;">Analitik & Wawasan</span>
+            <span data-lang="zh" style="display:none;">分析与洞察</span>
+            <span data-lang="ta" style="display:none;">பகுப்பாய்வு மற்றும் நுண்ணறிவுகள்</span>
+          </h3>
+          <ul class="list-disc list-inside text-gray-300 space-y-2">
+            <li>
+              <span data-lang="en">Response time averages and trends</span>
+              <span data-lang="ms" style="display:none;">Purata masa respons dan trend</span>
+              <span data-lang="zh" style="display:none;">响应时间平均值和趋势</span>
+              <span data-lang="ta" style="display:none;">பதில் நேர சராசரிகள் மற்றும் போக்குகள்</span>
+            </li>
+            <li>
+              <span data-lang="en">Customer satisfaction scores from conversations</span>
+              <span data-lang="ms" style="display:none;">Skor kepuasan pelanggan dari perbualan</span>
+              <span data-lang="zh" style="display:none;">来自对话的客户满意度分数</span>
+              <span data-lang="ta" style="display:none;">உரையாடல்களிலிருந்து வாடிக்கையாளர் திருப்தி மதிப்பெண்கள்</span>
+            </li>
+            <li>
+              <span data-lang="en">Peak conversation hours and volume patterns</span>
+              <span data-lang="ms" style="display:none;">Waktu puncak perbualan dan corak volum</span>
+              <span data-lang="zh" style="display:none;">高峰对话时间和音量模式</span>
+              <span data-lang="ta" style="display:none;">உச்ச உரையாடல் நேரங்கள் மற்றும் அளவு வடிவங்கள்</span>
+            </li>
+            <li>
+              <span data-lang="en">AI accuracy rates and escalation frequency</span>
+              <span data-lang="ms" style="display:none;">Kadar ketepatan AI dan kekerapan peningkatan</span>
+              <span data-lang="zh" style="display:none;">AI准确率和升级频率</span>
+              <span data-lang="ta" style="display:none;">AI துல்லியம் விகிதங்கள் மற்றும் மேம்பாட்டு அதிர்வெண்</span>
+            </li>
+            <li>
+              <span data-lang="en">Integration usage statistics (calendar bookings, form submissions)</span>
+              <span data-lang="ms" style="display:none;">Statistik penggunaan integrasi (tempahan kalendar, penyerahan borang)</span>
+              <span data-lang="zh" style="display:none;">集成使用统计（日历预订、表单提交）</span>
+              <span data-lang="ta" style="display:none;">ஒருங்கிணைப்பு பயன்பாட்டு புள்ளிவிவரங்கள் (காலெண்டர் முன்பதிவுகள், படிவ சமர்ப்பிப்புகள்)</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- AI Features Section -->
+    <section id="ai-features" class="glass-card p-8 mb-8">
+      <h2 class="text-3xl font-bold mb-6 bg-gradient-to-r from-2EF19D to-00F5E4 bg-clip-text text-transparent">
+        🤖 
+        <span data-lang="en">AI Features</span>
+        <span data-lang="ms" style="display:none;">Ciri-ciri AI</span>
+        <span data-lang="zh" style="display:none;">AI 功能</span>
+        <span data-lang="ta" style="display:none;">AI அம்சங்கள்</span>
+      </h2>
+
+      <div class="space-y-6">
+        <div>
+          <h3 class="text-xl font-semibold mb-3 text-white">
+            <span data-lang="en">Language Intelligence</span>
+            <span data-lang="ms" style="display:none;">Kecerdasan Bahasa</span>
+            <span data-lang="zh" style="display:none;">语言智能</span>
+            <span data-lang="ta" style="display:none;">மொழி நுண்ணறிவு</span>
+          </h3>
+          <p class="text-gray-300 mb-4">
+            <span data-lang="en">Bijou AI automatically detects and responds in the customer's preferred language, including complex Malaysian language mixing (code-switching).</span>
+            <span data-lang="ms" style="display:none;">Bijou AI secara automatik mengesan dan membalas dalam bahasa pilihan pelanggan, termasuk pencampuran bahasa Malaysia yang kompleks (code-switching).</span>
+            <span data-lang="zh" style="display:none;">Bijou AI 自动检测并以客户首选语言回复，包括复杂的马来西亚语言混合（代码转换）。</span>
+            <span data-lang="ta" style="display:none;">Bijou AI தானாகவே வாடிக்கையாளரின் விருப்பமான மொழியைக் கண்டறிந்து பதிலளிக்கிறது, சிக்கலான மலேசிய மொழிக் கலவை (குறியீடு மாற்றம்) உட்பட.</span>
+          </p>
+          
+          <div class="glass-nav-card p-4">
+            <h4 class="font-medium mb-2 text-C9A961">
+              <span data-lang="en">Supported Languages:</span>
+              <span data-lang="ms" style="display:none;">Bahasa yang Disokong:</span>
+              <span data-lang="zh" style="display:none;">支持的语言：</span>
+              <span data-lang="ta" style="display:none;">ஆதரிக்கப்படும் மொழிகள்:</span>
+            </h4>
+            <div class="grid md:grid-cols-2 gap-2 text-sm text-gray-300">
+              <div>
+                • 
+                <span data-lang="en">English (Standard & Malaysian English)</span>
+                <span data-lang="ms" style="display:none;">Bahasa Inggeris (Standard & Bahasa Inggeris Malaysia)</span>
+                <span data-lang="zh" style="display:none;">英语（标准英语和马来西亚英语）</span>
+                <span data-lang="ta" style="display:none;">ஆங்கிலம் (தரநிலை மற்றும் மலேசிய ஆங்கிலம்)</span>
+              </div>
+              <div>
+                • 
+                <span data-lang="en">Bahasa Malaysia</span>
+                <span data-lang="ms" style="display:none;">Bahasa Malaysia</span>
+                <span data-lang="zh" style="display:none;">马来语</span>
+                <span data-lang="ta" style="display:none;">பஹாசா மலேசியா</span>
+              </div>
+              <div>
+                • 
+                <span data-lang="en">Mandarin Chinese (Simplified)</span>
+                <span data-lang="ms" style="display:none;">Bahasa Cina Mandarin (Dipermudah)</span>
+                <span data-lang="zh" style="display:none;">普通话（简体）</span>
+                <span data-lang="ta" style="display:none;">மாண்டரின் சீன மொழி (எளிமைப்படுத்தப்பட்டது)</span>
+              </div>
+              <div>
+                • 
+                <span data-lang="en">Tamil</span>
+                <span data-lang="ms" style="display:none;">Tamil</span>
+                <span data-lang="zh" style="display:none;">泰米尔语</span>
+                <span data-lang="ta" style="display:none;">தமிழ்</span>
+              </div>
+              <div>
+                • 
+                <span data-lang="en">Manglish (Mixed language)</span>
+                <span data-lang="ms" style="display:none;">Manglish (Bahasa campuran)</span>
+                <span data-lang="zh" style="display:none;">马式英语（混合语言）</span>
+                <span data-lang="ta" style="display:none;">மங்கிலீஷ் (கலப்பு மொழி)</span>
+              </div>
+              <div>
+                • 
+                <span data-lang="en">Code-switching detection</span>
+                <span data-lang="ms" style="display:none;">Pengesanan pertukaran kod</span>
+                <span data-lang="zh" style="display:none;">代码切换检测</span>
+                <span data-lang="ta" style="display:none;">குறியீடு மாற்றம் கண்டறிதல்</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <h3 class="text-xl font-semibold mb-3 text-white">
+            <span data-lang="en">Smart Escalation System</span>
+            <span data-lang="ms" style="display:none;">Sistem Peningkatan Pintar</span>
+            <span data-lang="zh" style="display:none;">智能升级系统</span>
+            <span data-lang="ta" style="display:none;">புத்திசாலி மேம்பாட்டு அமைப்பு</span>
+          </h3>
+          <p class="text-gray-300 mb-4">
+            <span data-lang="en">Bijou AI knows when to hand over conversations to humans. It escalates based on:</span>
+            <span data-lang="ms" style="display:none;">Bijou AI tahu bila perlu menyerahkan perbualan kepada manusia. Ia meningkatkan berdasarkan:</span>
+            <span data-lang="zh" style="display:none;">Bijou AI 知道何时将对话移交给人类。它基于以下情况进行升级：</span>
+            <span data-lang="ta" style="display:none;">Bijou AI எப்போது உரையாடல்களை மனிதர்களிடம் ஒப்படைக்க வேண்டும் என்று தெரியும். இது பின்வருவனவற்றின் அடிப்படையில் மேம்படுத்துகிறது:</span>
+          </p>
+          <ul class="list-disc list-inside text-gray-300 space-y-1">
+            <li>
+              <span data-lang="en">Complex technical questions beyond its knowledge</span>
+              <span data-lang="ms" style="display:none;">Soalan teknikal yang kompleks di luar pengetahuannya</span>
+              <span data-lang="zh" style="display:none;">超出其知识范围的复杂技术问题</span>
+              <span data-lang="ta" style="display:none;">அதன் அறிவுக்கு அப்பாற்பட்ட சிக்கலான தொழில்நுட்ப கேள்விகள்</span>
+            </li>
+            <li>
+              <span data-lang="en">Customer frustration or dissatisfaction</span>
+              <span data-lang="ms" style="display:none;">Kekecewaan atau ketidakpuasan pelanggan</span>
+              <span data-lang="zh" style="display:none;">客户沮丧或不满</span>
+              <span data-lang="ta" style="display:none;">வாடிக்கையாளர் விரக்தி அல்லது அதிருப்தி</span>
+            </li>
+            <li>
+              <span data-lang="en">Requests for human manager or supervisor</span>
+              <span data-lang="ms" style="display:none;">Permintaan untuk pengurus atau penyelia manusia</span>
+              <span data-lang="zh" style="display:none;">要求人工经理或主管</span>
+              <span data-lang="ta" style="display:none;">மனித மேலாளர் அல்லது மேற்பார்வையாளருக்கான கோரிக்கைகள்</span>
+            </li>
+            <li>
+              <span data-lang="en">Pricing negotiations or custom quotes</span>
+              <span data-lang="ms" style="display:none;">Rundingan harga atau sebut harga tersuai</span>
+              <span data-lang="zh" style="display:none;">价格谈判或定制报价</span>
+              <span data-lang="ta" style="display:none;">விலை பேச்சுவார்த்தைகள் அல்லது தனிப்பயன் மேற்கோள்கள்</span>
+            </li>
+            <li>
+              <span data-lang="en">Complaint resolution requiring empathy</span>
+              <span data-lang="ms" style="display:none;">Penyelesaian aduan yang memerlukan empati</span>
+              <span data-lang="zh" style="display:none;">需要同理心的投诉解决</span>
+              <span data-lang="ta" style="display:none;">பச்சாதாபம் தேவைப்படும் புகார் தீர்வு</span>
+            </li>
+            <li>
+              <span data-lang="en">Time-sensitive urgent matters</span>
+              <span data-lang="ms" style="display:none;">Perkara mendesak yang sensitif masa</span>
+              <span data-lang="zh" style="display:none;">时间敏感的紧急事务</span>
+              <span data-lang="ta" style="display:none;">நேர உணர்வுள்ள அவசர விஷயங்கள்</span>
+            </li>
+          </ul>
+        </div>
+
+        <div>
+          <h3 class="text-xl font-semibold mb-3 text-white">
+            <span data-lang="en">Business Context Understanding</span>
+            <span data-lang="ms" style="display:none;">Pemahaman Konteks Perniagaan</span>
+            <span data-lang="zh" style="display:none;">业务上下文理解</span>
+            <span data-lang="ta" style="display:none;">வணிக சூழல் புரிதல்</span>
+          </h3>
+          <p class="text-gray-300 mb-4">
+            <span data-lang="en">Bijou AI learns your business context and responds appropriately to:</span>
+            <span data-lang="ms" style="display:none;">Bijou AI mempelajari konteks perniagaan anda dan membalas dengan sesuai untuk:</span>
+            <span data-lang="zh" style="display:none;">Bijou AI 学习您的业务上下文并适当地回应：</span>
+            <span data-lang="ta" style="display:none;">Bijou AI உங்கள் வணிக சூழலைக் கற்றுக்கொண்டு பின்வருவனவற்றிற்கு பொருத்தமாக பதிலளிக்கிறது:</span>
+          </p>
+          <div class="grid md:grid-cols-2 gap-4">
+            <ul class="list-disc list-inside text-gray-300 space-y-1">
+              <li>
+                <span data-lang="en">Product inquiries</span>
+                <span data-lang="ms" style="display:none;">Pertanyaan produk</span>
+                <span data-lang="zh" style="display:none;">产品咨询</span>
+                <span data-lang="ta" style="display:none;">தயாரிப்பு விசாரணைகள்</span>
+              </li>
+              <li>
+                <span data-lang="en">Service availability</span>
+                <span data-lang="ms" style="display:none;">Ketersediaan perkhidmatan</span>
+                <span data-lang="zh" style="display:none;">服务可用性</span>
+                <span data-lang="ta" style="display:none;">சேவை கிடைக்கும் தன்மை</span>
+              </li>
+              <li>
+                <span data-lang="en">Business hours questions</span>
+                <span data-lang="ms" style="display:none;">Soalan waktu perniagaan</span>
+                <span data-lang="zh" style="display:none;">营业时间问题</span>
+                <span data-lang="ta" style="display:none;">வணிக நேர கேள்விகள்</span>
+              </li>
+              <li>
+                <span data-lang="en">Location and directions</span>
+                <span data-lang="ms" style="display:none;">Lokasi dan arah</span>
+                <span data-lang="zh" style="display:none;">位置和方向</span>
+                <span data-lang="ta" style="display:none;">இடம் மற்றும் திசைகள்</span>
+              </li>
+            </ul>
+            <ul class="list-disc list-inside text-gray-300 space-y-1">
+              <li>
+                <span data-lang="en">Appointment scheduling</span>
+                <span data-lang="ms" style="display:none;">Penjadualan temujanji</span>
+                <span data-lang="zh" style="display:none;">预约安排</span>
+                <span data-lang="ta" style="display:none;">நியமன அட்டவணை</span>
+              </li>
+              <li>
+                <span data-lang="en">General company information</span>
+                <span data-lang="ms" style="display:none;">Maklumat umum syarikat</span>
+                <span data-lang="zh" style="display:none;">一般公司信息</span>
+                <span data-lang="ta" style="display:none;">பொதுவான நிறுவன தகவல்</span>
+              </li>
+              <li>
+                <span data-lang="en">FAQ responses</span>
+                <span data-lang="ms" style="display:none;">Jawapan FAQ</span>
+                <span data-lang="zh" style="display:none;">常见问题解答</span>
+                <span data-lang="ta" style="display:none;">அடிக்கடி கேட்கப்படும் கேள்விகளுக்கான பதில்கள்</span>
+              </li>
+              <li>
+                <span data-lang="en">Contact information</span>
+                <span data-lang="ms" style="display:none;">Maklumat hubungan</span>
+                <span data-lang="zh" style="display:none;">联系信息</span>
+                <span data-lang="ta" style="display:none;">தொடர்பு தகவல்</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <div>
+          <h3 class="text-xl font-semibold mb-3 text-white">
+            <span data-lang="en">Integration Capabilities</span>
+            <span data-lang="ms" style="display:none;">Keupayaan Integrasi</span>
+            <span data-lang="zh" style="display:none;">集成能力</span>
+            <span data-lang="ta" style="display:none;">ஒருங்கிணைப்பு திறன்கள்</span>
+          </h3>
+          <div class="space-y-4">
+            <div class="glass-nav-card p-4">
+              <h4 class="font-semibold text-2EF19D mb-2">
+                📅 
+                <span data-lang="en">Google Calendar</span>
+                <span data-lang="ms" style="display:none;">Google Calendar</span>
+                <span data-lang="zh" style="display:none;">Google 日历</span>
+                <span data-lang="ta" style="display:none;">Google காலெண்டர்</span>
+              </h4>
+              <p class="text-sm text-gray-300">
+                <span data-lang="en">Automatically books appointments, checks availability, and sends calendar invites directly through WhatsApp conversations.</span>
+                <span data-lang="ms" style="display:none;">Secara automatik menempah temujanji, semak ketersediaan, dan hantar jemputan kalendar terus melalui perbualan WhatsApp.</span>
+                <span data-lang="zh" style="display:none;">自动预订约会，检查可用性，并通过 WhatsApp 对话直接发送日历邀请。</span>
+                <span data-lang="ta" style="display:none;">தானாகவே நியமனங்களை முன்பதிவு செய்கிறது, கிடைக்கும் தன்மையைச் சரிபார்க்கிறது, மற்றும் WhatsApp உரையாடல்கள் மூலம் நேரடியாக காலெண்டர் அழைப்பிதழ்களை அனுப்புகிறது.</span>
+              </p>
+            </div>
+            <div class="glass-nav-card p-4">
+              <h4 class="font-semibold text-2EF19D mb-2">
+                📋 
+                <span data-lang="en">Form Collection</span>
+                <span data-lang="ms" style="display:none;">Pengumpulan Borang</span>
+                <span data-lang="zh" style="display:none;">表单收集</span>
+                <span data-lang="ta" style="display:none;">படிவ சேகரிப்பு</span>
+              </h4>
+              <p class="text-sm text-gray-300">
+                <span data-lang="en">Collects customer information through conversational forms and integrates with your existing CRM systems.</span>
+                <span data-lang="ms" style="display:none;">Mengumpul maklumat pelanggan melalui borang perbualan dan bersepadu dengan sistem CRM sedia ada anda.</span>
+                <span data-lang="zh" style="display:none;">通过对话表单收集客户信息，并与您现有的 CRM 系统集成。</span>
+                <span data-lang="ta" style="display:none;">உரையாடல் படிவங்கள் மூலம் வாடிக்கையாளர் தகவலை சேகரித்து, உங்கள் தற்போதைய CRM அமைப்புகளுடன் ஒருங்கிணைக்கிறது.</span>
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Support Section -->
+    <section class="glass-card p-8 mb-8">
+      <h2 class="text-3xl font-bold mb-6 text-white">
+        <span data-lang="en">Need Help?</span>
+        <span data-lang="ms" style="display:none;">Perlukan Bantuan?</span>
+        <span data-lang="zh" style="display:none;">需要帮助？</span>
+        <span data-lang="ta" style="display:none;">உதவி தேவையா?</span>
+      </h2>
+      <div class="grid md:grid-cols-3 gap-6">
+        <div class="text-center glass-nav-card p-6">
+          <div class="text-4xl mb-3">📧</div>
+          <h3 class="font-semibold mb-2 text-2EF19D">
+            <span data-lang="en">Email Support</span>
+            <span data-lang="ms" style="display:none;">Sokongan E-mel</span>
+            <span data-lang="zh" style="display:none;">邮件支持</span>
+            <span data-lang="ta" style="display:none;">மின்னஞ்சல் ஆதரவு</span>
+          </h3>
+          <p class="text-sm text-gray-300">support@mybijou.xyz</p>
+        </div>
+        <div class="text-center glass-nav-card p-6">
+          <div class="text-4xl mb-3">💬</div>
+          <h3 class="font-semibold mb-2 text-2EF19D">
+            <span data-lang="en">WhatsApp Support</span>
+            <span data-lang="ms" style="display:none;">Sokongan WhatsApp</span>
+            <span data-lang="zh" style="display:none;">WhatsApp 支持</span>
+            <span data-lang="ta" style="display:none;">WhatsApp ஆதரவு</span>
+          </h3>
+          <p class="text-sm text-gray-300">+60 17-410 6981</p>
+        </div>
+        <div class="text-center glass-nav-card p-6">
+          <div class="text-4xl mb-3">🌐</div>
+          <h3 class="font-semibold mb-2 text-2EF19D">
+            <span data-lang="en">Knowledge Base</span>
+            <span data-lang="ms" style="display:none;">Pangkalan Pengetahuan</span>
+            <span data-lang="zh" style="display:none;">知识库</span>
+            <span data-lang="ta" style="display:none;">அறிவுத் தளம்</span>
+          </h3>
+          <p class="text-sm text-gray-300 mb-3">
+            <span data-lang="en">Complete troubleshooting guide</span>
+            <span data-lang="ms" style="display:none;">Panduan penyelesaian masalah lengkap</span>
+            <span data-lang="zh" style="display:none;">完整的故障排除指南</span>
+            <span data-lang="ta" style="display:none;">முழுமையான சிக்கல் தீர்க்கும் வழிகாட்டி</span>
+          </p>
+          <a href="/static/help.html" class="inline-flex items-center bg-2EF19D text-0A1E1C px-3 py-1 rounded text-sm font-medium hover:bg-00F5E4 transition-colors">
+            <span data-lang="en">Visit Knowledge Base</span>
+            <span data-lang="ms" style="display:none;">Lawati Pangkalan Pengetahuan</span>
+            <span data-lang="zh" style="display:none;">访问知识库</span>
+            <span data-lang="ta" style="display:none;">அறிவுத் தளத்தைப் பார்வையிடவும்</span>
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="glass-card p-6 text-center">
+      <div class="mb-4">
+        <p class="text-gray-300">
+          <span data-lang="en">© 2026 Bijou AI. Made with 🤍 by <a href="https://w3jdev.com" class="text-2EF19D hover:text-00F5E4 transition-colors">W3J LLC</a></span>
+          <span data-lang="ms" style="display:none;">© 2026 Bijou AI. Dibuat dengan 🤍 oleh <a href="https://w3jdev.com" class="text-2EF19D hover:text-00F5E4 transition-colors">W3J LLC</a></span>
+          <span data-lang="zh" style="display:none;">© 2026 Bijou AI。由 <a href="https://w3jdev.com" class="text-2EF19D hover:text-00F5E4 transition-colors">W3J LLC</a> 用 🤍 制作</span>
+          <span data-lang="ta" style="display:none;">© 2026 Bijou AI. <a href="https://w3jdev.com" class="text-2EF19D hover:text-00F5E4 transition-colors">W3J LLC</a> द्वारा 🤍 के साथ बनाया गया</span>
+        </p>
+        <p class="text-sm text-gray-400 mt-2">
+          <span data-lang="en">Wyoming, USA • Operations: Kuala Lumpur, Malaysia</span>
+          <span data-lang="ms" style="display:none;">Wyoming, USA • Operasi: Kuala Lumpur, Malaysia</span>
+          <span data-lang="zh" style="display:none;">怀俄明州，美国 • 运营：吉隆坡，马来西亚</span>
+          <span data-lang="ta" style="display:none;">வயோமிங், அமெரிக்கா • செயல்பாடுகள்: கோலாலம்பூர், மலேசியா</span>
+        </p>
+      </div>
+      <p class="mt-4">
+        <a href="/static/login.html" class="text-C9A961 hover:text-2EF19D transition-colors">
+          <span data-lang="en">Return to Dashboard</span>
+          <span data-lang="ms" style="display:none;">Kembali ke Dashboard</span>
+          <span data-lang="zh" style="display:none;">返回仪表板</span>
+          <span data-lang="ta" style="display:none;">டாஷ்போர்டுக்குத் திரும்பு</span>
+        </a>
+      </p>
+    </footer>
+
+  </div>
+
+  <script>
+    // Language switching functionality
+    document.getElementById('languageSelector').addEventListener('change', function(e) {
+      const selectedLang = e.target.value;
+      
+      // Hide all language elements
+      document.querySelectorAll('[data-lang]').forEach(el => {
+        el.style.display = 'none';
+      });
+      
+      // Show selected language elements
+      document.querySelectorAll(`[data-lang="${selectedLang}"]`).forEach(el => {
+        el.style.display = 'inline';
+      });
+      
+      // Save preference
+      localStorage.setItem('bijou-user-guide-lang', selectedLang);
+    });
+    
+    // Load saved language preference
+    document.addEventListener('DOMContentLoaded', function() {
+      const savedLang = localStorage.getItem('bijou-user-guide-lang') || 'en';
+      document.getElementById('languageSelector').value = savedLang;
+      
+      // Trigger change event to apply language
+      document.getElementById('languageSelector').dispatchEvent(new Event('change'));
+    });
+    
+    // Smooth scrolling for navigation links
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+      anchor.addEventListener('click', function (e) {
+        e.preventDefault();
+        document.querySelector(this.getAttribute('href')).scrollIntoView({
+          behavior: 'smooth'
+        });
+      });
+    });
+  </script>
+</body>
+</html>

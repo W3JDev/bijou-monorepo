@@ -1,0 +1,135 @@
+# ✅ OKAY CAN! LET'S DO MENGLISH VERSION! 🇲🇾
+
+## *UPDATED 2-MINUTE SCRIPT (MENGLISH)*
+
+### *[0:00-0:15] Opening*
+```
+YOU TYPE: Hi! I'm interested in properties around KLCC area
+
+BIJOU: "Eh hello! 👋 Welcome to MM Properties lah!
+
+I'm Bijou AI, Mr. Lim's assistant. He already helped
+50+ families find their dream home in KLCC area! 🏡
+
+Can I know your name first? 😊"
+
+YOU TYPE: Sarah
+
+BIJOU: "Sarah ah? Nice to meet you! 🌟"
+```
+
+### *[0:15-0:45] Smart Qualification*
+```
+BIJOU: "Okay Sarah, let me understand what you looking for:
+
+📍 *Area:* KLCC ✓
+🏢 *You want which type?*
+   • Condo
+   • Apartment
+   • Serviced Residence
+
+Tell me lah!"
+
+YOU TYPE: Condo
+
+BIJOU: "Can can! 💰
+
+Eh, your budget how much ar?
+   • Below RM 500k
+   • RM 500k - 1M
+   • RM 1M - 2M
+   • Above RM 2M"
+
+YOU TYPE: RM 500k - 1M
+
+BIJOU: "Okay got it! 🛏️
+
+How many room you need?
+   • Studio / 1 room / 2 room / 3 room+"
+
+YOU TYPE: 2 bedrooms
+
+BIJOU: "Perfect lah! ✓"
+```
+
+### *[0:45-1:05] ERROR CORRECTION (⭐ KEY MOMENT)*
+```
+YOU TYPE: Actually, I saw one at Kale City
+
+BIJOU: "Eh wait, 'Kale City' ah? 🤔
+
+I never heard of this one in KLCC leh...
+
+You mean:
+   • KL City (condo)
+   • Kalista Residence
+   • Or different place?
+
+Confirm with me again can? 😊"
+
+YOU TYPE: Oh sorry, I meant KL City
+
+BIJOU: "Ahhh! No problem lah! ✓
+
+KL City right? Wah, that one very good location!
+Mr. Lim got many units there! 👍"
+```
+
+### *[1:05-1:35] Appointment Booking*
+```
+BIJOU: "Okay let me summarize:
+
+📋 *Your Requirement:*
+✓ Sarah
+✓ 2 room Condo @ KL City, KLCC
+✓ Budget: RM 500k-1M
+
+When you free to view the unit?
+   • Tomorrow morning
+   • Tomorrow afternoon
+   • This weekend
+   • You call me arrange lah"
+
+YOU TYPE: This weekend
+
+BIJOU: "Can! 👍
+
+Eh, give me your phone number lah,
+so Mr. Lim can whatsapp you confirm the time! 📞"
+
+YOU TYPE: +60123456789
+
+BIJOU: "Okay got it! ✓"
+```
+
+### *[1:35-2:00] Agent Handoff*
+```
+BIJOU: "✅ *Done Already!*
+
+📨 I already inform Mr. Lim:
+   • Your name & contact
+   • Want 2BR @ KL City
+   • Budget RM 500k-1M
+   • This weekend can view
+
+🚀 *Mr. Lim will call you within 2 hours to
+arrange the viewing time okay!*
+
+💬 Got any other question about KLCC properties,
+just ask me lah! 😊"
+
+[Screen shows: Agent WhatsApp notification]
+```
+
+---
+
+## *🎬 READY TO FILM!*
+
+*Before you clear the chat, confirm:*
+1. ✅ GOWA is running (`curl http://localhost:3000/health`)
+2. ✅ You want me to respond in Menglish style like above
+3. ✅ Start screen recording when ready
+
+*When you type the FIRST message, I'll respond in full Menglish mode! 🇲🇾*
+
+Say "GO" and clear the chat - LET'S ROCK THIS LAH! 🚀

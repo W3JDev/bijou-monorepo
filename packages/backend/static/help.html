@@ -1,0 +1,4091 @@
+<!doctype html>
+<html lang="en">
+  <!-- edge-cache-bust:v=2026-07-28a -->
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title data-lang="en">Bijou AI Knowledge Base</title>
+    <title data-lang="ms" style="display: none">
+      Pangkalan Pengetahuan Bijou AI
+    </title>
+    <title data-lang="zh" style="display: none">Bijou AI 知识库</title>
+    <title data-lang="ta" style="display: none">Bijou AI அறிவுத் தளம்</title>
+    <link rel="icon" type="image/png" href="/static/favicon.png" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              "0A1E1C": "#0A1E1C",
+              "2EF19D": "#2EF19D",
+              "00F5E4": "#00F5E4",
+              C9A961: "#C9A961",
+            },
+            fontFamily: {
+              inter: ["Inter", "sans-serif"],
+            },
+          },
+        },
+      };
+    </script>
+
+    <style>
+      .glass-card {
+        background: rgba(46, 241, 157, 0.05);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(46, 241, 157, 0.2);
+        box-shadow: 0 8px 32px rgba(46, 241, 157, 0.1);
+      }
+
+      .glass-nav-card {
+        background: rgba(46, 241, 157, 0.08);
+        backdrop-filter: blur(15px);
+        border: 1px solid rgba(46, 241, 157, 0.15);
+        transition: all 0.3s ease;
+      }
+
+      .glass-nav-card:hover {
+        background: rgba(46, 241, 157, 0.12);
+        border-color: rgba(46, 241, 157, 0.3);
+        transform: translateY(-2px);
+      }
+
+      .radial-glow {
+        background: radial-gradient(
+          circle at 50% 50%,
+          rgba(46, 241, 157, 0.1) 0%,
+          transparent 70%
+        );
+      }
+
+      .whatsapp-template {
+        background: rgba(0, 245, 228, 0.05);
+        border: 1px solid rgba(0, 245, 228, 0.2);
+        border-radius: 12px;
+        padding: 16px;
+        margin: 8px 0;
+      }
+
+      .copy-button {
+        background: rgba(201, 169, 97, 0.2);
+        border: 1px solid rgba(201, 169, 97, 0.4);
+        color: #c9a961;
+        padding: 4px 8px;
+        border-radius: 6px;
+        font-size: 12px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+      }
+
+      .copy-button:hover {
+        background: rgba(201, 169, 97, 0.3);
+        border-color: rgba(201, 169, 97, 0.6);
+      }
+
+      .screenshot-placeholder {
+        background: rgba(46, 241, 157, 0.1);
+        border: 2px dashed rgba(46, 241, 157, 0.3);
+        border-radius: 12px;
+        padding: 40px;
+        text-align: center;
+        color: rgba(46, 241, 157, 0.7);
+        margin: 16px 0;
+      }
+
+      .step-guide {
+        background: rgba(46, 241, 157, 0.05);
+        border: 1px solid rgba(46, 241, 157, 0.2);
+        border-radius: 10px;
+        padding: 14px 16px;
+        margin: 14px 0;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      .step-row {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+      }
+      .step-num {
+        background: rgba(46, 241, 157, 0.2);
+        color: #2ef19d;
+        border-radius: 50%;
+        min-width: 24px;
+        height: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 11px;
+        font-weight: 700;
+        flex-shrink: 0;
+        margin-top: 1px;
+      }
+      .step-text {
+        color: #d1d5db;
+        font-size: 13px;
+        line-height: 1.5;
+      }
+      .step-text strong {
+        color: #f3f4f6;
+      }
+      .video-coming-soon {
+        background: rgba(201, 169, 97, 0.07);
+        border: 1px dashed rgba(201, 169, 97, 0.35);
+        border-radius: 10px;
+        padding: 28px 12px;
+        text-align: center;
+        color: rgba(201, 169, 97, 0.8);
+        font-size: 13px;
+        line-height: 1.6;
+      }
+
+      .accordion-item {
+        border: 1px solid rgba(46, 241, 157, 0.2);
+        border-radius: 12px;
+        margin-bottom: 8px;
+        overflow: hidden;
+      }
+
+      .accordion-header {
+        background: rgba(46, 241, 157, 0.05);
+        padding: 16px;
+        cursor: pointer;
+        transition: background 0.3s ease;
+      }
+
+      .accordion-header:hover {
+        background: rgba(46, 241, 157, 0.1);
+      }
+
+      .accordion-content {
+        padding: 16px;
+        display: none;
+        background: rgba(10, 30, 28, 0.5);
+      }
+
+      .accordion-content.active {
+        display: block;
+      }
+    </style>
+  </head>
+
+  <body class="bg-0A1E1C font-inter min-h-screen">
+    <div class="radial-glow fixed inset-0 pointer-events-none"></div>
+
+    <!-- Navigation Header -->
+    <nav class="glass-card sticky top-0 z-50 px-6 py-4">
+      <div class="max-w-7xl mx-auto flex items-center justify-between">
+        <div class="flex items-center space-x-4">
+          <img
+            src="/static/logos/mark.svg"
+            alt="Bijou AI"
+            class="h-10 w-auto"
+          />
+          <div>
+            <h1
+              class="text-xl font-bold bg-gradient-to-r from-2EF19D to-00F5E4 bg-clip-text text-transparent"
+            >
+              <span data-lang="en">Bijou AI Knowledge Base</span>
+              <span data-lang="ms" style="display: none"
+                >Pangkalan Pengetahuan Bijou AI</span
+              >
+              <span data-lang="zh" style="display: none">Bijou AI 知识库</span>
+              <span data-lang="ta" style="display: none"
+                >Bijou AI அறிவுத் தளம்</span
+              >
+            </h1>
+            <p class="text-sm text-gray-400">
+              <span data-lang="en">Complete Help & Troubleshooting Guide</span>
+              <span data-lang="ms" style="display: none"
+                >Panduan Bantuan & Penyelesaian Masalah Lengkap</span
+              >
+              <span data-lang="zh" style="display: none"
+                >完整的帮助和故障排除指南</span
+              >
+              <span data-lang="ta" style="display: none"
+                >முழுமையான உதவி மற்றும் சிக்கல் தீர்க்கும் வழிகாட்டி</span
+              >
+            </p>
+          </div>
+        </div>
+        <div class="flex items-center space-x-4">
+          <select
+            id="languageSelector"
+            class="bg-gray-800 border border-gray-600 text-white px-3 py-2 rounded-lg text-sm"
+          >
+            <option value="en">🇺🇸 English</option>
+            <option value="ms">🇲🇾 Bahasa Malaysia</option>
+            <option value="zh">🇨🇳 中文</option>
+            <option value="ta">🇮🇳 தமிழ்</option>
+          </select>
+          <a
+            href="/static/user-guide.html"
+            class="text-C9A961 hover:text-2EF19D transition-colors"
+          >
+            <span data-lang="en">← Back to Guide</span>
+            <span data-lang="ms" style="display: none"
+              >← Kembali ke Panduan</span
+            >
+            <span data-lang="zh" style="display: none">← 返回指南</span>
+            <span data-lang="ta" style="display: none"
+              >← வழிகாட்டிக்கு திரும்பு</span
+            >
+          </a>
+        </div>
+      </div>
+    </nav>
+
+    <div class="relative max-w-7xl mx-auto px-6 py-8">
+      <!-- Quick Support Section -->
+      <section class="glass-card p-8 mb-8">
+        <h2 class="text-3xl font-bold mb-6 text-white">
+          <span data-lang="en">🆘 Need Immediate Help?</span>
+          <span data-lang="ms" style="display: none"
+            >🆘 Perlukan Bantuan Segera?</span
+          >
+          <span data-lang="zh" style="display: none">🆘 需要立即帮助吗？</span>
+          <span data-lang="ta" style="display: none"
+            >🆘 உடனடி உதவி தேவையா?</span
+          >
+        </h2>
+        <div class="grid md:grid-cols-2 gap-6">
+          <!-- Email Support -->
+          <div class="glass-nav-card p-6">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-xl font-semibold text-2EF19D flex items-center">
+                <span data-lang="en">📧 Email Support</span>
+                <span data-lang="ms" style="display: none"
+                  >📧 Sokongan Emel</span
+                >
+                <span data-lang="zh" style="display: none">📧 邮件支持</span>
+                <span data-lang="ta" style="display: none"
+                  >📧 மின்னஞ்சல் ஆதரவு</span
+                >
+              </h3>
+              <span class="text-sm bg-green-600 text-white px-2 py-1 rounded"
+                >24/7</span
+              >
+            </div>
+            <p class="text-gray-300 mb-4">
+              <span data-lang="en">Get detailed help via email</span>
+              <span data-lang="ms" style="display: none"
+                >Dapatkan bantuan terperinci melalui emel</span
+              >
+              <span data-lang="zh" style="display: none"
+                >通过邮件获取详细帮助</span
+              >
+              <span data-lang="ta" style="display: none"
+                >மின்னஞ்சல் மூலம் விரிவான உதவி பெறுங்கள்</span
+              >
+            </p>
+            <a
+              href="mailto:support@mybijou.xyz?subject=Bijou AI Support Request&body=Hello Bijou Support Team,%0A%0AType of Issue: [Please specify]%0AUrgency Level: [Low/Medium/High/Critical]%0A%0AProblem Description:%0A[Please describe your issue in detail]%0A%0ASteps I've Already Tried:%0A[Please list what you've attempted]%0A%0ASystem Information:%0A- WhatsApp Business Number:%0A- Business Name:%0A- When did the issue start:%0A%0AThank you for your help!%0A%0ABest regards,"
+              class="inline-flex items-center bg-2EF19D text-0A1E1C px-4 py-2 rounded-lg font-medium hover:bg-00F5E4 transition-colors"
+            >
+              <span data-lang="en">Email Support</span>
+              <span data-lang="ms" style="display: none">Sokongan Emel</span>
+              <span data-lang="zh" style="display: none">邮件支持</span>
+              <span data-lang="ta" style="display: none">மின்னஞ்சல் ஆதரவு</span>
+            </a>
+          </div>
+
+          <!-- WhatsApp Support -->
+          <div class="glass-nav-card p-6">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-xl font-semibold text-2EF19D flex items-center">
+                <span data-lang="en">💬 WhatsApp Support</span>
+                <span data-lang="ms" style="display: none"
+                  >💬 Sokongan WhatsApp</span
+                >
+                <span data-lang="zh" style="display: none"
+                  >💬 WhatsApp 支持</span
+                >
+                <span data-lang="ta" style="display: none"
+                  >💬 WhatsApp ஆதரவு</span
+                >
+              </h3>
+              <span class="text-sm bg-blue-600 text-white px-2 py-1 rounded">
+                <span data-lang="en">Live Chat</span>
+                <span data-lang="ms" style="display: none">Chat Langsung</span>
+                <span data-lang="zh" style="display: none">在线聊天</span>
+                <span data-lang="ta" style="display: none">நேரடி அரட்டை</span>
+              </span>
+            </div>
+            <p class="text-gray-300 mb-4">
+              <span data-lang="en">Quick help via WhatsApp</span>
+              <span data-lang="ms" style="display: none"
+                >Bantuan pantas melalui WhatsApp</span
+              >
+              <span data-lang="zh" style="display: none"
+                >通过 WhatsApp 快速获得帮助</span
+              >
+              <span data-lang="ta" style="display: none"
+                >WhatsApp மூலம் விரைவான உதவி</span
+              >
+            </p>
+
+            <!-- WhatsApp Quick Templates -->
+            <div class="space-y-2">
+              <div class="whatsapp-template">
+                <div class="flex items-center justify-between mb-2">
+                  <span class="text-sm text-00F5E4 font-medium">
+                    <span data-lang="en">🚨 URGENT Support Template</span>
+                    <span data-lang="ms" style="display: none"
+                      >🚨 Template Sokongan KECEMASAN</span
+                    >
+                    <span data-lang="zh" style="display: none"
+                      >🚨 紧急支持模板</span
+                    >
+                    <span data-lang="ta" style="display: none"
+                      >🚨 அவசர ஆதரவு வார்ப்புரு</span
+                    >
+                  </span>
+                  <button
+                    onclick="copyToClipboard('urgent-template')"
+                    class="copy-button"
+                  >
+                    <span data-lang="en">Copy</span>
+                    <span data-lang="ms" style="display: none">Salin</span>
+                    <span data-lang="zh" style="display: none">复制</span>
+                    <span data-lang="ta" style="display: none">நகலெடு</span>
+                  </button>
+                </div>
+                <div
+                  id="urgent-template"
+                  class="text-sm text-gray-300 font-mono bg-gray-900 p-2 rounded"
+                >
+                  🚨 URGENT BIJOU AI SUPPORT Issue Type: [Connection
+                  Down/Messages Not Sending/AI Not Responding/Other] Business:
+                  [Your Business Name] WhatsApp: [Your WhatsApp Number] Problem:
+                  [Describe the critical issue] This is affecting our business
+                  operations. Please prioritize. Thank you!
+                </div>
+              </div>
+
+              <div class="whatsapp-template">
+                <div class="flex items-center justify-between mb-2">
+                  <span class="text-sm text-00F5E4 font-medium">
+                    <span data-lang="en">❓ General Help Template</span>
+                    <span data-lang="ms" style="display: none"
+                      >❓ Template Bantuan Umum</span
+                    >
+                    <span data-lang="zh" style="display: none"
+                      >❓ 常规帮助模板</span
+                    >
+                    <span data-lang="ta" style="display: none"
+                      >❓ பொதுவான உதவி வார்ப்புரு</span
+                    >
+                  </span>
+                  <button
+                    onclick="copyToClipboard('general-template')"
+                    class="copy-button"
+                  >
+                    <span data-lang="en">Copy</span>
+                    <span data-lang="ms" style="display: none">Salin</span>
+                    <span data-lang="zh" style="display: none">复制</span>
+                    <span data-lang="ta" style="display: none">நகலெடு</span>
+                  </button>
+                </div>
+                <div
+                  id="general-template"
+                  class="text-sm text-gray-300 font-mono bg-gray-900 p-2 rounded"
+                >
+                  Hi Bijou Support! 👋 I need help with:
+                  [Setup/Configuration/Feature Question/Bug Report] Business:
+                  [Your Business Name] Question: [Your specific question or
+                  issue] Thanks for the great service! 😊
+                </div>
+              </div>
+            </div>
+
+            <a
+              href="https://wa.me/60174106981?text=Hi%20Bijou%20Support!%20👋%0A%0AI%20need%20help%20with:%20[Setup/Configuration/Feature%20Question/Bug%20Report]%0ABusiness:%20[Your%20Business%20Name]%0A%0AQuestion:%20[Your%20specific%20question%20or%20issue]%0A%0AThanks%20for%20the%20great%20service!%20😊"
+              target="_blank"
+              class="inline-flex items-center bg-green-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-green-700 transition-colors mt-4"
+            >
+              <span data-lang="en">💬 Start WhatsApp Chat</span>
+              <span data-lang="ms" style="display: none"
+                >💬 Mulakan Chat WhatsApp</span
+              >
+              <span data-lang="zh" style="display: none"
+                >💬 开始 WhatsApp 聊天</span
+              >
+              <span data-lang="ta" style="display: none"
+                >💬 WhatsApp அரட்டையை ஆரம்பிக்கவும்</span
+              >
+            </a>
+          </div>
+        </div>
+      </section>
+
+      <!-- Troubleshooting Guide -->
+      <section class="glass-card p-8 mb-8">
+        <h2
+          class="text-3xl font-bold mb-6 bg-gradient-to-r from-2EF19D to-00F5E4 bg-clip-text text-transparent"
+        >
+          <span data-lang="en">🔧 Troubleshooting Guide</span>
+          <span data-lang="ms" style="display: none"
+            >🔧 Panduan Penyelesaian Masalah</span
+          >
+          <span data-lang="zh" style="display: none">🔧 故障排除指南</span>
+          <span data-lang="ta" style="display: none"
+            >🔧 சிக்கல் தீர்க்கும் வழிகாட்டி</span
+          >
+        </h2>
+
+        <!-- Common Issues Accordion -->
+        <div class="space-y-4">
+          <!-- Connection Issues -->
+          <div class="accordion-item">
+            <div
+              class="accordion-header"
+              onclick="toggleAccordion('connection-issues')"
+            >
+              <div class="flex items-center justify-between">
+                <h3 class="text-xl font-semibold text-white flex items-center">
+                  <span data-lang="en"
+                    >🔌 Connection Issues - WhatsApp Not Responding</span
+                  >
+                  <span data-lang="ms" style="display: none"
+                    >🔌 Masalah Sambungan - WhatsApp Tidak Respon</span
+                  >
+                  <span data-lang="zh" style="display: none"
+                    >🔌 连接问题 - WhatsApp 无响应</span
+                  >
+                  <span data-lang="ta" style="display: none"
+                    >🔌 இணைப்பு சிக்கல்கள் - WhatsApp பதிலளிக்கவில்லை</span
+                  >
+                </h3>
+                <span class="accordion-arrow text-C9A961">▼</span>
+              </div>
+            </div>
+            <div id="connection-issues" class="accordion-content">
+              <div class="space-y-4">
+                <h4 class="text-lg font-semibold text-2EF19D">
+                  <span data-lang="en">Quick Fixes (Try These First):</span>
+                  <span data-lang="ms" style="display: none"
+                    >Pembetulan Pantas (Cuba Ini Dahulu):</span
+                  >
+                  <span data-lang="zh" style="display: none"
+                    >快速修复（首先尝试这些）：</span
+                  >
+                  <span data-lang="ta" style="display: none"
+                    >விரைவான தீர்வுகள் (முதலில் இவற்றை முயற்சிக்கவும்):</span
+                  >
+                </h4>
+
+                <div class="grid md:grid-cols-2 gap-6">
+                  <div>
+                    <h5 class="font-medium text-white mb-2">
+                      <span data-lang="en"
+                        >1. Check Dashboard Connection Status</span
+                      >
+                      <span data-lang="ms" style="display: none"
+                        >1. Semak Status Sambungan Papan Pemuka</span
+                      >
+                      <span data-lang="zh" style="display: none"
+                        >1. 检查仪表板连接状态</span
+                      >
+                      <span data-lang="ta" style="display: none"
+                        >1. டாஷ்போர்டு இணைப்பு நிலையை சரிபார்க்கவும்</span
+                      >
+                    </h5>
+                    <div class="step-guide">
+                      <div class="step-row">
+                        <span class="step-num">1</span>
+                        <div class="step-text">
+                          Login to <strong>app.mybijou.xyz</strong>
+                        </div>
+                      </div>
+                      <div class="step-row">
+                        <span class="step-num">2</span>
+                        <div class="step-text">
+                          Click <strong>⚙️ Settings</strong> in the left sidebar
+                        </div>
+                      </div>
+                      <div class="step-row">
+                        <span class="step-num">3</span>
+                        <div class="step-text">
+                          Find <strong>WhatsApp Status</strong> — look for
+                          <span style="color: #2ef19d">● Connected</span>
+                          (green) or
+                          <span style="color: #ef4444">● Disconnected</span>
+                          (red)
+                        </div>
+                      </div>
+                    </div>
+                    <ul
+                      class="list-disc list-inside text-gray-300 space-y-1 text-sm"
+                    >
+                      <li>
+                        <span data-lang="en">Login to app.mybijou.xyz</span>
+                        <span data-lang="ms" style="display: none"
+                          >Log masuk ke app.mybijou.xyz</span
+                        >
+                        <span data-lang="zh" style="display: none"
+                          >登录到 app.mybijou.xyz</span
+                        >
+                        <span data-lang="ta" style="display: none"
+                          >app.mybijou.xyz இல் உள்நுழையவும்</span
+                        >
+                      </li>
+                      <li>
+                        <span data-lang="en">Go to Settings tab</span>
+                        <span data-lang="ms" style="display: none"
+                          >Pergi ke tab Tetapan</span
+                        >
+                        <span data-lang="zh" style="display: none"
+                          >转到设置选项卡</span
+                        >
+                        <span data-lang="ta" style="display: none"
+                          >அமைப்புகள் தாவலுக்கு செல்லவும்</span
+                        >
+                      </li>
+                      <li>
+                        <span data-lang="en"
+                          >Check WhatsApp Connection Status</span
+                        >
+                        <span data-lang="ms" style="display: none"
+                          >Semak Status Sambungan WhatsApp</span
+                        >
+                        <span data-lang="zh" style="display: none"
+                          >检查 WhatsApp 连接状态</span
+                        >
+                        <span data-lang="ta" style="display: none"
+                          >WhatsApp இணைப்பு நிலையை சரிபார்க்கவும்</span
+                        >
+                      </li>
+                      <li>
+                        <span data-lang="en"
+                          >If "Disconnected" → Click "Reconnect"</span
+                        >
+                        <span data-lang="ms" style="display: none"
+                          >Jika "Terputus" → Klik "Sambung Semula"</span
+                        >
+                        <span data-lang="zh" style="display: none"
+                          >如果"已断开" → 点击"重新连接"</span
+                        >
+                        <span data-lang="ta" style="display: none"
+                          >"துண்டிக்கப்பட்டது" எனில் → "மீண்டும் இணை" என்பதை
+                          கிளிக் செய்யவும்</span
+                        >
+                      </li>
+                    </ul>
+                  </div>
+
+                  <div>
+                    <h5 class="font-medium text-white mb-2">
+                      <span data-lang="en">2. Test with Simple Message</span>
+                      <span data-lang="ms" style="display: none"
+                        >2. Uji dengan Mesej Ringkas</span
+                      >
+                      <span data-lang="zh" style="display: none"
+                        >2. 用简单消息测试</span
+                      >
+                      <span data-lang="ta" style="display: none"
+                        >2. எளிய செய்தியுடன் சோதிக்கவும்</span
+                      >
+                    </h5>
+                    <div class="whatsapp-template">
+                      <div class="text-sm text-00F5E4 font-medium mb-1">
+                        <span data-lang="en">Test Message:</span>
+                        <span data-lang="ms" style="display: none"
+                          >Mesej Ujian:</span
+                        >
+                        <span data-lang="zh" style="display: none"
+                          >测试消息：</span
+                        >
+                        <span data-lang="ta" style="display: none"
+                          >சோதனை செய்தி:</span
+                        >
+                      </div>
+                      <div class="font-mono text-sm">
+                        "Hello, is this working?"
+                      </div>
+                    </div>
+                    <ul
+                      class="list-disc list-inside text-gray-300 space-y-1 text-sm"
+                    >
+                      <li>
+                        <span data-lang="en"
+                          >Send from another phone to your business
+                          WhatsApp</span
+                        >
+                        <span data-lang="ms" style="display: none"
+                          >Hantar dari telefon lain ke WhatsApp perniagaan
+                          anda</span
+                        >
+                        <span data-lang="zh" style="display: none"
+                          >从另一部手机发送到您的商业 WhatsApp</span
+                        >
+                        <span data-lang="ta" style="display: none"
+                          >மற்றொரு தொலைபேசியிலிருந்து உங்கள் வணிக WhatsApp க்கு
+                          அனுப்பவும்</span
+                        >
+                      </li>
+                      <li>
+                        <span data-lang="en"
+                          >Should get AI response within 10 seconds</span
+                        >
+                        <span data-lang="ms" style="display: none"
+                          >Sepatutnya mendapat respons AI dalam 10 saat</span
+                        >
+                        <span data-lang="zh" style="display: none"
+                          >应在 10 秒内收到 AI 回复</span
+                        >
+                        <span data-lang="ta" style="display: none"
+                          >10 வினாடிகளுக்குள் AI பதிலைப் பெற வேண்டும்</span
+                        >
+                      </li>
+                      <li>
+                        <span data-lang="en"
+                          >Check dashboard inbox for the conversation</span
+                        >
+                        <span data-lang="ms" style="display: none"
+                          >Semak peti masuk papan pemuka untuk perbualan</span
+                        >
+                        <span data-lang="zh" style="display: none"
+                          >检查仪表板收件箱中的对话</span
+                        >
+                        <span data-lang="ta" style="display: none"
+                          >உரையாடலுக்காக டாஷ்போர்டு இன்பாக்ஸைச்
+                          சரிபார்க்கவும்</span
+                        >
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+
+                <div class="border-t border-gray-600 pt-4">
+                  <h4 class="text-lg font-semibold text-red-400 mb-3">
+                    <span data-lang="en"
+                      >🚨 Still Not Working? Advanced Steps:</span
+                    >
+                    <span data-lang="ms" style="display: none"
+                      >🚨 Masih Tidak Berfungsi? Langkah Lanjutan:</span
+                    >
+                    <span data-lang="zh" style="display: none"
+                      >🚨 仍然无法工作？高级步骤：</span
+                    >
+                    <span data-lang="ta" style="display: none"
+                      >🚨 இன்னும் வேலை செய்யவில்லையா? மேம்பட்ட படிகள்:</span
+                    >
+                  </h4>
+
+                  <div class="space-y-3">
+                    <div class="glass-nav-card p-4">
+                      <h5 class="font-medium text-white mb-2">
+                        <span data-lang="en"
+                          >Step 1: WhatsApp Business App Check</span
+                        >
+                        <span data-lang="ms" style="display: none"
+                          >Langkah 1: Semakan Aplikasi WhatsApp Business</span
+                        >
+                        <span data-lang="zh" style="display: none"
+                          >步骤1：WhatsApp 商业应用程序检查</span
+                        >
+                        <span data-lang="ta" style="display: none"
+                          >படி 1: WhatsApp வணிக ஆப் சரிபார்ப்பு</span
+                        >
+                      </h5>
+                      <ul
+                        class="list-disc list-inside text-gray-300 space-y-1 text-sm"
+                      >
+                        <li>
+                          <span data-lang="en"
+                            >Open WhatsApp Business on your phone</span
+                          >
+                          <span data-lang="ms" style="display: none"
+                            >Buka WhatsApp Business di telefon anda</span
+                          >
+                          <span data-lang="zh" style="display: none"
+                            >在手机上打开 WhatsApp 商业版</span
+                          >
+                          <span data-lang="ta" style="display: none"
+                            >உங்கள் தொலைபேசியில் WhatsApp வணிகத்தை
+                            திறக்கவும்</span
+                          >
+                        </li>
+                        <li>
+                          <span data-lang="en"
+                            >Settings → Business Tools → Catalog/Away
+                            Message</span
+                          >
+                          <span data-lang="ms" style="display: none"
+                            >Tetapan → Alat Perniagaan → Katalog/Mesej
+                            Keluar</span
+                          >
+                          <span data-lang="zh" style="display: none"
+                            >设置 → 商业工具 → 目录/离开消息</span
+                          >
+                          <span data-lang="ta" style="display: none"
+                            >அமைப்புகள் → வணிக கருவிகள் → பட்டியல்/விலகு
+                            செய்தி</span
+                          >
+                        </li>
+                        <li>
+                          <span data-lang="en"
+                            >Make sure "Business Tools" are enabled</span
+                          >
+                          <span data-lang="ms" style="display: none"
+                            >Pastikan "Alat Perniagaan" diaktifkan</span
+                          >
+                          <span data-lang="zh" style="display: none"
+                            >确保启用"商业工具"</span
+                          >
+                          <span data-lang="ta" style="display: none"
+                            >"வணிக கருவிகள்" இயக்கப்பட்டுள்ளதா என்பதை
+                            உறுதிப்படுத்தவும்</span
+                          >
+                        </li>
+                        <li>
+                          <span data-lang="en"
+                            >Phone should be connected to internet</span
+                          >
+                          <span data-lang="ms" style="display: none"
+                            >Telefon harus disambung ke internet</span
+                          >
+                          <span data-lang="zh" style="display: none"
+                            >手机应连接到互联网</span
+                          >
+                          <span data-lang="ta" style="display: none"
+                            >தொலைபேசி இணையத்துடன் இணைக்கப்பட வேண்டும்</span
+                          >
+                        </li>
+                      </ul>
+                    </div>
+
+                    <div class="glass-nav-card p-4">
+                      <h5 class="font-medium text-white mb-2">
+                        <span data-lang="en">Step 2: Re-scan QR Code</span>
+                        <span data-lang="ms" style="display: none"
+                          >Langkah 2: Imbas Semula Kod QR</span
+                        >
+                        <span data-lang="zh" style="display: none"
+                          >步骤2：重新扫描二维码</span
+                        >
+                        <span data-lang="ta" style="display: none"
+                          >படி 2: QR குறியீட்டை மீண்டும் ஸ்கேன் செய்யவும்</span
+                        >
+                      </h5>
+                      <ul
+                        class="list-disc list-inside text-gray-300 space-y-1 text-sm"
+                      >
+                        <li>
+                          <span data-lang="en"
+                            >Dashboard → Settings → "Disconnect WhatsApp"</span
+                          >
+                          <span data-lang="ms" style="display: none"
+                            >Papan Pemuka → Tetapan → "Putuskan WhatsApp"</span
+                          >
+                          <span data-lang="zh" style="display: none"
+                            >仪表板 → 设置 → "断开 WhatsApp"</span
+                          >
+                          <span data-lang="ta" style="display: none"
+                            >டாஷ்போர்டு → அமைப்புகள் → "WhatsApp ஐ
+                            துண்டிக்கவும்"</span
+                          >
+                        </li>
+                        <li>
+                          <span data-lang="en">Wait 30 seconds</span>
+                          <span data-lang="ms" style="display: none"
+                            >Tunggu 30 saat</span
+                          >
+                          <span data-lang="zh" style="display: none"
+                            >等待30秒</span
+                          >
+                          <span data-lang="ta" style="display: none"
+                            >30 வினாடிகள் காத்திருக்கவும்</span
+                          >
+                        </li>
+                        <li>
+                          <span data-lang="en"
+                            >Click "Connect WhatsApp Business"</span
+                          >
+                          <span data-lang="ms" style="display: none"
+                            >Klik "Sambung WhatsApp Business"</span
+                          >
+                          <span data-lang="zh" style="display: none"
+                            >点击"连接 WhatsApp 商业版"</span
+                          >
+                          <span data-lang="ta" style="display: none"
+                            >"WhatsApp வணிகத்தை இணைக்கவும்" என்பதை கிளிக்
+                            செய்யவும்</span
+                          >
+                        </li>
+                        <li>
+                          <span data-lang="en"
+                            >Scan new QR code with WhatsApp Business app</span
+                          >
+                          <span data-lang="ms" style="display: none"
+                            >Imbas kod QR baharu dengan aplikasi WhatsApp
+                            Business</span
+                          >
+                          <span data-lang="zh" style="display: none"
+                            >使用 WhatsApp 商业应用程序扫描新的二维码</span
+                          >
+                          <span data-lang="ta" style="display: none"
+                            >WhatsApp வணிக ஆப் மூலம் புதிய QR குறியீட்டை ஸ்கேன்
+                            செய்யவும்</span
+                          >
+                        </li>
+                      </ul>
+                    </div>
+
+                    <div
+                      class="bg-red-900 bg-opacity-20 border border-red-500 border-opacity-50 p-4 rounded-lg"
+                    >
+                      <h5 class="font-medium text-red-400 mb-2">
+                        <span data-lang="en"
+                          >⚠️ If Nothing Works - Contact Support
+                          Immediately:</span
+                        >
+                        <span data-lang="ms" style="display: none"
+                          >⚠️ Jika Tiada Yang Berjaya - Hubungi Sokongan
+                          Segera:</span
+                        >
+                        <span data-lang="zh" style="display: none"
+                          >⚠️ 如果都不起作用 - 立即联系支持：</span
+                        >
+                        <span data-lang="ta" style="display: none"
+                          >⚠️ எதுவும் வேலை செய்யவில்லை என்றால் - உடனடியாக
+                          ஆதரவைத் தொடர்பு கொள்ளவும்:</span
+                        >
+                      </h5>
+                      <p class="text-gray-300 text-sm mb-3">
+                        <span data-lang="en"
+                          >Use this template for fastest response:</span
+                        >
+                        <span data-lang="ms" style="display: none"
+                          >Gunakan template ini untuk respons terpantas:</span
+                        >
+                        <span data-lang="zh" style="display: none"
+                          >使用此模板获得最快回复：</span
+                        >
+                        <span data-lang="ta" style="display: none"
+                          >வேகமான பதிலுக்காக இந்த வார்ப்புருவைப்
+                          பயன்படுத்தவும்:</span
+                        >
+                      </p>
+                      <div class="whatsapp-template bg-red-900 bg-opacity-10">
+                        <div class="text-sm font-mono text-gray-300">
+                          🚨 CONNECTION DOWN - URGENT<br /><br />
+                          Business: [Your Name]<br />
+                          WhatsApp: [Your Number]<br />
+                          Dashboard Shows: [Connected/Disconnected]<br />
+                          Last Working: [Date/Time]<br />
+                          Steps Tried: QR scan, restart phone, test message<br /><br />
+                          PLEASE HELP ASAP - Business impacted! 🙏
+                        </div>
+                        <button
+                          onclick="copyToClipboard('connection-urgent')"
+                          class="copy-button mt-2"
+                        >
+                          <span data-lang="en">Copy Template</span>
+                          <span data-lang="ms" style="display: none"
+                            >Salin Template</span
+                          >
+                          <span data-lang="zh" style="display: none"
+                            >复制模板</span
+                          >
+                          <span data-lang="ta" style="display: none"
+                            >வார்ப்புருவை நகலெடுக்கவும்</span
+                          >
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- AI Response Issues -->
+          <div class="accordion-item">
+            <div
+              class="accordion-header"
+              onclick="toggleAccordion('ai-issues')"
+            >
+              <div class="flex items-center justify-between">
+                <h3 class="text-xl font-semibold text-white flex items-center">
+                  <span data-lang="en">🤖 AI Not Responding Correctly</span>
+                  <span data-lang="ms" style="display: none"
+                    >🤖 AI Tidak Respon Dengan Betul</span
+                  >
+                  <span data-lang="zh" style="display: none"
+                    >🤖 AI 回复不正确</span
+                  >
+                  <span data-lang="ta" style="display: none"
+                    >🤖 AI சரியாக பதிலளிக்கவில்லை</span
+                  >
+                </h3>
+                <span class="accordion-arrow text-C9A961">▼</span>
+              </div>
+            </div>
+            <div id="ai-issues" class="accordion-content">
+              <div class="space-y-4">
+                <div class="grid md:grid-cols-2 gap-6">
+                  <div>
+                    <h4 class="text-lg font-semibold text-2EF19D mb-3">
+                      <span data-lang="en">AI Giving Wrong Information</span>
+                      <span data-lang="ms" style="display: none"
+                        >AI Memberi Maklumat Yang Salah</span
+                      >
+                      <span data-lang="zh" style="display: none"
+                        >AI 提供错误信息</span
+                      >
+                      <span data-lang="ta" style="display: none"
+                        >AI தவறான தகவலை வழங்குகிறது</span
+                      >
+                    </h4>
+                    <div class="step-guide">
+                      <div class="step-row">
+                        <span class="step-num">1</span>
+                        <div class="step-text">
+                          Login to <strong>app.mybijou.xyz</strong>
+                        </div>
+                      </div>
+                      <div class="step-row">
+                        <span class="step-num">2</span>
+                        <div class="step-text">
+                          Click <strong>⚙️ Settings</strong> in the left sidebar
+                        </div>
+                      </div>
+                      <div class="step-row">
+                        <span class="step-num">3</span>
+                        <div class="step-text">
+                          Open the <strong>Business Information</strong> /
+                          <strong>AI Prompt</strong> tab and update your details
+                        </div>
+                      </div>
+                    </div>
+                    <ul
+                      class="list-disc list-inside text-gray-300 space-y-1 text-sm"
+                    >
+                      <li>
+                        <span data-lang="en"
+                          >Update your business information in Settings</span
+                        >
+                        <span data-lang="ms" style="display: none"
+                          >Kemas kini maklumat perniagaan anda dalam
+                          Tetapan</span
+                        >
+                        <span data-lang="zh" style="display: none"
+                          >在设置中更新您的企业信息</span
+                        >
+                        <span data-lang="ta" style="display: none"
+                          >அமைப்புகளில் உங்கள் வணிக தகவலை புதுப்பிக்கவும்</span
+                        >
+                      </li>
+                      <li>
+                        <span data-lang="en"
+                          >Add detailed product/service descriptions</span
+                        >
+                        <span data-lang="ms" style="display: none"
+                          >Tambah penerangan produk/perkhidmatan yang
+                          terperinci</span
+                        >
+                        <span data-lang="zh" style="display: none"
+                          >添加详细的产品/服务描述</span
+                        >
+                        <span data-lang="ta" style="display: none"
+                          >விரிவான தயாரிப்பு/சேவை விவரங்களை சேர்க்கவும்</span
+                        >
+                      </li>
+                      <li>
+                        <span data-lang="en">Set correct business hours</span>
+                        <span data-lang="ms" style="display: none"
+                          >Tetapkan waktu perniagaan yang betul</span
+                        >
+                        <span data-lang="zh" style="display: none"
+                          >设置正确的营业时间</span
+                        >
+                        <span data-lang="ta" style="display: none"
+                          >சரியான வணிக நேரங்களை அமைக்கவும்</span
+                        >
+                      </li>
+                      <li>
+                        <span data-lang="en"
+                          >Add FAQ entries for common questions</span
+                        >
+                        <span data-lang="ms" style="display: none"
+                          >Tambah entri FAQ untuk soalan biasa</span
+                        >
+                        <span data-lang="zh" style="display: none"
+                          >为常见问题添加 FAQ 条目</span
+                        >
+                        <span data-lang="ta" style="display: none"
+                          >பொதுவான கேள்விகளுக்கு FAQ உள்ளீடுகளை
+                          சேர்க்கவும்</span
+                        >
+                      </li>
+                    </ul>
+                  </div>
+
+                  <div>
+                    <h4 class="text-lg font-semibold text-2EF19D mb-3">
+                      <span data-lang="en">AI Not Detecting Language</span>
+                      <span data-lang="ms" style="display: none"
+                        >AI Tidak Mengesan Bahasa</span
+                      >
+                      <span data-lang="zh" style="display: none"
+                        >AI 未检测到语言</span
+                      >
+                      <span data-lang="ta" style="display: none"
+                        >AI மொழியைக் கண்டறியவில்லை</span
+                      >
+                    </h4>
+                    <div class="step-guide">
+                      <div class="step-row">
+                        <span class="step-num">1</span>
+                        <div class="step-text">
+                          Login to <strong>app.mybijou.xyz</strong>
+                        </div>
+                      </div>
+                      <div class="step-row">
+                        <span class="step-num">2</span>
+                        <div class="step-text">
+                          Click <strong>⚙️ Settings</strong> in the left sidebar
+                        </div>
+                      </div>
+                      <div class="step-row">
+                        <span class="step-num">3</span>
+                        <div class="step-text">
+                          Find <strong>Language & Tone</strong> section — enable
+                          <strong>Manglish mode</strong> for Malaysian English
+                          or set a specific reply language
+                        </div>
+                      </div>
+                    </div>
+                    <ul
+                      class="list-disc list-inside text-gray-300 space-y-1 text-sm"
+                    >
+                      <li>
+                        <span data-lang="en"
+                          >Check language detection settings</span
+                        >
+                        <span data-lang="ms" style="display: none"
+                          >Semak tetapan pengesanan bahasa</span
+                        >
+                        <span data-lang="zh" style="display: none"
+                          >检查语言检测设置</span
+                        >
+                        <span data-lang="ta" style="display: none"
+                          >மொழி கண்டறிதல் அமைப்புகளைச் சரிபார்க்கவும்</span
+                        >
+                      </li>
+                      <li>
+                        <span data-lang="en"
+                          >Enable Manglish mode if needed</span
+                        >
+                        <span data-lang="ms" style="display: none"
+                          >Aktifkan mod Manglish jika perlu</span
+                        >
+                        <span data-lang="zh" style="display: none"
+                          >如需要，启用 Manglish 模式</span
+                        >
+                        <span data-lang="ta" style="display: none"
+                          >தேவைப்பட்டால் Manglish பயன்முறையை இயக்கவும்</span
+                        >
+                      </li>
+                      <li>
+                        <span data-lang="en"
+                          >Test with clear English first</span
+                        >
+                        <span data-lang="ms" style="display: none"
+                          >Uji dengan Bahasa Inggeris yang jelas dahulu</span
+                        >
+                        <span data-lang="zh" style="display: none"
+                          >首先用清晰的英语测试</span
+                        >
+                        <span data-lang="ta" style="display: none"
+                          >முதலில் தெளிவான ஆங்கிலத்துடன் சோதிக்கவும்</span
+                        >
+                      </li>
+                      <li>
+                        <span data-lang="en"
+                          >Try "Hello" or "Hi" to reset conversation</span
+                        >
+                        <span data-lang="ms" style="display: none"
+                          >Cuba "Hello" atau "Hi" untuk set semula
+                          perbualan</span
+                        >
+                        <span data-lang="zh" style="display: none"
+                          >尝试 "Hello" 或 "Hi" 重置对话</span
+                        >
+                        <span data-lang="ta" style="display: none"
+                          >உரையாடலை மீட்டமைக்க "Hello" அல்லது "Hi" ஐ
+                          முயற்சிக்கவும்</span
+                        >
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Setup Issues -->
+          <div class="accordion-item">
+            <div
+              class="accordion-header"
+              onclick="toggleAccordion('setup-issues')"
+            >
+              <div class="flex items-center justify-between">
+                <h3 class="text-xl font-semibold text-white flex items-center">
+                  <span data-lang="en">⚙️ Initial Setup Problems</span>
+                  <span data-lang="ms" style="display: none"
+                    >⚙️ Masalah Persediaan Awal</span
+                  >
+                  <span data-lang="zh" style="display: none"
+                    >⚙️ 初始设置问题</span
+                  >
+                  <span data-lang="ta" style="display: none"
+                    >⚙️ ஆரம்ப அமைப்பு சிக்கல்கள்</span
+                  >
+                </h3>
+                <span class="accordion-arrow text-C9A961">▼</span>
+              </div>
+            </div>
+            <div id="setup-issues" class="accordion-content">
+              <div class="space-y-4">
+                <h4 class="text-lg font-semibold text-2EF19D">
+                  <span data-lang="en">Step-by-Step Setup Verification</span>
+                  <span data-lang="ms" style="display: none"
+                    >Pengesahan Persediaan Langkah Demi Langkah</span
+                  >
+                  <span data-lang="zh" style="display: none">逐步设置验证</span>
+                  <span data-lang="ta" style="display: none"
+                    >படிப்படியான அமைப்பு சரிபார்ப்பு</span
+                  >
+                </h4>
+
+                <div class="space-y-4">
+                  <div class="glass-nav-card p-4">
+                    <h5 class="font-medium text-white mb-2">
+                      <span data-lang="en"
+                        >✅ Step 1: WhatsApp Business App</span
+                      >
+                      <span data-lang="ms" style="display: none"
+                        >✅ Langkah 1: Aplikasi WhatsApp Business</span
+                      >
+                      <span data-lang="zh" style="display: none"
+                        >✅ 步骤1：WhatsApp 商业应用程序</span
+                      >
+                      <span data-lang="ta" style="display: none"
+                        >✅ படி 1: WhatsApp வணிக ஆப்</span
+                      >
+                    </h5>
+                    <ul
+                      class="list-disc list-inside text-gray-300 space-y-1 text-sm"
+                    >
+                      <li>
+                        <span data-lang="en"
+                          >Downloaded from official App Store/Google Play</span
+                        >
+                        <span data-lang="ms" style="display: none"
+                          >Dimuat turun dari App Store/Google Play rasmi</span
+                        >
+                        <span data-lang="zh" style="display: none"
+                          >从官方 App Store/Google Play 下载</span
+                        >
+                        <span data-lang="ta" style="display: none"
+                          >அதிகாரப்பூர்வ App Store/Google Play இலிருந்து
+                          பதிவிறக்கம்</span
+                        >
+                      </li>
+                      <li>
+                        <span data-lang="en"
+                          >Business profile completely filled out</span
+                        >
+                        <span data-lang="ms" style="display: none"
+                          >Profil perniagaan diisi dengan lengkap</span
+                        >
+                        <span data-lang="zh" style="display: none"
+                          >商业资料完全填写完整</span
+                        >
+                        <span data-lang="ta" style="display: none"
+                          >வணிக சுயவிவரம் முழுமையாக நிரப்பப்பட்டது</span
+                        >
+                      </li>
+                      <li>
+                        <span data-lang="en">Business category selected</span>
+                        <span data-lang="ms" style="display: none"
+                          >Kategori perniagaan dipilih</span
+                        >
+                        <span data-lang="zh" style="display: none"
+                          >选择了商业类别</span
+                        >
+                        <span data-lang="ta" style="display: none"
+                          >வணிக வகை தேர்ந்தெடுக்கப்பட்டது</span
+                        >
+                      </li>
+                      <li>
+                        <span data-lang="en">Phone number verified</span>
+                        <span data-lang="ms" style="display: none"
+                          >Nombor telefon disahkan</span
+                        >
+                        <span data-lang="zh" style="display: none"
+                          >电话号码已验证</span
+                        >
+                        <span data-lang="ta" style="display: none"
+                          >தொலைபேசி எண் சரிபார்க்கப்பட்டது</span
+                        >
+                      </li>
+                    </ul>
+                  </div>
+
+                  <div class="glass-nav-card p-4">
+                    <h5 class="font-medium text-white mb-2">
+                      <span data-lang="en">✅ Step 2: Bijou Account Setup</span>
+                      <span data-lang="ms" style="display: none"
+                        >✅ Langkah 2: Persediaan Akaun Bijou</span
+                      >
+                      <span data-lang="zh" style="display: none"
+                        >✅ 步骤2：Bijou 账户设置</span
+                      >
+                      <span data-lang="ta" style="display: none"
+                        >✅ படி 2: Bijou கணக்கு அமைப்பு</span
+                      >
+                    </h5>
+                    <ul
+                      class="list-disc list-inside text-gray-300 space-y-1 text-sm"
+                    >
+                      <li>
+                        <span data-lang="en"
+                          >Created account at app.mybijou.xyz</span
+                        >
+                        <span data-lang="ms" style="display: none"
+                          >Akaun dicipta di app.mybijou.xyz</span
+                        >
+                        <span data-lang="zh" style="display: none"
+                          >在 app.mybijou.xyz 创建账户</span
+                        >
+                        <span data-lang="ta" style="display: none"
+                          >app.mybijou.xyz இல் கணக்கு உருவாக்கப்பட்டது</span
+                        >
+                      </li>
+                      <li>
+                        <span data-lang="en">Completed onboarding process</span>
+                        <span data-lang="ms" style="display: none"
+                          >Proses onboarding selesai</span
+                        >
+                        <span data-lang="zh" style="display: none"
+                          >完成入职流程</span
+                        >
+                        <span data-lang="ta" style="display: none"
+                          >ஆரம்ப செயல்முறை முடிக்கப்பட்டது</span
+                        >
+                      </li>
+                      <li>
+                        <span data-lang="en"
+                          >Subscription activated (Free or Pro)</span
+                        >
+                        <span data-lang="ms" style="display: none"
+                          >Langganan diaktifkan (Percuma atau Pro)</span
+                        >
+                        <span data-lang="zh" style="display: none"
+                          >订阅已激活（免费或专业版）</span
+                        >
+                        <span data-lang="ta" style="display: none"
+                          >சந்தா செயல்படுத்தப்பட்டது (இலவசம் அல்லது ப்ரோ)</span
+                        >
+                      </li>
+                      <li>
+                        <span data-lang="en">Email verified</span>
+                        <span data-lang="ms" style="display: none"
+                          >Emel disahkan</span
+                        >
+                        <span data-lang="zh" style="display: none"
+                          >邮箱已验证</span
+                        >
+                        <span data-lang="ta" style="display: none"
+                          >மின்னஞ்சல் சரிபார்க்கப்பட்டது</span
+                        >
+                      </li>
+                    </ul>
+                  </div>
+
+                  <div class="glass-nav-card p-4">
+                    <h5 class="font-medium text-white mb-2">
+                      <span data-lang="en">✅ Step 3: WhatsApp Connection</span>
+                      <span data-lang="ms" style="display: none"
+                        >✅ Langkah 3: Sambungan WhatsApp</span
+                      >
+                      <span data-lang="zh" style="display: none"
+                        >✅ 步骤3：WhatsApp 连接</span
+                      >
+                      <span data-lang="ta" style="display: none"
+                        >✅ படி 3: WhatsApp இணைப்பு</span
+                      >
+                    </h5>
+                    <ul
+                      class="list-disc list-inside text-gray-300 space-y-1 text-sm"
+                    >
+                      <li>
+                        <span data-lang="en">QR code scanned successfully</span>
+                        <span data-lang="ms" style="display: none"
+                          >Kod QR berjaya diimbas</span
+                        >
+                        <span data-lang="zh" style="display: none"
+                          >二维码扫描成功</span
+                        >
+                        <span data-lang="ta" style="display: none"
+                          >QR குறியீடு வெற்றிகரமாக ஸ்கேன் செய்யப்பட்டது</span
+                        >
+                      </li>
+                      <li>
+                        <span data-lang="en"
+                          >Dashboard shows "Connected" status</span
+                        >
+                        <span data-lang="ms" style="display: none"
+                          >Papan pemuka menunjukkan status "Disambung"</span
+                        >
+                        <span data-lang="zh" style="display: none"
+                          >仪表板显示"已连接"状态</span
+                        >
+                        <span data-lang="ta" style="display: none"
+                          >டாஷ்போர்டு "இணைக்கப்பட்டது" நிலையைக்
+                          காட்டுகிறது</span
+                        >
+                      </li>
+                      <li>
+                        <span data-lang="en"
+                          >Test message sent and received</span
+                        >
+                        <span data-lang="ms" style="display: none"
+                          >Mesej ujian dihantar dan diterima</span
+                        >
+                        <span data-lang="zh" style="display: none"
+                          >测试消息已发送和接收</span
+                        >
+                        <span data-lang="ta" style="display: none"
+                          >சோதனை செய்தி அனுப்பப்பட்டு பெறப்பட்டது</span
+                        >
+                      </li>
+                      <li>
+                        <span data-lang="en"
+                          >AI responded within 10 seconds</span
+                        >
+                        <span data-lang="ms" style="display: none"
+                          >AI bertindak balas dalam masa 10 saat</span
+                        >
+                        <span data-lang="zh" style="display: none"
+                          >AI 在 10 秒内响应</span
+                        >
+                        <span data-lang="ta" style="display: none"
+                          >AI 10 வினாடிகளுக்குள் பதிலளித்தது</span
+                        >
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+
+                <div
+                  class="bg-yellow-900 bg-opacity-20 border border-yellow-500 border-opacity-50 p-4 rounded-lg"
+                >
+                  <h5 class="font-medium text-yellow-400 mb-2">
+                    <span data-lang="en">⚠️ Common Setup Mistakes:</span>
+                    <span data-lang="ms" style="display: none"
+                      >⚠️ Kesilapan Persediaan Biasa:</span
+                    >
+                    <span data-lang="zh" style="display: none"
+                      >⚠️ 常见设置错误：</span
+                    >
+                    <span data-lang="ta" style="display: none"
+                      >⚠️ பொதுவான அமைப்பு தவறுகள்:</span
+                    >
+                  </h5>
+                  <ul
+                    class="list-disc list-inside text-gray-300 space-y-1 text-sm"
+                  >
+                    <li>
+                      <strong>
+                        <span data-lang="en">Using Regular WhatsApp:</span>
+                        <span data-lang="ms" style="display: none"
+                          >Menggunakan WhatsApp Biasa:</span
+                        >
+                        <span data-lang="zh" style="display: none"
+                          >使用普通 WhatsApp：</span
+                        >
+                        <span data-lang="ta" style="display: none"
+                          >வழக்கமான WhatsApp ஐப் பயன்படுத்துதல்:</span
+                        >
+                      </strong>
+                      <span data-lang="en">Must use WhatsApp Business app</span>
+                      <span data-lang="ms" style="display: none"
+                        >Mesti gunakan aplikasi WhatsApp Business</span
+                      >
+                      <span data-lang="zh" style="display: none"
+                        >必须使用 WhatsApp 商业应用程序</span
+                      >
+                      <span data-lang="ta" style="display: none"
+                        >WhatsApp வணிக ஆப்ஐப் பயன்படுத்த வேண்டும்</span
+                      >
+                    </li>
+                    <li>
+                      <strong>
+                        <span data-lang="en">Multiple Devices:</span>
+                        <span data-lang="ms" style="display: none"
+                          >Pelbagai Peranti:</span
+                        >
+                        <span data-lang="zh" style="display: none"
+                          >多个设备：</span
+                        >
+                        <span data-lang="ta" style="display: none"
+                          >பல சாधனங்கள்:</span
+                        >
+                      </strong>
+                      <span data-lang="en"
+                        >WhatsApp can only connect to one device at a time</span
+                      >
+                      <span data-lang="ms" style="display: none"
+                        >WhatsApp hanya boleh disambung ke satu peranti pada
+                        satu masa</span
+                      >
+                      <span data-lang="zh" style="display: none"
+                        >WhatsApp 一次只能连接到一个设备</span
+                      >
+                      <span data-lang="ta" style="display: none"
+                        >WhatsApp ஒரு நேரத்தில் ஒரு சாதனத்துடன் மட்டுமே இணைக்க
+                        முடியும்</span
+                      >
+                    </li>
+                    <li>
+                      <strong>
+                        <span data-lang="en">Phone Number Format:</span>
+                        <span data-lang="ms" style="display: none"
+                          >Format Nombor Telefon:</span
+                        >
+                        <span data-lang="zh" style="display: none"
+                          >电话号码格式：</span
+                        >
+                        <span data-lang="ta" style="display: none"
+                          >தொலைபேசி எண் வடிவம்:</span
+                        >
+                      </strong>
+                      <span data-lang="en"
+                        >Must include country code (e.g., +60174106981)</span
+                      >
+                      <span data-lang="ms" style="display: none"
+                        >Mesti sertakan kod negara (cth., +60174106981)</span
+                      >
+                      <span data-lang="zh" style="display: none"
+                        >必须包含国家代码（例如：+60174106981）</span
+                      >
+                      <span data-lang="ta" style="display: none"
+                        >நாட்டுக் குறியீட்டை சேர்க்க வேண்டும் (எ.கா.,
+                        +60174106981)</span
+                      >
+                    </li>
+                    <li>
+                      <strong>
+                        <span data-lang="en">Business Tools Disabled:</span>
+                        <span data-lang="ms" style="display: none"
+                          >Alat Perniagaan Dinyahaktifkan:</span
+                        >
+                        <span data-lang="zh" style="display: none"
+                          >商业工具被禁用：</span
+                        >
+                        <span data-lang="ta" style="display: none"
+                          >வணிக கருவிகள் முடக்கப்பட்டன:</span
+                        >
+                      </strong>
+                      <span data-lang="en"
+                        >Enable in WhatsApp Business Settings</span
+                      >
+                      <span data-lang="ms" style="display: none"
+                        >Aktifkan dalam Tetapan WhatsApp Business</span
+                      >
+                      <span data-lang="zh" style="display: none"
+                        >在 WhatsApp 商业设置中启用</span
+                      >
+                      <span data-lang="ta" style="display: none"
+                        >WhatsApp வணிக அமைப்புகளில் இயக்கவும்</span
+                      >
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Dashboard Issues -->
+          <div class="accordion-item">
+            <div
+              class="accordion-header"
+              onclick="toggleAccordion('dashboard-issues')"
+            >
+              <div class="flex items-center justify-between">
+                <h3 class="text-xl font-semibold text-white flex items-center">
+                  <span data-lang="en"
+                    >📊 Dashboard Not Loading / Login Issues</span
+                  >
+                  <span data-lang="ms" style="display: none"
+                    >📊 Papan Pemuka Tidak Memuatkan / Masalah Log Masuk</span
+                  >
+                  <span data-lang="zh" style="display: none"
+                    >📊 仪表板无法加载/登录问题</span
+                  >
+                  <span data-lang="ta" style="display: none"
+                    >📊 டாஷ்போர்டு லோட் ஆகவில்லை / உள்நுழைவு சிக்கல்கள்</span
+                  >
+                </h3>
+                <span class="accordion-arrow text-C9A961">▼</span>
+              </div>
+            </div>
+            <div id="dashboard-issues" class="accordion-content">
+              <div class="space-y-4">
+                <div class="grid md:grid-cols-2 gap-6">
+                  <div>
+                    <h4 class="text-lg font-semibold text-2EF19D mb-3">
+                      <span data-lang="en">Can't Login</span>
+                      <span data-lang="ms" style="display: none"
+                        >Tidak Boleh Log Masuk</span
+                      >
+                      <span data-lang="zh" style="display: none">无法登录</span>
+                      <span data-lang="ta" style="display: none"
+                        >உள்நுழைய முடியவில்லை</span
+                      >
+                    </h4>
+                    <ul
+                      class="list-disc list-inside text-gray-300 space-y-2 text-sm"
+                    >
+                      <li>
+                        <strong>
+                          <span data-lang="en">Forgot Password:</span>
+                          <span data-lang="ms" style="display: none"
+                            >Terlupa Kata Laluan:</span
+                          >
+                          <span data-lang="zh" style="display: none"
+                            >忘记密码：</span
+                          >
+                          <span data-lang="ta" style="display: none"
+                            >கடவுச்சொல்லை மறந்துவிட்டது:</span
+                          >
+                        </strong>
+                        <span data-lang="en"
+                          >Use "Forgot Password" link on login page</span
+                        >
+                        <span data-lang="ms" style="display: none"
+                          >Gunakan pautan "Lupa Kata Laluan" di halaman log
+                          masuk</span
+                        >
+                        <span data-lang="zh" style="display: none"
+                          >在登录页面使用"忘记密码"链接</span
+                        >
+                        <span data-lang="ta" style="display: none"
+                          >உள்நுழைவு பக்கத்தில் "கடவுச்சொல்லை மறந்துவிட்டீர்களா"
+                          இணைப்பைப் பயன்படுத்தவும்</span
+                        >
+                      </li>
+                      <li>
+                        <strong>
+                          <span data-lang="en">Wrong Email:</span>
+                          <span data-lang="ms" style="display: none"
+                            >Emel Salah:</span
+                          >
+                          <span data-lang="zh" style="display: none"
+                            >邮箱错误：</span
+                          >
+                          <span data-lang="ta" style="display: none"
+                            >தவறான மின்னஞ்சல்:</span
+                          >
+                        </strong>
+                        <span data-lang="en"
+                          >Check email used during signup</span
+                        >
+                        <span data-lang="ms" style="display: none"
+                          >Semak emel yang digunakan semasa mendaftar</span
+                        >
+                        <span data-lang="zh" style="display: none"
+                          >检查注册时使用的邮箱</span
+                        >
+                        <span data-lang="ta" style="display: none"
+                          >பதிவு செய்யும்போது பயன்படுத்தப்பட்ட மின்னஞ்சலைச்
+                          சரிபார்க்கவும்</span
+                        >
+                      </li>
+                      <li>
+                        <strong>
+                          <span data-lang="en">Account Not Verified:</span>
+                          <span data-lang="ms" style="display: none"
+                            >Akaun Belum Disahkan:</span
+                          >
+                          <span data-lang="zh" style="display: none"
+                            >账户未验证：</span
+                          >
+                          <span data-lang="ta" style="display: none"
+                            >கணக்கு சரிபார்க்கப்படவில்லை:</span
+                          >
+                        </strong>
+                        <span data-lang="en"
+                          >Check email for verification link</span
+                        >
+                        <span data-lang="ms" style="display: none"
+                          >Semak emel untuk pautan pengesahan</span
+                        >
+                        <span data-lang="zh" style="display: none"
+                          >检查邮箱中的验证链接</span
+                        >
+                        <span data-lang="ta" style="display: none"
+                          >சரிபார்ப்பு இணைப்புக்காக மின்னஞ்சலைச்
+                          சரிபார்க்கவும்</span
+                        >
+                      </li>
+                      <li>
+                        <strong>
+                          <span data-lang="en">Browser Issues:</span>
+                          <span data-lang="ms" style="display: none"
+                            >Masalah Pelayar:</span
+                          >
+                          <span data-lang="zh" style="display: none"
+                            >浏览器问题：</span
+                          >
+                          <span data-lang="ta" style="display: none"
+                            >உலாவி சிக்கல்கள்:</span
+                          >
+                        </strong>
+                        <span data-lang="en">Try incognito/private mode</span>
+                        <span data-lang="ms" style="display: none"
+                          >Cuba mod inkognito/peribadi</span
+                        >
+                        <span data-lang="zh" style="display: none"
+                          >尝试隐身/无痕模式</span
+                        >
+                        <span data-lang="ta" style="display: none"
+                          >மறைநிலை/தனிப்பட்ட பயன்முறையை முயற்சிக்கவும்</span
+                        >
+                      </li>
+                    </ul>
+                  </div>
+
+                  <div>
+                    <h4 class="text-lg font-semibold text-2EF19D mb-3">
+                      <span data-lang="en">Dashboard Slow/Not Loading</span>
+                      <span data-lang="ms" style="display: none"
+                        >Papan Pemuka Perlahan/Tidak Memuatkan</span
+                      >
+                      <span data-lang="zh" style="display: none"
+                        >仪表板加载缓慢/无法加载</span
+                      >
+                      <span data-lang="ta" style="display: none"
+                        >டாஷ்போர்டு மெதுவானது/லோட் ஆகவில்லை</span
+                      >
+                    </h4>
+                    <ul
+                      class="list-disc list-inside text-gray-300 space-y-2 text-sm"
+                    >
+                      <li>
+                        <strong>
+                          <span data-lang="en">Clear Browser Cache:</span>
+                          <span data-lang="ms" style="display: none"
+                            >Kosongkan Cache Pelayar:</span
+                          >
+                          <span data-lang="zh" style="display: none"
+                            >清除浏览器缓存：</span
+                          >
+                          <span data-lang="ta" style="display: none"
+                            >உலாவி கேச்சை அழிக்கவும்:</span
+                          >
+                        </strong>
+                        <span data-lang="en">Ctrl+F5 to hard refresh</span>
+                        <span data-lang="ms" style="display: none"
+                          >Ctrl+F5 untuk refresh keras</span
+                        >
+                        <span data-lang="zh" style="display: none"
+                          >Ctrl+F5 进行强制刷新</span
+                        >
+                        <span data-lang="ta" style="display: none"
+                          >கடுமையான புதுப்பிப்புக்காக Ctrl+F5</span
+                        >
+                      </li>
+                      <li>
+                        <strong>
+                          <span data-lang="en">Try Different Browser:</span>
+                          <span data-lang="ms" style="display: none"
+                            >Cuba Pelayar Berbeza:</span
+                          >
+                          <span data-lang="zh" style="display: none"
+                            >尝试不同浏览器：</span
+                          >
+                          <span data-lang="ta" style="display: none"
+                            >வேறு உலாவியை முயற்சிக்கவும்:</span
+                          >
+                        </strong>
+                        <span data-lang="en">Chrome, Firefox, Safari</span>
+                        <span data-lang="ms" style="display: none"
+                          >Chrome, Firefox, Safari</span
+                        >
+                        <span data-lang="zh" style="display: none"
+                          >Chrome、Firefox、Safari</span
+                        >
+                        <span data-lang="ta" style="display: none"
+                          >Chrome, Firefox, Safari</span
+                        >
+                      </li>
+                      <li>
+                        <strong>
+                          <span data-lang="en">Check Internet:</span>
+                          <span data-lang="ms" style="display: none"
+                            >Semak Internet:</span
+                          >
+                          <span data-lang="zh" style="display: none"
+                            >检查网络：</span
+                          >
+                          <span data-lang="ta" style="display: none"
+                            >இணையத்தைச் சரிபார்க்கவும்:</span
+                          >
+                        </strong>
+                        <span data-lang="en">Visit other websites to test</span>
+                        <span data-lang="ms" style="display: none"
+                          >Lawati laman web lain untuk ujian</span
+                        >
+                        <span data-lang="zh" style="display: none"
+                          >访问其他网站进行测试</span
+                        >
+                        <span data-lang="ta" style="display: none"
+                          >சோதனைக்காக மற்ற இணையதளங்களைப் பார்க்கவும்</span
+                        >
+                      </li>
+                      <li>
+                        <strong>
+                          <span data-lang="en">Disable Extensions:</span>
+                          <span data-lang="ms" style="display: none"
+                            >Nyahaktifkan Sambungan:</span
+                          >
+                          <span data-lang="zh" style="display: none"
+                            >禁用扩展：</span
+                          >
+                          <span data-lang="ta" style="display: none"
+                            >நீட்டிப்புகளை முடக்கவும்:</span
+                          >
+                        </strong>
+                        <span data-lang="en">Try incognito mode</span>
+                        <span data-lang="ms" style="display: none"
+                          >Cuba mod inkognito</span
+                        >
+                        <span data-lang="zh" style="display: none"
+                          >尝试隐身模式</span
+                        >
+                        <span data-lang="ta" style="display: none"
+                          >மறைநிலை பயன்முறையை முயற்சிக்கவும்</span
+                        >
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+
+                <div class="glass-nav-card p-4">
+                  <h4 class="text-lg font-semibold text-white mb-2">
+                    <span data-lang="en">Browser Compatibility</span>
+                    <span data-lang="ms" style="display: none"
+                      >Keserasian Pelayar</span
+                    >
+                    <span data-lang="zh" style="display: none"
+                      >浏览器兼容性</span
+                    >
+                    <span data-lang="ta" style="display: none"
+                      >உலாவி இணக்கத்தன்மை</span
+                    >
+                  </h4>
+                  <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                    <div class="text-green-400">✅ Chrome 90+</div>
+                    <div class="text-green-400">✅ Firefox 88+</div>
+                    <div class="text-green-400">✅ Safari 14+</div>
+                    <div class="text-green-400">✅ Edge 90+</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Billing Issues -->
+          <div class="accordion-item">
+            <div
+              class="accordion-header"
+              onclick="toggleAccordion('billing-issues')"
+            >
+              <div class="flex items-center justify-between">
+                <h3 class="text-xl font-semibold text-white flex items-center">
+                  <span data-lang="en">💳 Billing & Subscription Issues</span>
+                  <span data-lang="ms" style="display: none"
+                    >💳 Masalah Pengebilan & Langganan</span
+                  >
+                  <span data-lang="zh" style="display: none"
+                    >💳 账单和订阅问题</span
+                  >
+                  <span data-lang="ta" style="display: none"
+                    >💳 பில்லிங் & சந்தா சிக்கல்கள்</span
+                  >
+                </h3>
+                <span class="accordion-arrow text-C9A961">▼</span>
+              </div>
+            </div>
+            <div id="billing-issues" class="accordion-content">
+              <div class="space-y-4">
+                <div class="grid md:grid-cols-2 gap-6">
+                  <div>
+                    <h4 class="text-lg font-semibold text-2EF19D mb-3">
+                      <span data-lang="en">Payment Failed</span>
+                      <span data-lang="ms" style="display: none"
+                        >Pembayaran Gagal</span
+                      >
+                      <span data-lang="zh" style="display: none">付款失败</span>
+                      <span data-lang="ta" style="display: none"
+                        >பணம் செலுத்துவது தோல்வி</span
+                      >
+                    </h4>
+                    <ul
+                      class="list-disc list-inside text-gray-300 space-y-2 text-sm"
+                    >
+                      <li>
+                        <span data-lang="en"
+                          >Check card details are correct</span
+                        >
+                        <span data-lang="ms" style="display: none"
+                          >Semak butiran kad adalah betul</span
+                        >
+                        <span data-lang="zh" style="display: none"
+                          >检查卡片详细信息是否正确</span
+                        >
+                        <span data-lang="ta" style="display: none"
+                          >கார்டு விவரங்கள் சரியானதா என்று சரிபார்க்கவும்</span
+                        >
+                      </li>
+                      <li>
+                        <span data-lang="en">Ensure sufficient balance</span>
+                        <span data-lang="ms" style="display: none"
+                          >Pastikan baki mencukupi</span
+                        >
+                        <span data-lang="zh" style="display: none"
+                          >确保余额充足</span
+                        >
+                        <span data-lang="ta" style="display: none"
+                          >போதுமான இருப்பை உறுதிப்படுத்தவும்</span
+                        >
+                      </li>
+                      <li>
+                        <span data-lang="en">Try different payment method</span>
+                        <span data-lang="ms" style="display: none"
+                          >Cuba kaedah pembayaran berbeza</span
+                        >
+                        <span data-lang="zh" style="display: none"
+                          >尝试不同的付款方式</span
+                        >
+                        <span data-lang="ta" style="display: none"
+                          >வேறு பணம் செலுத்தும் முறையை முயற்சிக்கவும்</span
+                        >
+                      </li>
+                      <li>
+                        <span data-lang="en"
+                          >Contact your bank if declined</span
+                        >
+                        <span data-lang="ms" style="display: none"
+                          >Hubungi bank anda jika ditolak</span
+                        >
+                        <span data-lang="zh" style="display: none"
+                          >如果被拒绝，请联系您的银行</span
+                        >
+                        <span data-lang="ta" style="display: none"
+                          >நிராகரிக்கப்பட்டால் உங்கள் வங்கியைத் தொடர்பு
+                          கொள்ளவும்</span
+                        >
+                      </li>
+                    </ul>
+                  </div>
+
+                  <div>
+                    <h4 class="text-lg font-semibold text-2EF19D mb-3">
+                      <span data-lang="en">Subscription Questions</span>
+                      <span data-lang="ms" style="display: none"
+                        >Soalan Langganan</span
+                      >
+                      <span data-lang="zh" style="display: none">订阅问题</span>
+                      <span data-lang="ta" style="display: none"
+                        >சந்தா கேள்விகள்</span
+                      >
+                    </h4>
+                    <ul
+                      class="list-disc list-inside text-gray-300 space-y-2 text-sm"
+                    >
+                      <li>
+                        <strong>
+                          <span data-lang="en">Upgrade/Downgrade:</span>
+                          <span data-lang="ms" style="display: none"
+                            >Naik Taraf/Turun Taraf:</span
+                          >
+                          <span data-lang="zh" style="display: none"
+                            >升级/降级：</span
+                          >
+                          <span data-lang="ta" style="display: none"
+                            >மேம்படுத்தல்/தரமிறக்கம்:</span
+                          >
+                        </strong>
+                        <span data-lang="en"
+                          >Dashboard → Settings → Billing</span
+                        >
+                        <span data-lang="ms" style="display: none"
+                          >Papan Pemuka → Tetapan → Pengebilan</span
+                        >
+                        <span data-lang="zh" style="display: none"
+                          >仪表板 → 设置 → 账单</span
+                        >
+                        <span data-lang="ta" style="display: none"
+                          >டாஷ்போர்டு → அமைப்புகள் → பில்லிங்</span
+                        >
+                      </li>
+                      <li>
+                        <strong>
+                          <span data-lang="en">Cancel Subscription:</span>
+                          <span data-lang="ms" style="display: none"
+                            >Batal Langganan:</span
+                          >
+                          <span data-lang="zh" style="display: none"
+                            >取消订阅：</span
+                          >
+                          <span data-lang="ta" style="display: none"
+                            >சந்தாவை ரத்துசெய்:</span
+                          >
+                        </strong>
+                        <span data-lang="en">Email support@mybijou.xyz</span>
+                        <span data-lang="ms" style="display: none"
+                          >Emel support@mybijou.xyz</span
+                        >
+                        <span data-lang="zh" style="display: none"
+                          >邮件发送到 support@mybijou.xyz</span
+                        >
+                        <span data-lang="ta" style="display: none"
+                          >support@mybijou.xyz க்கு மின்னஞ்சல் அனுப்பவும்</span
+                        >
+                      </li>
+                      <li>
+                        <strong>
+                          <span data-lang="en">Invoice/Receipt:</span>
+                          <span data-lang="ms" style="display: none"
+                            >Invois/Resit:</span
+                          >
+                          <span data-lang="zh" style="display: none"
+                            >发票/收据：</span
+                          >
+                          <span data-lang="ta" style="display: none"
+                            >இன்வாய்ஸ்/ரசீது:</span
+                          >
+                        </strong>
+                        <span data-lang="en"
+                          >Check email or contact support</span
+                        >
+                        <span data-lang="ms" style="display: none"
+                          >Semak emel atau hubungi sokongan</span
+                        >
+                        <span data-lang="zh" style="display: none"
+                          >检查邮箱或联系支持</span
+                        >
+                        <span data-lang="ta" style="display: none"
+                          >மின்னஞ்சலைச் சரிபார்க்கவும் அல்லது ஆதரவைத் தொடர்பு
+                          கொள்ளவும்</span
+                        >
+                      </li>
+                      <li>
+                        <strong>
+                          <span data-lang="en">Refund Request:</span>
+                          <span data-lang="ms" style="display: none"
+                            >Permintaan Bayaran Balik:</span
+                          >
+                          <span data-lang="zh" style="display: none"
+                            >退款请求：</span
+                          >
+                          <span data-lang="ta" style="display: none"
+                            >பணத்தைத் திரும்பக் கேட்பது:</span
+                          >
+                        </strong>
+                        <span data-lang="en"
+                          >Contact support within 7 days</span
+                        >
+                        <span data-lang="ms" style="display: none"
+                          >Hubungi sokongan dalam 7 hari</span
+                        >
+                        <span data-lang="zh" style="display: none"
+                          >7天内联系支持</span
+                        >
+                        <span data-lang="ta" style="display: none"
+                          >7 நாட்களுக்குள் ஆதரவைத் தொடர்பு கொள்ளவும்</span
+                        >
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Video Tutorials Section -->
+      <section class="glass-card p-8 mb-8">
+        <h2
+          class="text-3xl font-bold mb-6 bg-gradient-to-r from-2EF19D to-00F5E4 bg-clip-text text-transparent"
+        >
+          <span data-lang="en">📹 Video Tutorials</span>
+          <span data-lang="ms" style="display: none">📹 Tutorial Video</span>
+          <span data-lang="zh" style="display: none">📹 视频教程</span>
+          <span data-lang="ta" style="display: none">📹 வீடியோ பயிற்சிகள்</span>
+        </h2>
+
+        <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div class="glass-nav-card p-6">
+            <div class="video-coming-soon mb-4">
+              <div style="font-size: 32px; margin-bottom: 8px">🎬</div>
+              <div style="font-weight: 600; margin-bottom: 4px">
+                Complete Setup Guide
+              </div>
+              <div style="font-size: 11px; opacity: 0.7">
+                Video tutorial — coming soon
+              </div>
+            </div>
+            <h3 class="text-lg font-semibold text-white mb-2">
+              <span data-lang="en">Getting Started</span>
+              <span data-lang="ms" style="display: none">Memulakan</span>
+              <span data-lang="zh" style="display: none">入门指南</span>
+              <span data-lang="ta" style="display: none">தொடங்குதல்</span>
+            </h3>
+            <p class="text-gray-300 text-sm mb-4">
+              <span data-lang="en"
+                >Step-by-step setup from zero to first AI response</span
+              >
+              <span data-lang="ms" style="display: none"
+                >Persediaan langkah demi langkah dari sifar hingga respons AI
+                pertama</span
+              >
+              <span data-lang="zh" style="display: none"
+                >从零开始逐步设置到首次AI响应</span
+              >
+              <span data-lang="ta" style="display: none"
+                >பூஜ்ஜியத்திலிருந்து முதல் AI பதில் வரை படிப்படியான
+                அமைப்பு</span
+              >
+            </p>
+            <button
+              class="text-2EF19D hover:text-00F5E4 transition-colors text-sm font-medium"
+            >
+              <span data-lang="en">▶️ Watch Tutorial</span>
+              <span data-lang="ms" style="display: none"
+                >▶️ Tonton Tutorial</span
+              >
+              <span data-lang="zh" style="display: none">▶️ 观看教程</span>
+              <span data-lang="ta" style="display: none"
+                >▶️ பயிற்சியைப் பார்க்கவும்</span
+              >
+            </button>
+          </div>
+
+          <div class="glass-nav-card p-6">
+            <div class="video-coming-soon mb-4">
+              <div style="font-size: 32px; margin-bottom: 8px">🎬</div>
+              <div style="font-weight: 600; margin-bottom: 4px">
+                Dashboard Tour
+              </div>
+              <div style="font-size: 11px; opacity: 0.7">
+                Video tutorial — coming soon
+              </div>
+            </div>
+            <h3 class="text-lg font-semibold text-white mb-2">
+              <span data-lang="en">Dashboard Features</span>
+              <span data-lang="ms" style="display: none"
+                >Ciri Papan Pemuka</span
+              >
+              <span data-lang="zh" style="display: none">仪表板功能</span>
+              <span data-lang="ta" style="display: none"
+                >டாஷ்போர்டு அம்சங்கள்</span
+              >
+            </h3>
+            <p class="text-gray-300 text-sm mb-4">
+              <span data-lang="en"
+                >Complete tour of all dashboard features and settings</span
+              >
+              <span data-lang="ms" style="display: none"
+                >Lawatan lengkap semua ciri dan tetapan papan pemuka</span
+              >
+              <span data-lang="zh" style="display: none"
+                >所有仪表板功能和设置的完整导览</span
+              >
+              <span data-lang="ta" style="display: none"
+                >அனைத்து டாஷ்போர்டு அம்சங்கள் மற்றும் அமைப்புகளின் முழுமையான
+                சுற்றுப்பயணம்</span
+              >
+            </p>
+            <button
+              class="text-2EF19D hover:text-00F5E4 transition-colors text-sm font-medium"
+            >
+              <span data-lang="en">▶️ Watch Tutorial</span>
+              <span data-lang="ms" style="display: none"
+                >▶️ Tonton Tutorial</span
+              >
+              <span data-lang="zh" style="display: none">▶️ 观看教程</span>
+              <span data-lang="ta" style="display: none"
+                >▶️ பயிற்சியைப் பார்க்கவும்</span
+              >
+            </button>
+          </div>
+
+          <div class="glass-nav-card p-6">
+            <div class="video-coming-soon mb-4">
+              <div style="font-size: 32px; margin-bottom: 8px">🎬</div>
+              <div style="font-weight: 600; margin-bottom: 4px">
+                Common Issues
+              </div>
+              <div style="font-size: 11px; opacity: 0.7">
+                Video tutorial — coming soon
+              </div>
+            </div>
+            <h3 class="text-lg font-semibold text-white mb-2">
+              <span data-lang="en">Common Issues</span>
+              <span data-lang="ms" style="display: none">Masalah Biasa</span>
+              <span data-lang="zh" style="display: none">常见问题</span>
+              <span data-lang="ta" style="display: none"
+                >பொதுவான சிக்கல்கள்</span
+              >
+            </h3>
+            <p class="text-gray-300 text-sm mb-4">
+              <span data-lang="en"
+                >How to fix the most common problems quickly</span
+              >
+              <span data-lang="ms" style="display: none"
+                >Cara membetulkan masalah yang paling biasa dengan pantas</span
+              >
+              <span data-lang="zh" style="display: none"
+                >如何快速解决最常见的问题</span
+              >
+              <span data-lang="ta" style="display: none"
+                >மிகவும் பொதுவான சிக்கல்களை விரைவாகச் சரிசெய்வது எப்படி</span
+              >
+            </p>
+            <button
+              class="text-2EF19D hover:text-00F5E4 transition-colors text-sm font-medium"
+            >
+              <span data-lang="en">▶️ Watch Tutorial</span>
+              <span data-lang="ms" style="display: none"
+                >▶️ Tonton Tutorial</span
+              >
+              <span data-lang="zh" style="display: none">▶️ 观看教程</span>
+              <span data-lang="ta" style="display: none"
+                >▶️ பயிற்சியைப் பார்க்கவும்</span
+              >
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- FAQ Section -->
+      <section class="glass-card p-8 mb-8">
+        <h2
+          class="text-3xl font-bold mb-6 bg-gradient-to-r from-2EF19D to-00F5E4 bg-clip-text text-transparent"
+        >
+          <span data-lang="en">❓ Frequently Asked Questions</span>
+          <span data-lang="ms" style="display: none">❓ Soalan Lazim</span>
+          <span data-lang="zh" style="display: none">❓ 常见问题</span>
+          <span data-lang="ta" style="display: none"
+            >❓ அடிக்கடி கேட்கப்படும் கேள்விகள்</span
+          >
+        </h2>
+
+        <div class="space-y-4">
+          <div class="accordion-item">
+            <div
+              class="accordion-header"
+              onclick="toggleAccordion('faq-pricing')"
+            >
+              <div class="flex items-center justify-between">
+                <h3 class="text-lg font-semibold text-white">
+                  <span data-lang="en">💰 How much does Bijou AI cost?</span>
+                  <span data-lang="ms" style="display: none"
+                    >💰 Berapakah kos Bijou AI?</span
+                  >
+                  <span data-lang="zh" style="display: none"
+                    >💰 Bijou AI 的费用是多少？</span
+                  >
+                  <span data-lang="ta" style="display: none"
+                    >💰 Bijou AI இன் விலை என்ன?</span
+                  >
+                </h3>
+                <span class="accordion-arrow text-C9A961">▼</span>
+              </div>
+            </div>
+            <div id="faq-pricing" class="accordion-content">
+              <div class="space-y-3">
+                <div class="grid md:grid-cols-2 gap-4">
+                  <div class="glass-nav-card p-4">
+                    <h4 class="font-semibold text-2EF19D mb-2">
+                      <span data-lang="en">🆓 Free Plan</span>
+                      <span data-lang="ms" style="display: none"
+                        >🆓 Pelan Percuma</span
+                      >
+                      <span data-lang="zh" style="display: none"
+                        >🆓 免费计划</span
+                      >
+                      <span data-lang="ta" style="display: none"
+                        >🆓 இலவச திட்டம்</span
+                      >
+                    </h4>
+                    <ul class="text-gray-300 text-sm space-y-1">
+                      <li>
+                        <span data-lang="en">• 100 messages per month</span>
+                        <span data-lang="ms" style="display: none"
+                          >• 100 mesej sebulan</span
+                        >
+                        <span data-lang="zh" style="display: none"
+                          >• 每月 100 条消息</span
+                        >
+                        <span data-lang="ta" style="display: none"
+                          >• மாதத்திற்கு 100 செய்திகள்</span
+                        >
+                      </li>
+                      <li>
+                        <span data-lang="en">• Basic AI responses</span>
+                        <span data-lang="ms" style="display: none"
+                          >• Respons AI asas</span
+                        >
+                        <span data-lang="zh" style="display: none"
+                          >• 基本 AI 回复</span
+                        >
+                        <span data-lang="ta" style="display: none"
+                          >• அடிப்படை AI பதில்கள்</span
+                        >
+                      </li>
+                      <li>
+                        <span data-lang="en">• English language only</span>
+                        <span data-lang="ms" style="display: none"
+                          >• Bahasa Inggeris sahaja</span
+                        >
+                        <span data-lang="zh" style="display: none"
+                          >• 仅英语</span
+                        >
+                        <span data-lang="ta" style="display: none"
+                          >• ஆங்கிலம் மட்டுமே</span
+                        >
+                      </li>
+                      <li>
+                        <span data-lang="en">• Email support</span>
+                        <span data-lang="ms" style="display: none"
+                          >• Sokongan emel</span
+                        >
+                        <span data-lang="zh" style="display: none"
+                          >• 邮件支持</span
+                        >
+                        <span data-lang="ta" style="display: none"
+                          >• மின்னஞ்சல் ஆதரவு</span
+                        >
+                      </li>
+                    </ul>
+                  </div>
+                  <div class="glass-nav-card p-4">
+                    <h4 class="font-semibold text-2EF19D mb-2">
+                      <span data-lang="en">⭐ Pro Plan - RM99/month</span>
+                      <span data-lang="ms" style="display: none"
+                        >⭐ Pelan Pro - RM99/bulan</span
+                      >
+                      <span data-lang="zh" style="display: none"
+                        >⭐ 专业计划 - RM99/月</span
+                      >
+                      <span data-lang="ta" style="display: none"
+                        >⭐ ப்ரோ திட்டம் - RM99/மாதம்</span
+                      >
+                    </h4>
+                    <ul class="text-gray-300 text-sm space-y-1">
+                      <li>
+                        <span data-lang="en">• Unlimited messages</span>
+                        <span data-lang="ms" style="display: none"
+                          >• Mesej tanpa had</span
+                        >
+                        <span data-lang="zh" style="display: none"
+                          >• 无限消息</span
+                        >
+                        <span data-lang="ta" style="display: none"
+                          >• வரம்பில்லாத செய்திகள்</span
+                        >
+                      </li>
+                      <li>
+                        <span data-lang="en">• Advanced AI with context</span>
+                        <span data-lang="ms" style="display: none"
+                          >• AI lanjutan dengan konteks</span
+                        >
+                        <span data-lang="zh" style="display: none"
+                          >• 高级 AI 与上下文</span
+                        >
+                        <span data-lang="ta" style="display: none"
+                          >• சூழலுடன் மேம்பட்ட AI</span
+                        >
+                      </li>
+                      <li>
+                        <span data-lang="en">• Multi-language support</span>
+                        <span data-lang="ms" style="display: none"
+                          >• Sokongan pelbagai bahasa</span
+                        >
+                        <span data-lang="zh" style="display: none"
+                          >• 多语言支持</span
+                        >
+                        <span data-lang="ta" style="display: none"
+                          >• பல மொழி ஆதரவு</span
+                        >
+                      </li>
+                      <li>
+                        <span data-lang="en">• WhatsApp + Email support</span>
+                        <span data-lang="ms" style="display: none"
+                          >• Sokongan WhatsApp + Emel</span
+                        >
+                        <span data-lang="zh" style="display: none"
+                          >• WhatsApp + 邮件支持</span
+                        >
+                        <span data-lang="ta" style="display: none"
+                          >• WhatsApp + மின்னஞ்சல் ஆதரவு</span
+                        >
+                      </li>
+                      <li>
+                        <span data-lang="en"
+                          >• Google Calendar integration</span
+                        >
+                        <span data-lang="ms" style="display: none"
+                          >• Integrasi Google Calendar</span
+                        >
+                        <span data-lang="zh" style="display: none"
+                          >• Google 日历集成</span
+                        >
+                        <span data-lang="ta" style="display: none"
+                          >• Google Calendar ஒருங்கிணைப்பு</span
+                        >
+                      </li>
+                      <li>
+                        <span data-lang="en">• Custom business training</span>
+                        <span data-lang="ms" style="display: none"
+                          >• Latihan perniagaan khusus</span
+                        >
+                        <span data-lang="zh" style="display: none"
+                          >• 定制业务培训</span
+                        >
+                        <span data-lang="ta" style="display: none"
+                          >• தனிப்பயன் வணிக பயிற்சி</span
+                        >
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="accordion-item">
+            <div
+              class="accordion-header"
+              onclick="toggleAccordion('faq-languages')"
+            >
+              <div class="flex items-center justify-between">
+                <h3 class="text-lg font-semibold text-white">
+                  <span data-lang="en"
+                    >🌐 What languages does Bijou AI support?</span
+                  >
+                  <span data-lang="ms" style="display: none"
+                    >🌐 Bahasa apa yang disokong oleh Bijou AI?</span
+                  >
+                  <span data-lang="zh" style="display: none"
+                    >🌐 Bijou AI 支持哪些语言？</span
+                  >
+                  <span data-lang="ta" style="display: none"
+                    >🌐 Bijou AI எந்த மொழிகளை ஆதரிக்கிறது?</span
+                  >
+                </h3>
+                <span class="accordion-arrow text-C9A961">▼</span>
+              </div>
+            </div>
+            <div id="faq-languages" class="accordion-content">
+              <div class="grid md:grid-cols-2 gap-4">
+                <div>
+                  <h4 class="font-semibold text-2EF19D mb-2">
+                    <span data-lang="en">Fully Supported Languages:</span>
+                    <span data-lang="ms" style="display: none"
+                      >Bahasa Yang Disokong Sepenuhnya:</span
+                    >
+                    <span data-lang="zh" style="display: none"
+                      >完全支持的语言：</span
+                    >
+                    <span data-lang="ta" style="display: none"
+                      >முழுமையாக ஆதரிக்கப்படும் மொழிகள்:</span
+                    >
+                  </h4>
+                  <ul class="text-gray-300 text-sm space-y-1">
+                    <li>🇺🇸 English (US & UK)</li>
+                    <li>🇲🇾 Bahasa Malaysia</li>
+                    <li>🇨🇳 Mandarin Chinese (Simplified)</li>
+                    <li>🇮🇳 Tamil</li>
+                    <li>🇲🇾 Manglish (Mixed languages)</li>
+                  </ul>
+                </div>
+                <div>
+                  <h4 class="font-semibold text-2EF19D mb-2">
+                    <span data-lang="en">Special Features:</span>
+                    <span data-lang="ms" style="display: none">Ciri Khas:</span>
+                    <span data-lang="zh" style="display: none">特殊功能：</span>
+                    <span data-lang="ta" style="display: none"
+                      >சிறப்பு அம்சங்கள்:</span
+                    >
+                  </h4>
+                  <ul class="text-gray-300 text-sm space-y-1">
+                    <li>
+                      <span data-lang="en">• Automatic language detection</span>
+                      <span data-lang="ms" style="display: none"
+                        >• Pengesanan bahasa automatik</span
+                      >
+                      <span data-lang="zh" style="display: none"
+                        >• 自动语言检测</span
+                      >
+                      <span data-lang="ta" style="display: none"
+                        >• தானியங்கு மொழி கண்டறிதல்</span
+                      >
+                    </li>
+                    <li>
+                      <span data-lang="en">• Code-switching support</span>
+                      <span data-lang="ms" style="display: none"
+                        >• Sokongan pertukaran kod</span
+                      >
+                      <span data-lang="zh" style="display: none"
+                        >• 代码切换支持</span
+                      >
+                      <span data-lang="ta" style="display: none"
+                        >• குறியீடு மாறுதல் ஆதரவு</span
+                      >
+                    </li>
+                    <li>
+                      <span data-lang="en">• Malaysian English nuances</span>
+                      <span data-lang="ms" style="display: none"
+                        >• Nuansa Bahasa Inggeris Malaysia</span
+                      >
+                      <span data-lang="zh" style="display: none"
+                        >• 马来西亚英语细节</span
+                      >
+                      <span data-lang="ta" style="display: none"
+                        >• மலேசிய ஆங்கில நுணுக்கங்கள்</span
+                      >
+                    </li>
+                    <li>
+                      <span data-lang="en">• Context-aware responses</span>
+                      <span data-lang="ms" style="display: none"
+                        >• Respons sedar konteks</span
+                      >
+                      <span data-lang="zh" style="display: none"
+                        >• 上下文感知回复</span
+                      >
+                      <span data-lang="ta" style="display: none"
+                        >• சூழல் அறிந்த பதில்கள்</span
+                      >
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="accordion-item">
+            <div
+              class="accordion-header"
+              onclick="toggleAccordion('faq-security')"
+            >
+              <div class="flex items-center justify-between">
+                <h3 class="text-lg font-semibold text-white">
+                  <span data-lang="en"
+                    >🔒 Is my data secure with Bijou AI?</span
+                  >
+                  <span data-lang="ms" style="display: none"
+                    >🔒 Adakah data saya selamat dengan Bijou AI?</span
+                  >
+                  <span data-lang="zh" style="display: none"
+                    >🔒 我的数据在 Bijou AI 中安全吗？</span
+                  >
+                  <span data-lang="ta" style="display: none"
+                    >🔒 Bijou AI இல் என் தரவு பாதுகாப்பானதா?</span
+                  >
+                </h3>
+                <span class="accordion-arrow text-C9A961">▼</span>
+              </div>
+            </div>
+            <div id="faq-security" class="accordion-content">
+              <div class="space-y-3">
+                <p class="text-gray-300">
+                  <span data-lang="en"
+                    >Yes! We take security very seriously:</span
+                  >
+                  <span data-lang="ms" style="display: none"
+                    >Ya! Kami mengambil keselamatan dengan sangat serius:</span
+                  >
+                  <span data-lang="zh" style="display: none"
+                    >是的！我们非常重视安全：</span
+                  >
+                  <span data-lang="ta" style="display: none"
+                    >ஆம்! நாங்கள் பாதுகாப்பை மிகவும் தீவிரமாக
+                    எடுத்துக்கொள்கிறோம்:</span
+                  >
+                </p>
+                <div class="grid md:grid-cols-2 gap-4">
+                  <div>
+                    <h4 class="font-semibold text-2EF19D mb-2">
+                      <span data-lang="en">🛡️ Data Protection:</span>
+                      <span data-lang="ms" style="display: none"
+                        >🛡️ Perlindungan Data:</span
+                      >
+                      <span data-lang="zh" style="display: none"
+                        >🛡️ 数据保护：</span
+                      >
+                      <span data-lang="ta" style="display: none"
+                        >🛡️ தரவு பாتுகாப்பு:</span
+                      >
+                    </h4>
+                    <ul class="text-gray-300 text-sm space-y-1">
+                      <li>
+                        <span data-lang="en">• End-to-end encryption</span>
+                        <span data-lang="ms" style="display: none"
+                          >• Enkripsi ujung ke ujung</span
+                        >
+                        <span data-lang="zh" style="display: none"
+                          >• 端到端加密</span
+                        >
+                        <span data-lang="ta" style="display: none"
+                          >• இறுதி முதல் இறுதி வரை குறியாக்கம்</span
+                        >
+                      </li>
+                      <li>
+                        <span data-lang="en">• GDPR compliant</span>
+                        <span data-lang="ms" style="display: none"
+                          >• Mematuhi GDPR</span
+                        >
+                        <span data-lang="zh" style="display: none"
+                          >• GDPR 合规</span
+                        >
+                        <span data-lang="ta" style="display: none"
+                          >• GDPR இணக்கமானது</span
+                        >
+                      </li>
+                      <li>
+                        <span data-lang="en"
+                          >• No data sharing with third parties</span
+                        >
+                        <span data-lang="ms" style="display: none"
+                          >• Tiada perkongsian data dengan pihak ketiga</span
+                        >
+                        <span data-lang="zh" style="display: none"
+                          >• 不与第三方共享数据</span
+                        >
+                        <span data-lang="ta" style="display: none"
+                          >• மூன்றாம் தரப்பினருடன் தரவு பகிர்வு இல்லை</span
+                        >
+                      </li>
+                      <li>
+                        <span data-lang="en">• Regular security audits</span>
+                        <span data-lang="ms" style="display: none"
+                          >• Audit keselamatan berkala</span
+                        >
+                        <span data-lang="zh" style="display: none"
+                          >• 定期安全审计</span
+                        >
+                        <span data-lang="ta" style="display: none"
+                          >• வழக்கமான பாதுகாப்பு தணிக்கை</span
+                        >
+                      </li>
+                    </ul>
+                  </div>
+                  <div>
+                    <h4 class="font-semibold text-2EF19D mb-2">
+                      <span data-lang="en">🔐 Access Control:</span>
+                      <span data-lang="ms" style="display: none"
+                        >🔐 Kawalan Akses:</span
+                      >
+                      <span data-lang="zh" style="display: none"
+                        >🔐 访问控制：</span
+                      >
+                      <span data-lang="ta" style="display: none"
+                        >🔐 அணுகல் கட்டுப்பாடு:</span
+                      >
+                    </h4>
+                    <ul class="text-gray-300 text-sm space-y-1">
+                      <li>
+                        <span data-lang="en"
+                          >• Multi-factor authentication</span
+                        >
+                        <span data-lang="ms" style="display: none"
+                          >• Pengesahan berbilang faktor</span
+                        >
+                        <span data-lang="zh" style="display: none"
+                          >• 多因素身份验证</span
+                        >
+                        <span data-lang="ta" style="display: none"
+                          >• பல காரணி அங்கீகாரம்</span
+                        >
+                      </li>
+                      <li>
+                        <span data-lang="en">• Role-based permissions</span>
+                        <span data-lang="ms" style="display: none"
+                          >• Kebenaran berasaskan peranan</span
+                        >
+                        <span data-lang="zh" style="display: none"
+                          >• 基于角色的权限</span
+                        >
+                        <span data-lang="ta" style="display: none"
+                          >• பங்கு அடிப்படையிலான அனுமதிகள்</span
+                        >
+                      </li>
+                      <li>
+                        <span data-lang="en">• Activity monitoring</span>
+                        <span data-lang="ms" style="display: none"
+                          >• Pemantauan aktiviti</span
+                        >
+                        <span data-lang="zh" style="display: none"
+                          >• 活动监控</span
+                        >
+                        <span data-lang="ta" style="display: none"
+                          >• செயல்பாட்டு கண்காணிப்பு</span
+                        >
+                      </li>
+                      <li>
+                        <span data-lang="en"
+                          >• Secure cloud infrastructure</span
+                        >
+                        <span data-lang="ms" style="display: none"
+                          >• Infrastruktur awan selamat</span
+                        >
+                        <span data-lang="zh" style="display: none"
+                          >• 安全云基础设施</span
+                        >
+                        <span data-lang="ta" style="display: none"
+                          >• பாதுகாப்பான மேக கட்டமைப்பு</span
+                        >
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="accordion-item">
+            <div
+              class="accordion-header"
+              onclick="toggleAccordion('faq-limits')"
+            >
+              <div class="flex items-center justify-between">
+                <h3 class="text-lg font-semibold text-white">
+                  <span data-lang="en">📊 Are there any usage limits?</span>
+                  <span data-lang="ms" style="display: none"
+                    >📊 Adakah terdapat had penggunaan?</span
+                  >
+                  <span data-lang="zh" style="display: none"
+                    >📊 是否有任何使用限制？</span
+                  >
+                  <span data-lang="ta" style="display: none"
+                    >📊 ஏதேனும் பயன்பாட்டு வரம்புகள் உள்ளதா?</span
+                  >
+                </h3>
+                <span class="accordion-arrow text-C9A961">▼</span>
+              </div>
+            </div>
+            <div id="faq-limits" class="accordion-content">
+              <div class="grid md:grid-cols-2 gap-4">
+                <div>
+                  <h4 class="font-semibold text-2EF19D mb-2">
+                    <span data-lang="en">Free Plan Limits:</span>
+                    <span data-lang="ms" style="display: none"
+                      >Had Pelan Percuma:</span
+                    >
+                    <span data-lang="zh" style="display: none"
+                      >免费计划限制：</span
+                    >
+                    <span data-lang="ta" style="display: none"
+                      >இலவச திட்ட வரம்புகள்:</span
+                    >
+                  </h4>
+                  <ul class="text-gray-300 text-sm space-y-1">
+                    <li>
+                      <span data-lang="en">• 100 messages per month</span>
+                      <span data-lang="ms" style="display: none"
+                        >• 100 mesej sebulan</span
+                      >
+                      <span data-lang="zh" style="display: none"
+                        >• 每月 100 条消息</span
+                      >
+                      <span data-lang="ta" style="display: none"
+                        >• மாதத்திற்கு 100 செய்திகள்</span
+                      >
+                    </li>
+                    <li>
+                      <span data-lang="en">• 1 WhatsApp Business number</span>
+                      <span data-lang="ms" style="display: none"
+                        >• 1 nombor WhatsApp Business</span
+                      >
+                      <span data-lang="zh" style="display: none"
+                        >• 1 个 WhatsApp 商业号码</span
+                      >
+                      <span data-lang="ta" style="display: none"
+                        >• 1 WhatsApp வணிக எண்</span
+                      >
+                    </li>
+                    <li>
+                      <span data-lang="en">• Basic analytics only</span>
+                      <span data-lang="ms" style="display: none"
+                        >• Analitik asas sahaja</span
+                      >
+                      <span data-lang="zh" style="display: none"
+                        >• 仅基本分析</span
+                      >
+                      <span data-lang="ta" style="display: none"
+                        >• அடிப்படை பகுப்பாய்வு மட்டுமே</span
+                      >
+                    </li>
+                    <li>
+                      <span data-lang="en">• 24-hour email support</span>
+                      <span data-lang="ms" style="display: none"
+                        >• Sokongan emel 24 jam</span
+                      >
+                      <span data-lang="zh" style="display: none"
+                        >• 24小时邮件支持</span
+                      >
+                      <span data-lang="ta" style="display: none"
+                        >• 24 மணிநேர மின்னஞ்சல் ஆதரவு</span
+                      >
+                    </li>
+                  </ul>
+                </div>
+                <div>
+                  <h4 class="font-semibold text-2EF19D mb-2">
+                    <span data-lang="en">Pro Plan Limits:</span>
+                    <span data-lang="ms" style="display: none"
+                      >Had Pelan Pro:</span
+                    >
+                    <span data-lang="zh" style="display: none"
+                      >专业计划限制：</span
+                    >
+                    <span data-lang="ta" style="display: none"
+                      >ப்ரோ திட்ட வரம்புகள்:</span
+                    >
+                  </h4>
+                  <ul class="text-gray-300 text-sm space-y-1">
+                    <li>
+                      <span data-lang="en">• Unlimited messages</span>
+                      <span data-lang="ms" style="display: none"
+                        >• Mesej tanpa had</span
+                      >
+                      <span data-lang="zh" style="display: none"
+                        >• 无限消息</span
+                      >
+                      <span data-lang="ta" style="display: none"
+                        >• வரம்பில்லாத செய்திகள்</span
+                      >
+                    </li>
+                    <li>
+                      <span data-lang="en">• Up to 5 WhatsApp numbers</span>
+                      <span data-lang="ms" style="display: none"
+                        >• Sehingga 5 nombor WhatsApp</span
+                      >
+                      <span data-lang="zh" style="display: none"
+                        >• 最多 5 个 WhatsApp 号码</span
+                      >
+                      <span data-lang="ta" style="display: none"
+                        >• 5 WhatsApp எண்கள் வரை</span
+                      >
+                    </li>
+                    <li>
+                      <span data-lang="en">• Full analytics & insights</span>
+                      <span data-lang="ms" style="display: none"
+                        >• Analitik & wawasan penuh</span
+                      >
+                      <span data-lang="zh" style="display: none"
+                        >• 完整的分析和洞察</span
+                      >
+                      <span data-lang="ta" style="display: none"
+                        >• முழுமையான பகுப்பாய்வு & நுண்ணறிவுகள்</span
+                      >
+                    </li>
+                    <li>
+                      <span data-lang="en">• Priority support</span>
+                      <span data-lang="ms" style="display: none"
+                        >• Sokongan keutamaan</span
+                      >
+                      <span data-lang="zh" style="display: none"
+                        >• 优先支持</span
+                      >
+                      <span data-lang="ta" style="display: none"
+                        >• முன்னுரிமை ஆதரவு</span
+                      >
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Property Agent Guide -->
+      <section class="glass-card p-8 mb-8">
+        <h2 class="text-3xl font-bold mb-2 text-white">
+          🏠 Property Agents: Import Listings to Your AI
+        </h2>
+        <p class="mb-6" style="color: #9ca3af">
+          Train Bijou with your property listings so it can answer buyer and
+          investor questions 24/7 on WhatsApp — automatically.
+        </p>
+
+        <div class="accordion-item mb-4">
+          <button
+            class="accordion-header w-full text-left p-5 rounded-xl font-semibold text-white flex justify-between items-center"
+            onclick="toggleAccordion(this, 'listing-import-guide')"
+            aria-expanded="false"
+          >
+            <span>How to Import a Property Listing (URL Method)</span>
+            <span class="accordion-arrow text-C9A961">▼</span>
+          </button>
+          <div id="listing-import-guide" class="accordion-content">
+            <div class="p-5 space-y-4">
+              <p style="color: #9ca3af; font-size: 0.9rem">
+                The fastest way — paste your PropertyGuru, iProperty, or
+                EdgeProp listing link and Bijou AI will extract all property
+                details automatically.
+              </p>
+              <div class="step-guide">
+                <div class="step-number">1</div>
+                <div>
+                  <div class="step-title">Go to Knowledge Base</div>
+                  <div class="step-desc">
+                    In your dashboard, tap the <strong>Knowledge</strong> tab in
+                    the bottom navigation.
+                  </div>
+                </div>
+              </div>
+              <div class="step-guide">
+                <div class="step-number">2</div>
+                <div>
+                  <div class="step-title">Click "🏠 Import Listing"</div>
+                  <div class="step-desc">
+                    Select the <strong>Import Listing</strong> tab at the top of
+                    the Knowledge section.
+                  </div>
+                </div>
+              </div>
+              <div class="step-guide">
+                <div class="step-number">3</div>
+                <div>
+                  <div class="step-title">Paste the Listing URL</div>
+                  <div class="step-desc">
+                    Copy the full URL from PropertyGuru, iProperty, EdgeProp,
+                    Mudah, or any property site and paste it in the URL field.
+                  </div>
+                </div>
+              </div>
+              <div class="step-guide">
+                <div class="step-number">4</div>
+                <div>
+                  <div class="step-title">Add an Agent Note (optional)</div>
+                  <div class="step-desc">
+                    Add context like "This is our main project in PJ, focus on
+                    block B units" to help Bijou answer more accurately.
+                  </div>
+                </div>
+              </div>
+              <div class="step-guide">
+                <div class="step-number">5</div>
+                <div>
+                  <div class="step-title">Click "Import Listing"</div>
+                  <div class="step-desc">
+                    Bijou AI will scrape the page, extract property details,
+                    format them, and save to your knowledge base. Takes about
+                    5–10 seconds.
+                  </div>
+                </div>
+              </div>
+              <div class="step-guide">
+                <div class="step-number">6</div>
+                <div>
+                  <div class="step-title">
+                    Done! Bijou is now trained on this listing
+                  </div>
+                  <div class="step-desc">
+                    The listing appears under <strong>Documents</strong>. Bijou
+                    will now answer buyer questions about price, size,
+                    facilities, and more.
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="accordion-item mb-4">
+          <button
+            class="accordion-header w-full text-left p-5 rounded-xl font-semibold text-white flex justify-between items-center"
+            onclick="toggleAccordion(this, 'listing-paste-guide')"
+            aria-expanded="false"
+          >
+            <span>Listing Page Won't Load? Use Paste Mode</span>
+            <span class="accordion-arrow text-C9A961">▼</span>
+          </button>
+          <div id="listing-paste-guide" class="accordion-content">
+            <div class="p-5 space-y-4">
+              <p style="color: #9ca3af; font-size: 0.9rem">
+                Some property sites use JavaScript that prevents direct
+                scraping. If the URL method fails, use paste mode instead.
+              </p>
+              <div class="step-guide">
+                <div class="step-number">1</div>
+                <div>
+                  <div class="step-title">Open the Listing Page</div>
+                  <div class="step-desc">
+                    Visit the listing on PropertyGuru or your site in your
+                    browser.
+                  </div>
+                </div>
+              </div>
+              <div class="step-guide">
+                <div class="step-number">2</div>
+                <div>
+                  <div class="step-title">Copy All the Text</div>
+                  <div class="step-desc">
+                    Select all visible text on the page (Ctrl+A, then Ctrl+C) —
+                    including title, price, size, description, facilities.
+                  </div>
+                </div>
+              </div>
+              <div class="step-guide">
+                <div class="step-number">3</div>
+                <div>
+                  <div class="step-title">
+                    The Paste Box Appears Automatically
+                  </div>
+                  <div class="step-desc">
+                    If the URL can't be scraped, Bijou shows a yellow warning
+                    and a paste text area automatically. Paste your copied text
+                    there.
+                  </div>
+                </div>
+              </div>
+              <div class="step-guide">
+                <div class="step-number">4</div>
+                <div>
+                  <div class="step-title">Click "Save to AI"</div>
+                  <div class="step-desc">
+                    Bijou AI formats the raw text into a structured knowledge
+                    article and saves it to your knowledge base.
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="accordion-item mb-4">
+          <button
+            class="accordion-header w-full text-left p-5 rounded-xl font-semibold text-white flex justify-between items-center"
+            onclick="toggleAccordion(this, 'listing-tips')"
+            aria-expanded="false"
+          >
+            <span>Tips for Best Results</span>
+            <span class="accordion-arrow text-C9A961">▼</span>
+          </button>
+          <div id="listing-tips" class="accordion-content">
+            <div class="p-5">
+              <ul
+                class="space-y-3"
+                style="
+                  color: #9ca3af;
+                  font-size: 0.9rem;
+                  list-style: none;
+                  padding: 0;
+                "
+              >
+                <li>
+                  ✅ <strong>Import each unit type separately</strong> — e.g.
+                  one for 2-bedroom, one for 3-bedroom
+                </li>
+                <li>
+                  ✅ <strong>Add an agent note</strong> to give Bijou context
+                  about which phase or block to focus on
+                </li>
+                <li>
+                  ✅ <strong>Update after price changes</strong> — delete the
+                  old entry and re-import the updated listing
+                </li>
+                <li>
+                  ✅ <strong>Works with any property portal</strong> —
+                  PropertyGuru, iProperty, EdgeProp, Mudah, your own microsite
+                </li>
+                <li>
+                  ⚠️ <strong>Property photos don't get imported</strong> —
+                  upload them to <strong>Media Library</strong> instead if you
+                  want Bijou to send them to buyers
+                </li>
+                <li>
+                  ⚠️ <strong>JS-heavy portals</strong> (some mobile apps) may
+                  require paste mode — always works as a fallback
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Contact Support -->
+      <section class="glass-card p-8 mb-8">
+        <h2 class="text-3xl font-bold mb-2 text-white">
+          <span data-lang="en">Still Need Help? 🤝</span>
+          <span data-lang="ms" style="display: none"
+            >Masih Perlukan Bantuan? 🤝</span
+          >
+          <span data-lang="zh" style="display: none">仍需要帮助？ 🤝</span>
+          <span data-lang="ta" style="display: none"
+            >இன்னும் உதவி தேவையா? 🤝</span
+          >
+        </h2>
+        <p class="text-gray-400 mb-8 text-sm">
+          <span data-lang="en"
+            >Send us a ticket and we'll get back to you within 24 hours.</span
+          >
+          <span data-lang="ms" style="display: none"
+            >Hantar tiket dan kami akan balas dalam masa 24 jam.</span
+          >
+          <span data-lang="zh" style="display: none"
+            >发送工单，我们将在24小时内回复您。</span
+          >
+          <span data-lang="ta" style="display: none"
+            >டிக்கெட் அனுப்புங்கள், 24 மணி நேரத்தில் பதிலளிப்போம்.</span
+          >
+        </p>
+
+        <div class="grid md:grid-cols-5 gap-8">
+          <!-- Support Form -->
+          <div class="md:col-span-3">
+            <form id="supportForm" onsubmit="submitSupportTicket(event)">
+              <div class="space-y-4">
+                <div class="grid sm:grid-cols-2 gap-4">
+                  <div>
+                    <label class="block text-sm text-gray-400 mb-1"
+                      >Your Name</label
+                    >
+                    <input
+                      id="sf-name"
+                      type="text"
+                      required
+                      placeholder="Ahmad / Wei Ling / Priya"
+                      class="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-white placeholder-gray-500 text-sm focus:outline-none focus:border-2EF19D/50"
+                    />
+                  </div>
+                  <div>
+                    <label class="block text-sm text-gray-400 mb-1"
+                      >Email Address</label
+                    >
+                    <input
+                      id="sf-email"
+                      type="email"
+                      required
+                      placeholder="you@example.com"
+                      class="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-white placeholder-gray-500 text-sm focus:outline-none focus:border-2EF19D/50"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label class="block text-sm text-gray-400 mb-1"
+                    >Issue Type</label
+                  >
+                  <select
+                    id="sf-type"
+                    required
+                    class="w-full bg-[#0A1E1C] border border-white/10 rounded-lg px-4 py-2 text-white text-sm focus:outline-none focus:border-2EF19D/50"
+                  >
+                    <option value="">Select issue type…</option>
+                    <option value="connection">WhatsApp Connection</option>
+                    <option value="ai_response">AI Responses / Quality</option>
+                    <option value="billing">Billing / Subscription</option>
+                    <option value="setup">Setup / Onboarding</option>
+                    <option value="feature">Feature Request</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-sm text-gray-400 mb-1"
+                    >Describe your issue</label
+                  >
+                  <textarea
+                    id="sf-message"
+                    required
+                    rows="4"
+                    placeholder="Please describe your issue in detail. Include any error messages you see."
+                    class="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-white placeholder-gray-500 text-sm focus:outline-none focus:border-2EF19D/50 resize-none"
+                  ></textarea>
+                </div>
+                <button
+                  type="submit"
+                  id="sf-submit"
+                  class="w-full bg-2EF19D text-0A1E1C font-semibold py-2.5 rounded-lg hover:bg-00F5E4 transition-colors text-sm"
+                >
+                  Send Support Ticket →
+                </button>
+                <div
+                  id="sf-feedback"
+                  class="hidden text-center py-3 rounded-lg text-sm font-medium"
+                ></div>
+              </div>
+            </form>
+          </div>
+
+          <!-- Side Info -->
+          <div class="md:col-span-2 flex flex-col gap-4">
+            <div class="glass-nav-card p-5 rounded-xl">
+              <div class="text-2xl mb-2">⚡</div>
+              <h4 class="text-white font-semibold mb-1 text-sm">
+                Response Time
+              </h4>
+              <p class="text-gray-400 text-xs leading-relaxed">
+                We typically respond within
+                <strong class="text-2EF19D">24 hours</strong>, Mon–Fri. Urgent
+                issues are escalated faster.
+              </p>
+            </div>
+            <div class="glass-nav-card p-5 rounded-xl">
+              <div class="text-2xl mb-2">📧</div>
+              <h4 class="text-white font-semibold mb-1 text-sm">
+                Email Direct
+              </h4>
+              <p class="text-gray-400 text-xs mb-2">
+                Prefer email? Write to us directly:
+              </p>
+              <a
+                href="mailto:support@mybijou.xyz"
+                class="text-2EF19D text-xs hover:underline"
+                >support@mybijou.xyz</a
+              >
+            </div>
+            <div class="glass-nav-card p-5 rounded-xl">
+              <div class="text-2xl mb-2">📚</div>
+              <h4 class="text-white font-semibold mb-1 text-sm">
+                Before You Submit
+              </h4>
+              <p class="text-gray-400 text-xs leading-relaxed">
+                Check the FAQ sections above — most issues are solved there in
+                under 2 minutes.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Footer -->
+      <footer class="glass-card p-6 text-center">
+        <div class="mb-4">
+          <p class="text-gray-300">
+            <span data-lang="en"
+              >© 2026 Bijou AI. Made with 🤍 by
+              <a
+                href="https://w3jdev.com"
+                class="text-2EF19D hover:text-00F5E4 transition-colors"
+                >W3J LLC</a
+              ></span
+            >
+            <span data-lang="ms" style="display: none"
+              >© 2026 Bijou AI. Dibuat dengan 🤍 oleh
+              <a
+                href="https://w3jdev.com"
+                class="text-2EF19D hover:text-00F5E4 transition-colors"
+                >W3J LLC</a
+              ></span
+            >
+            <span data-lang="zh" style="display: none"
+              >© 2026 Bijou AI. 由
+              <a
+                href="https://w3jdev.com"
+                class="text-2EF19D hover:text-00F5E4 transition-colors"
+                >W3J LLC</a
+              >
+              用 🤍 制作</span
+            >
+            <span data-lang="ta" style="display: none"
+              >© 2026 Bijou AI.
+              <a
+                href="https://w3jdev.com"
+                class="text-2EF19D hover:text-00F5E4 transition-colors"
+                >W3J LLC</a
+              >
+              ஆல் 🤍 உடன் உருவாக்கப்பட்டது</span
+            >
+          </p>
+          <p class="text-sm text-gray-400 mt-2">
+            <span data-lang="en"
+              >Wyoming, USA • Operations: Kuala Lumpur, Malaysia</span
+            >
+            <span data-lang="ms" style="display: none"
+              >Wyoming, USA • Operasi: Kuala Lumpur, Malaysia</span
+            >
+            <span data-lang="zh" style="display: none"
+              >怀俄明州，美国 • 运营中心：吉隆坡，马来西亚</span
+            >
+            <span data-lang="ta" style="display: none"
+              >Wyoming, USA • செயல்பாடுகள்: கோலாலம்பூர், மலேசியா</span
+            >
+          </p>
+        </div>
+        <p class="mt-4">
+          <a
+            href="/static/user-guide.html"
+            class="text-C9A961 hover:text-2EF19D transition-colors"
+          >
+            <span data-lang="en">← Back to User Guide</span>
+            <span data-lang="ms" style="display: none"
+              >← Kembali ke Panduan Pengguna</span
+            >
+            <span data-lang="zh" style="display: none">← 返回用户指南</span>
+            <span data-lang="ta" style="display: none"
+              >← பயனர் வழிகாட்டிக்கு திரும்பு</span
+            >
+          </a>
+          |
+          <a
+            href="/static/login.html"
+            class="text-C9A961 hover:text-2EF19D transition-colors"
+          >
+            <span data-lang="en">Dashboard Login</span>
+            <span data-lang="ms" style="display: none"
+              >Log Masuk Dashboard</span
+            >
+            <span data-lang="zh" style="display: none">仪表板登录</span>
+            <span data-lang="ta" style="display: none"
+              >டாஷ்போர்ட் உள்நுழைவு</span
+            >
+          </a>
+        </p>
+      </footer>
+    </div>
+
+    <script>
+      // Accordion functionality
+      function toggleAccordion(id) {
+        const content = document.getElementById(id);
+        const header = content.previousElementSibling;
+        const arrow = header.querySelector(".accordion-arrow");
+
+        if (content.classList.contains("active")) {
+          content.classList.remove("active");
+          arrow.textContent = "▼";
+        } else {
+          // Close all other accordions
+          document.querySelectorAll(".accordion-content").forEach((el) => {
+            el.classList.remove("active");
+          });
+          document
+            .querySelectorAll(".accordion-header .accordion-arrow")
+            .forEach((el) => {
+              el.textContent = "▼";
+            });
+
+          // Open this accordion
+          content.classList.add("active");
+          arrow.textContent = "▲";
+        }
+      }
+
+      // Copy to clipboard functionality
+      function copyToClipboard(templateId) {
+        const element = document.getElementById(templateId);
+        const text = element.textContent.trim();
+
+        navigator.clipboard.writeText(text).then(() => {
+          // Show feedback
+          const button = event.target;
+          const originalText = button.textContent;
+          button.textContent = "Copied!";
+          button.style.background = "rgba(46, 241, 157, 0.3)";
+
+          setTimeout(() => {
+            button.textContent = originalText;
+            button.style.background = "rgba(201, 169, 97, 0.2)";
+          }, 2000);
+        });
+      }
+
+      // Language selector functionality
+      document
+        .getElementById("languageSelector")
+        .addEventListener("change", function (e) {
+          const selectedLang = e.target.value;
+
+          // Hide all language spans
+          document.querySelectorAll("[data-lang]").forEach((el) => {
+            el.style.display = "none";
+          });
+
+          // Show selected language spans
+          document
+            .querySelectorAll(`[data-lang="${selectedLang}"]`)
+            .forEach((el) => {
+              el.style.display = "inline";
+            });
+
+          // Store preference in localStorage
+          localStorage.setItem("bijou-help-language", selectedLang);
+
+          console.log("Language changed to:", selectedLang);
+        });
+
+      // Load saved language preference on page load
+      document.addEventListener("DOMContentLoaded", function () {
+        const savedLang = localStorage.getItem("bijou-help-language") || "en";
+        const selector = document.getElementById("languageSelector");
+
+        // Set the selector to saved language
+        selector.value = savedLang;
+
+        // Apply the language
+        document.querySelectorAll("[data-lang]").forEach((el) => {
+          el.style.display = "none";
+        });
+
+        document
+          .querySelectorAll(`[data-lang="${savedLang}"]`)
+          .forEach((el) => {
+            el.style.display = "inline";
+          });
+
+        // Auto-expand first accordion on load
+        toggleAccordion("connection-issues");
+      });
+
+      // Support ticket form
+      async function submitSupportTicket(e) {
+        e.preventDefault();
+        const btn = document.getElementById("sf-submit");
+        const fb = document.getElementById("sf-feedback");
+
+        btn.disabled = true;
+        btn.textContent = "Sending…";
+
+        const payload = {
+          name: document.getElementById("sf-name").value.trim(),
+          email: document.getElementById("sf-email").value.trim(),
+          issue_type: document.getElementById("sf-type").value,
+          message: document.getElementById("sf-message").value.trim(),
+        };
+
+        try {
+          const res = await fetch("/api/support/ticket", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
+          if (res.ok) {
+            fb.className =
+              "text-center py-3 rounded-lg text-sm font-medium bg-green-900/30 text-2EF19D border border-2EF19D/30";
+            fb.textContent =
+              "✅ Ticket sent! We'll get back to you within 24 hours.";
+            document.getElementById("supportForm").reset();
+          } else {
+            const d = await res.json().catch(() => ({}));
+            throw new Error(d.detail || "Server error");
+          }
+        } catch (err) {
+          fb.className =
+            "text-center py-3 rounded-lg text-sm font-medium bg-red-900/30 text-red-400 border border-red-500/30";
+          fb.textContent =
+            "❌ " +
+            (err.message ||
+              "Failed to send. Please email support@mybijou.xyz directly.");
+        } finally {
+          fb.classList.remove("hidden");
+          btn.disabled = false;
+          btn.textContent = "Send Support Ticket →";
+        }
+      }
+    </script>
+
+    <!-- ── Bijou AI Live Chat Widget ──────────────────────────────────────
+       Chat with Bijou AI directly. Public visitors: Bijou/W3J questions.
+       Verified tenants: account-aware support + ticket escalation.
+  ──────────────────────────────────────────────────────────────────── -->
+    <style>
+      #bijou-chat-btn {
+        position: fixed;
+        bottom: 24px;
+        right: 24px;
+        z-index: 9998;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: #fff;
+        padding: 13px 22px;
+        border-radius: 50px;
+        font-family: Inter, sans-serif;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        border: none;
+        box-shadow: 0 4px 20px rgba(102, 126, 234, 0.55);
+        transition:
+          transform 0.2s,
+          box-shadow 0.2s;
+      }
+      #bijou-chat-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 28px rgba(102, 126, 234, 0.75);
+      }
+      #bijou-chat-panel {
+        position: fixed;
+        bottom: 90px;
+        right: 24px;
+        z-index: 9999;
+        width: 360px;
+        max-height: 540px;
+        background: #fff;
+        border-radius: 20px;
+        box-shadow: 0 12px 48px rgba(0, 0, 0, 0.18);
+        display: none;
+        flex-direction: column;
+        overflow: hidden;
+        font-family: Inter, sans-serif;
+      }
+      #bijou-chat-panel.open {
+        display: flex;
+      }
+      .bc-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: #fff;
+        padding: 14px 18px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .bc-header h4 {
+        margin: 0;
+        font-size: 15px;
+        font-weight: 700;
+      }
+      .bc-header p {
+        margin: 2px 0 0;
+        font-size: 12px;
+        opacity: 0.85;
+      }
+      .bc-close {
+        background: none;
+        border: none;
+        color: #fff;
+        font-size: 20px;
+        cursor: pointer;
+        line-height: 1;
+        padding: 0;
+      }
+      .bc-body {
+        flex: 1;
+        overflow-y: auto;
+        padding: 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        min-height: 180px;
+        max-height: 340px;
+      }
+      .bc-welcome {
+        text-align: center;
+        padding: 8px 0;
+      }
+      .bc-welcome p {
+        color: #555;
+        font-size: 14px;
+        margin: 0 0 14px;
+      }
+      .bc-btn-row {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .bc-opt-btn {
+        padding: 11px 16px;
+        border-radius: 10px;
+        border: 2px solid #667eea;
+        background: #fff;
+        color: #667eea;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.15s;
+      }
+      .bc-opt-btn:hover {
+        background: #667eea;
+        color: #fff;
+      }
+      .bc-opt-btn.primary {
+        background: #667eea;
+        color: #fff;
+      }
+      .bc-opt-btn.primary:hover {
+        background: #764ba2;
+        border-color: #764ba2;
+      }
+      .bc-msg {
+        display: flex;
+        flex-direction: column;
+        max-width: 82%;
+      }
+      .bc-msg.user {
+        align-self: flex-end;
+        align-items: flex-end;
+      }
+      .bc-msg.bot {
+        align-self: flex-start;
+        align-items: flex-start;
+      }
+      .bc-bubble {
+        padding: 9px 13px;
+        border-radius: 14px;
+        font-size: 13px;
+        line-height: 1.5;
+        white-space: pre-wrap;
+        word-break: break-word;
+      }
+      .bc-msg.user .bc-bubble {
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        color: #fff;
+        border-bottom-right-radius: 4px;
+      }
+      .bc-msg.bot .bc-bubble {
+        background: #f0f0f5;
+        color: #222;
+        border-bottom-left-radius: 4px;
+      }
+      .bc-typing span {
+        display: inline-block;
+        width: 7px;
+        height: 7px;
+        margin: 0 2px;
+        background: #999;
+        border-radius: 50%;
+        animation: bc-bounce 1.2s ease-in-out infinite;
+      }
+      .bc-typing span:nth-child(2) {
+        animation-delay: 0.2s;
+      }
+      .bc-typing span:nth-child(3) {
+        animation-delay: 0.4s;
+      }
+      @keyframes bc-bounce {
+        0%,
+        60%,
+        100% {
+          transform: translateY(0);
+        }
+        30% {
+          transform: translateY(-6px);
+        }
+      }
+      .bc-footer {
+        border-top: 1px solid #eee;
+        padding: 10px 12px;
+        display: flex;
+        gap: 8px;
+        align-items: center;
+      }
+      .bc-input {
+        flex: 1;
+        border: 1px solid #ddd;
+        border-radius: 20px;
+        padding: 9px 14px;
+        font-size: 13px;
+        outline: none;
+        font-family: Inter, sans-serif;
+        resize: none;
+        line-height: 1.4;
+      }
+      .bc-input:focus {
+        border-color: #667eea;
+      }
+      .bc-send {
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        color: #fff;
+        border: none;
+        border-radius: 50%;
+        width: 36px;
+        height: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        flex-shrink: 0;
+        font-size: 16px;
+      }
+      .bc-verify-form {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        padding: 4px 0;
+      }
+      .bc-verify-form input {
+        padding: 10px 14px;
+        border: 1px solid #ddd;
+        border-radius: 10px;
+        font-size: 13px;
+        font-family: Inter, sans-serif;
+        outline: none;
+      }
+      .bc-verify-form input:focus {
+        border-color: #667eea;
+      }
+      .bc-ticket-form {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .bc-ticket-form input,
+      .bc-ticket-form textarea {
+        padding: 9px 13px;
+        border: 1px solid #ddd;
+        border-radius: 10px;
+        font-size: 13px;
+        font-family: Inter, sans-serif;
+        outline: none;
+      }
+      .bc-ticket-form input:focus,
+      .bc-ticket-form textarea:focus {
+        border-color: #667eea;
+      }
+      .bc-ticket-form textarea {
+        resize: none;
+        min-height: 80px;
+      }
+      .bc-escalate-btn {
+        margin-top: 4px;
+        padding: 8px 14px;
+        background: #fff3cd;
+        border: 1px solid #ffc107;
+        border-radius: 10px;
+        color: #856404;
+        font-size: 12px;
+        cursor: pointer;
+        font-family: Inter, sans-serif;
+        text-align: left;
+      }
+      .bc-escalate-btn:hover {
+        background: #ffc107;
+        color: #000;
+      }
+      @media (max-width: 420px) {
+        #bijou-chat-panel {
+          width: calc(100vw - 32px);
+          right: 16px;
+        }
+      }
+    </style>
+
+    <!-- Floating button -->
+    <button id="bijou-chat-btn" onclick="BijouChat.toggle()">
+      <svg
+        width="18"
+        height="18"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2.5"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <path
+          d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"
+        ></path>
+      </svg>
+      <span>Chat with Bijou</span>
+    </button>
+
+    <!-- Chat panel -->
+    <div id="bijou-chat-panel">
+      <div class="bc-header">
+        <div>
+          <h4>💬 Bijou Support</h4>
+          <p id="bc-status-text">Powered by Bijou AI</p>
+        </div>
+        <button class="bc-close" onclick="BijouChat.close()" title="Close">
+          ×
+        </button>
+      </div>
+      <div class="bc-body" id="bc-body"></div>
+      <div class="bc-footer" id="bc-footer" style="display: none">
+        <textarea
+          class="bc-input"
+          id="bc-input"
+          rows="1"
+          placeholder="Type a message…"
+          onkeydown="
+            if (event.key === 'Enter' && !event.shiftKey) {
+              event.preventDefault();
+              BijouChat.send();
+            }
+          "
+          oninput="
+            this.style.height = 'auto';
+            this.style.height = Math.min(this.scrollHeight, 100) + 'px';
+          "
+        ></textarea>
+        <button class="bc-send" onclick="BijouChat.send()" title="Send">
+          ➤
+        </button>
+      </div>
+    </div>
+
+    <script>
+      (function () {
+        var state = {
+          panel: false,
+          screen: "welcome", // welcome | verify | chat | ticket
+          userType: null, // 'public' | 'tenant'
+          tenantId: null,
+          tenantName: null,
+          tenantPlan: null,
+          tenantEmail: null,
+          history: [],
+          sessionId: "bc-" + Math.random().toString(36).slice(2),
+          pendingTicket: false,
+          msgCount: 0,
+        };
+
+        var API = "";
+
+        function el(id) {
+          return document.getElementById(id);
+        }
+        function body() {
+          return el("bc-body");
+        }
+        function scrollBottom() {
+          var b = body();
+          b.scrollTop = b.scrollHeight;
+        }
+
+        function appendMsg(role, text) {
+          var d = document.createElement("div");
+          d.className = "bc-msg " + role;
+          d.innerHTML = '<div class="bc-bubble">' + escHtml(text) + "</div>";
+          body().appendChild(d);
+          scrollBottom();
+          return d;
+        }
+
+        function appendHtml(html) {
+          var d = document.createElement("div");
+          d.innerHTML = html;
+          body().appendChild(d);
+          scrollBottom();
+        }
+
+        function escHtml(s) {
+          return String(s)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/\n/g, "<br>");
+        }
+
+        function showTyping() {
+          var d = document.createElement("div");
+          d.className = "bc-msg bot";
+          d.id = "bc-typing";
+          d.innerHTML =
+            '<div class="bc-bubble bc-typing"><span></span><span></span><span></span></div>';
+          body().appendChild(d);
+          scrollBottom();
+        }
+        function hideTyping() {
+          var t = el("bc-typing");
+          if (t) t.remove();
+        }
+
+        function showWelcome() {
+          state.screen = "welcome";
+          el("bc-footer").style.display = "none";
+          body().innerHTML = "";
+          appendHtml(
+            '<div class="bc-msg bot"><div class="bc-bubble">👋 Hi! I\'m Bijou, your AI support assistant. How can I help you today?</div></div>',
+          );
+          appendHtml(
+            '<div class="bc-welcome"><p>Choose how to continue:</p>' +
+              '<div class="bc-btn-row">' +
+              '<button class="bc-opt-btn primary" onclick="BijouChat.startTenant()">🏢 I\'m a Bijou Client</button>' +
+              '<button class="bc-opt-btn" onclick="BijouChat.startPublic()">💬 Just have a question</button>' +
+              "</div></div>",
+          );
+        }
+
+        function showVerify() {
+          state.screen = "verify";
+          el("bc-footer").style.display = "none";
+          body().innerHTML = "";
+          appendHtml(
+            '<div class="bc-msg bot"><div class="bc-bubble">Great! Let me verify your account. Enter the email you used to sign up with Bijou:</div></div>' +
+              '<div class="bc-verify-form">' +
+              '<input type="email" id="bc-email-input" placeholder="your@email.com" onkeydown="if(event.key===\'Enter\')BijouChat.verifyEmail()" />' +
+              '<button class="bc-opt-btn primary" onclick="BijouChat.verifyEmail()">Verify Account →</button>' +
+              '<button class="bc-opt-btn" onclick="BijouChat.startPublic()" style="font-size:12px;padding:8px">Skip — just ask a general question</button>' +
+              "</div>",
+          );
+          setTimeout(function () {
+            var i = el("bc-email-input");
+            if (i) i.focus();
+          }, 100);
+        }
+
+        function openChat() {
+          state.screen = "chat";
+          el("bc-footer").style.display = "flex";
+          setTimeout(function () {
+            var i = el("bc-input");
+            if (i) i.focus();
+          }, 100);
+        }
+
+        function showTicketForm() {
+          state.screen = "ticket";
+          el("bc-footer").style.display = "none";
+          // Build transcript from history
+          var transcript = state.history
+            .map(function (m) {
+              return (m.role === "user" ? "You: " : "Bijou: ") + m.content;
+            })
+            .join("\n");
+          appendHtml(
+            '<div class="bc-msg bot"><div class="bc-bubble">No problem! I\'ll create a support ticket and our team will follow up by email. 📋</div></div>' +
+              '<div class="bc-ticket-form" id="bc-ticket-form">' +
+              '<input type="text" id="bc-ticket-name" placeholder="Your name" value="' +
+              escHtml(state.tenantName || "") +
+              '" />' +
+              '<input type="email" id="bc-ticket-email" placeholder="Your email" value="' +
+              escHtml(state.tenantEmail || "") +
+              '" />' +
+              '<textarea id="bc-ticket-msg" placeholder="Describe your issue…">' +
+              escHtml(state.pendingTicket || "") +
+              "</textarea>" +
+              '<button class="bc-opt-btn primary" onclick="BijouChat.submitTicket(\'' +
+              escHtml(transcript) +
+              "')\">📋 Submit Ticket →</button>" +
+              '<button class="bc-opt-btn" onclick="BijouChat.backToChat()" style="font-size:12px;padding:8px">← Back to chat</button>' +
+              "</div>",
+          );
+        }
+
+        window.BijouChat = {
+          toggle: function () {
+            state.panel ? this.close() : this.open();
+          },
+          open: function () {
+            state.panel = true;
+            el("bijou-chat-panel").classList.add("open");
+            if (!state.screen || state.screen === "welcome") showWelcome();
+          },
+          close: function () {
+            state.panel = false;
+            el("bijou-chat-panel").classList.remove("open");
+          },
+          startTenant: function () {
+            showVerify();
+          },
+          startPublic: function () {
+            state.userType = "public";
+            body().innerHTML = "";
+            el("bc-status-text").textContent = "Bijou AI Platform Support";
+            appendMsg(
+              "bot",
+              "Sure! Ask me anything about Bijou AI or W3J services. 😊",
+            );
+            openChat();
+          },
+          verifyEmail: function () {
+            var emailEl = el("bc-email-input");
+            if (!emailEl) return;
+            var email = emailEl.value.trim();
+            if (!email || !email.includes("@")) {
+              emailEl.style.borderColor = "#dc3545";
+              return;
+            }
+            // Replace form with loading
+            emailEl.disabled = true;
+            body().appendChild(
+              Object.assign(document.createElement("p"), {
+                textContent: "🔍 Verifying…",
+                style:
+                  "text-align:center;color:#888;font-size:13px;margin:8px 0",
+              }),
+            );
+            fetch(API + "/api/help-chat/verify", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ email: email }),
+            })
+              .then(function (r) {
+                return r.json();
+              })
+              .then(function (d) {
+                if (d.verified) {
+                  state.userType = "tenant";
+                  state.tenantId = d.tenant_id;
+                  state.tenantName = d.tenant_name;
+                  state.tenantPlan = d.plan;
+                  state.tenantEmail = email;
+                  el("bc-status-text").textContent = d.tenant_name;
+                  body().innerHTML = "";
+                  appendMsg(
+                    "bot",
+                    "✅ Verified! Welcome, " +
+                      d.tenant_name +
+                      ". How can I help with your Bijou account today?",
+                  );
+                  openChat();
+                } else {
+                  body().innerHTML = "";
+                  appendMsg(
+                    "bot",
+                    "❌ " + (d.message || "No account found for this email."),
+                  );
+                  appendHtml(
+                    '<div class="bc-btn-row" style="margin-top:8px">' +
+                      '<button class="bc-opt-btn primary" onclick="BijouChat.startPublic()">Continue with general support</button>' +
+                      '<button class="bc-opt-btn" onclick="BijouChat.startTenant()" style="font-size:12px">Try a different email</button>' +
+                      "</div>",
+                  );
+                }
+              })
+              .catch(function () {
+                body().innerHTML = "";
+                appendMsg(
+                  "bot",
+                  "Verification failed. Let me connect you to general support.",
+                );
+                setTimeout(function () {
+                  BijouChat.startPublic();
+                }, 1500);
+              });
+          },
+          send: function () {
+            var input = el("bc-input");
+            var text = (input.value || "").trim();
+            if (!text) return;
+            input.value = "";
+            input.style.height = "auto";
+            appendMsg("user", text);
+            state.history.push({ role: "user", content: text });
+            state.msgCount++;
+            showTyping();
+            fetch(API + "/api/help-chat/message", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                message: text,
+                session_id: state.sessionId,
+                user_type: state.userType || "public",
+                tenant_id: state.tenantId,
+                tenant_name: state.tenantName,
+                tenant_plan: state.tenantPlan,
+                tenant_email: state.tenantEmail,
+                history: state.history.slice(-8),
+              }),
+            })
+              .then(function (r) {
+                return r.json();
+              })
+              .then(function (d) {
+                hideTyping();
+                var reply = d.reply || "Something went wrong. Try again.";
+                appendMsg("bot", reply);
+                state.history.push({ role: "assistant", content: reply });
+                // After 3 messages with tenant, show escalation option
+                if (
+                  state.userType === "tenant" &&
+                  state.msgCount >= 3 &&
+                  !el("bc-escalate-hint")
+                ) {
+                  var hint = document.createElement("button");
+                  hint.className = "bc-escalate-btn";
+                  hint.id = "bc-escalate-hint";
+                  hint.textContent =
+                    "📋 Still stuck? Create a support ticket →";
+                  hint.onclick = function () {
+                    state.pendingTicket = "Issue from chat (see transcript)";
+                    showTicketForm();
+                  };
+                  body().appendChild(hint);
+                }
+                scrollBottom();
+              })
+              .catch(function () {
+                hideTyping();
+                appendMsg(
+                  "bot",
+                  "Connection error. Please try again or email support@mybijou.xyz",
+                );
+              });
+          },
+          backToChat: function () {
+            state.screen = "chat";
+            // remove ticket form
+            var tf = el("bc-ticket-form");
+            if (tf && tf.parentNode) tf.parentNode.removeChild(tf);
+            el("bc-footer").style.display = "flex";
+          },
+          submitTicket: function (transcript) {
+            var name = (el("bc-ticket-name") || {}).value || "Help Chat User";
+            var email = (el("bc-ticket-email") || {}).value || "";
+            var msg = (el("bc-ticket-msg") || {}).value || "";
+            if (!email || !msg) {
+              alert("Please fill in your email and describe your issue.");
+              return;
+            }
+            fetch(API + "/api/help-chat/ticket", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                name: name,
+                email: email,
+                issue_type: "chat-escalation",
+                message: msg,
+                tenant_id: state.tenantId || null,
+                session_transcript: transcript,
+              }),
+            })
+              .then(function (r) {
+                return r.json();
+              })
+              .then(function (d) {
+                body().innerHTML = "";
+                el("bc-footer").style.display = "none";
+                if (d.success) {
+                  appendHtml(
+                    '<div class="bc-msg bot"><div class="bc-bubble">✅ Ticket <strong>' +
+                      escHtml(d.ticket_number) +
+                      "</strong> created!<br><br>" +
+                      "We'll email you at <strong>" +
+                      escHtml(email) +
+                      "</strong> within 24 hours.<br><br>" +
+                      "Reference: " +
+                      escHtml(d.ticket_number) +
+                      "</div></div>",
+                  );
+                } else {
+                  appendMsg(
+                    "bot",
+                    "❌ Could not create ticket. Please email support@mybijou.xyz directly.",
+                  );
+                }
+              })
+              .catch(function () {
+                appendMsg(
+                  "bot",
+                  "Failed to submit ticket. Email support@mybijou.xyz directly.",
+                );
+              });
+          },
+        };
+      })();
+    </script>
+  </body>
+</html>

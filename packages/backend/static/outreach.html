@@ -1,0 +1,1610 @@
+<!doctype html>
+<html lang="en">
+  <!-- edge-cache-bust:v=2026-07-28a -->
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Outreach — Bijou AI</title>
+    <link rel="icon" type="image/png" href="/static/favicon.png" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              sidebar: "#0f0f12",
+              main: "#0a0a0c",
+              card: "#16161a",
+              border: "#1e1e24",
+              muted: "#6b7280",
+            },
+            fontFamily: {
+              sans: ['"Manrope"', "system-ui", "sans-serif"],
+              serif: ['"Cormorant Garamond"', "Georgia", "serif"],
+            },
+          },
+        },
+      };
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Manrope:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        background: #0a0a0c;
+        font-family: "Manrope", system-ui, sans-serif;
+      }
+      /* Editorial pairing: Cormorant Garamond for headlines + premium moments,
+         Manrope for body / UI. */
+      h1, h2, h3, h4, .font-serif, .bj-headline {
+        font-family: "Cormorant Garamond", Georgia, serif;
+        font-weight: 500;
+        letter-spacing: -0.01em;
+      }
+      .bj-display {
+        font-family: "Cormorant Garamond", Georgia, serif;
+        font-weight: 500;
+        font-style: italic;
+      }
+      .bj-wordmark {
+        font-family: "Cormorant Garamond", Georgia, serif;
+        font-weight: 600;
+        font-feature-settings: "liga" 1, "dlig" 1;
+        letter-spacing: 0.02em;
+      }
+      ::-webkit-scrollbar {
+        width: 4px;
+      }
+      ::-webkit-scrollbar-track {
+        background: #0a0a0c;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #1e1e24;
+        border-radius: 2px;
+      }
+      .fade-in {
+        animation: fadeIn 0.3s ease;
+      }
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(6px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      input,
+      textarea,
+      select {
+        background: #0f0f12;
+        border: 1px solid #1e1e24;
+        color: #f9fafb;
+        border-radius: 8px;
+        padding: 10px 14px;
+        font-size: 14px;
+        font-family: "Manrope", sans-serif;
+        width: 100%;
+        transition: border-color 0.15s;
+      }
+      input:focus,
+      textarea:focus,
+      select:focus {
+        outline: none;
+        border-color: #10b981;
+      }
+      input::placeholder,
+      textarea::placeholder {
+        color: #4b5563;
+      }
+      select option {
+        background: #0f0f12;
+      }
+      .tab-btn {
+        padding: 8px 18px;
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.15s;
+        border: none;
+      }
+      .tab-btn.active {
+        background: #10b981;
+        color: #000;
+      }
+      .tab-btn.inactive {
+        background: #1e1e24;
+        color: #9ca3af;
+      }
+      .tab-btn.inactive:hover {
+        background: #2a2a33;
+        color: #e5e7eb;
+      }
+      .btn {
+        padding: 10px 20px;
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        border: none;
+        transition: all 0.15s;
+      }
+      .btn-primary {
+        background: #10b981;
+        color: #000;
+      }
+      .btn-primary:hover {
+        background: #059669;
+      }
+      .btn-primary:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+      .btn-outline {
+        background: transparent;
+        border: 1px solid #1e1e24;
+        color: #9ca3af;
+      }
+      .btn-outline:hover {
+        border-color: #10b981;
+        color: #10b981;
+      }
+      .btn-danger {
+        background: transparent;
+        border: 1px solid #ef4444;
+        color: #ef4444;
+      }
+      .btn-danger:hover {
+        background: rgba(239, 68, 68, 0.1);
+      }
+      .stat-card {
+        background: #16161a;
+        border: 1px solid #1e1e24;
+        border-radius: 12px;
+        padding: 20px;
+      }
+      .badge {
+        padding: 3px 9px;
+        border-radius: 6px;
+        font-size: 11px;
+        font-weight: 600;
+      }
+      .badge-green {
+        background: rgba(16, 185, 129, 0.15);
+        color: #10b981;
+      }
+      .badge-amber {
+        background: rgba(245, 158, 11, 0.15);
+        color: #f59e0b;
+      }
+      .badge-red {
+        background: rgba(239, 68, 68, 0.15);
+        color: #ef4444;
+      }
+      .badge-blue {
+        background: rgba(59, 130, 246, 0.15);
+        color: #60a5fa;
+      }
+      .badge-gray {
+        background: #1e1e24;
+        color: #9ca3af;
+      }
+      .progress-bar {
+        height: 6px;
+        background: #1e1e24;
+        border-radius: 3px;
+        overflow: hidden;
+      }
+      .progress-bar-fill {
+        height: 100%;
+        border-radius: 3px;
+        background: linear-gradient(90deg, #10b981, #34d399);
+        transition: width 0.5s ease;
+      }
+      .toast {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 9999;
+        padding: 12px 18px;
+        border-radius: 10px;
+        font-size: 13px;
+        font-weight: 500;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+        animation: fadeIn 0.2s ease;
+      }
+      .toast-success {
+        background: #16161a;
+        border: 1px solid rgba(16, 185, 129, 0.4);
+        color: #10b981;
+      }
+      .toast-error {
+        background: #16161a;
+        border: 1px solid rgba(239, 68, 68, 0.4);
+        color: #ef4444;
+      }
+      .row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .campaign-row:hover {
+        background: #1a1a20;
+      }
+      .modal-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.75);
+        z-index: 50;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+      }
+      .modal-box {
+        background: #16161a;
+        border: 1px solid #1e1e24;
+        border-radius: 16px;
+        padding: 32px;
+        width: 100%;
+        max-width: 540px;
+        max-height: 90vh;
+        overflow-y: auto;
+      }
+      .modal-box h2 {
+        font-size: 18px;
+        font-weight: 700;
+        color: #f9fafb;
+        margin-bottom: 6px;
+      }
+      .modal-box p {
+        font-size: 13px;
+        color: #6b7280;
+        margin-bottom: 24px;
+        line-height: 1.5;
+      }
+      .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+      }
+      label {
+        display: block;
+        font-size: 11px;
+        font-weight: 600;
+        color: #6b7280;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 6px;
+      }
+      .queue-item {
+        background: #0f0f12;
+        border: 1px solid #1e1e24;
+        border-radius: 10px;
+        padding: 14px 16px;
+        margin-bottom: 8px;
+      }
+      @media (max-width: 640px) {
+        .form-row {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body class="text-gray-100">
+    <!-- Top nav bar -->
+    <nav
+      class="flex items-center justify-between px-6 py-4 border-b border-border sticky top-0 z-40"
+      style="background: #0a0a0c"
+    >
+      <div class="flex items-center gap-4">
+        <a
+          href="/dashboard"
+          class="text-muted hover:text-gray-300 text-sm flex items-center gap-2 transition-colors"
+        >
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M19 12H5M12 5l-7 7 7 7" />
+          </svg>
+          Dashboard
+        </a>
+        <span class="text-border">/</span>
+        <span class="text-white font-semibold text-sm">Outreach Campaigns</span>
+      </div>
+      <div class="flex items-center gap-3">
+        <div
+          id="schedulerStatus"
+          class="flex items-center gap-2 text-xs text-muted"
+        >
+          <span
+            class="w-2 h-2 rounded-full bg-gray-600 inline-block"
+            id="schedulerDot"
+          ></span>
+          <span id="schedulerLabel">Checking...</span>
+        </div>
+        <button
+          onclick="openCreateModal()"
+          class="btn btn-primary flex items-center gap-2"
+        >
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.5"
+          >
+            <path d="M12 5v14M5 12h14" />
+          </svg>
+          New Campaign
+        </button>
+      </div>
+    </nav>
+
+    <!-- Main content -->
+    <div class="max-w-6xl mx-auto px-6 py-8">
+      <!-- Stats row -->
+      <div
+        class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8 fade-in"
+        id="statsRow"
+      >
+        <div class="stat-card">
+          <div class="text-xs text-muted mb-1 uppercase tracking-wide">
+            Active Campaigns
+          </div>
+          <div class="text-2xl font-bold text-white" id="statActive">—</div>
+        </div>
+        <div class="stat-card">
+          <div class="text-xs text-muted mb-1 uppercase tracking-wide">
+            Queued Messages
+          </div>
+          <div class="text-2xl font-bold text-emerald-400" id="statQueued">
+            —
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="text-xs text-muted mb-1 uppercase tracking-wide">
+            Sent Today
+          </div>
+          <div class="text-2xl font-bold text-white" id="statSent">—</div>
+        </div>
+        <div class="stat-card">
+          <div class="text-xs text-muted mb-1 uppercase tracking-wide">
+            Replied
+          </div>
+          <div class="text-2xl font-bold text-blue-400" id="statReplied">—</div>
+        </div>
+      </div>
+
+      <!-- Quick Start Guide -->
+      <div
+        id="quickStartGuide"
+        class="mb-6 fade-in"
+        style="
+          background: #0f0f12;
+          border: 1px solid #1e1e24;
+          border-radius: 14px;
+          overflow: hidden;
+        "
+      >
+        <button
+          onclick="toggleGuide()"
+          style="
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 20px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #fff;
+          "
+        >
+          <div style="display: flex; align-items: center; gap: 12px">
+            <span style="font-size: 20px">🚀</span>
+            <div style="text-align: left">
+              <div style="font-weight: 700; font-size: 14px; color: #fff">
+                Quick Start — Run Your First Outreach in 3 Steps
+              </div>
+              <div style="font-size: 12px; color: #6b7280; margin-top: 2px">
+                New here? Follow these steps to send your first WhatsApp
+                campaign in under 5 minutes.
+              </div>
+            </div>
+          </div>
+          <svg
+            id="guideChevron"
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="#6b7280"
+            stroke-width="2"
+            style="flex-shrink: 0; transition: transform 0.2s"
+          >
+            <path d="M6 9l6 6 6-6" />
+          </svg>
+        </button>
+        <div id="guideBody" style="padding: 0 20px 20px">
+          <div
+            style="
+              display: grid;
+              grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+              gap: 16px;
+              margin-bottom: 20px;
+            "
+          >
+            <!-- Step 1 -->
+            <div
+              style="
+                background: #16161a;
+                border: 1px solid #2a2a33;
+                border-radius: 10px;
+                padding: 16px;
+              "
+            >
+              <div
+                style="
+                  display: flex;
+                  align-items: center;
+                  gap: 10px;
+                  margin-bottom: 10px;
+                "
+              >
+                <div
+                  style="
+                    width: 28px;
+                    height: 28px;
+                    border-radius: 50%;
+                    background: #10b98120;
+                    border: 1px solid #10b98140;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-weight: 700;
+                    color: #10b981;
+                    font-size: 13px;
+                    flex-shrink: 0;
+                  "
+                >
+                  1
+                </div>
+                <span style="font-weight: 600; font-size: 13px; color: #fff"
+                  >Import Contacts</span
+                >
+              </div>
+              <p
+                style="
+                  font-size: 12px;
+                  color: #9ca3af;
+                  line-height: 1.6;
+                  margin-bottom: 12px;
+                "
+              >
+                Go to the
+                <strong style="color: #e5e7eb">Import Contacts</strong> tab.
+                Paste phone numbers (one per line, with country code) and give
+                them a segment name like <em>"March Leads"</em>.
+              </p>
+              <div
+                style="
+                  background: #0a0a0c;
+                  border-radius: 8px;
+                  padding: 10px;
+                  font-size: 11px;
+                  font-family: monospace;
+                  color: #6b7280;
+                "
+              >
+                601112223333<br />601234567890<br />601987654321
+              </div>
+            </div>
+            <!-- Step 2 -->
+            <div
+              style="
+                background: #16161a;
+                border: 1px solid #2a2a33;
+                border-radius: 10px;
+                padding: 16px;
+              "
+            >
+              <div
+                style="
+                  display: flex;
+                  align-items: center;
+                  gap: 10px;
+                  margin-bottom: 10px;
+                "
+              >
+                <div
+                  style="
+                    width: 28px;
+                    height: 28px;
+                    border-radius: 50%;
+                    background: #10b98120;
+                    border: 1px solid #10b98140;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-weight: 700;
+                    color: #10b981;
+                    font-size: 13px;
+                    flex-shrink: 0;
+                  "
+                >
+                  2
+                </div>
+                <span style="font-weight: 600; font-size: 13px; color: #fff"
+                  >Create a Campaign</span
+                >
+              </div>
+              <p
+                style="
+                  font-size: 12px;
+                  color: #9ca3af;
+                  line-height: 1.6;
+                  margin-bottom: 12px;
+                "
+              >
+                Click <strong style="color: #e5e7eb">+ New Campaign</strong>.
+                Write a message using
+                <code style="color: #10b981">{name}</code> for personalisation.
+                Select your imported segment, set a delay of 45s, and hit
+                Create.
+              </p>
+              <div
+                style="
+                  background: #0a0a0c;
+                  border-radius: 8px;
+                  padding: 10px;
+                  font-size: 11px;
+                  color: #6b7280;
+                  line-height: 1.5;
+                "
+              >
+                <em
+                  >"Hi {name}! I have some new listings this week you might like
+                  🏠 — mind if I share the details?"</em
+                >
+              </div>
+            </div>
+            <!-- Step 3 -->
+            <div
+              style="
+                background: #16161a;
+                border: 1px solid #2a2a33;
+                border-radius: 10px;
+                padding: 16px;
+              "
+            >
+              <div
+                style="
+                  display: flex;
+                  align-items: center;
+                  gap: 10px;
+                  margin-bottom: 10px;
+                "
+              >
+                <div
+                  style="
+                    width: 28px;
+                    height: 28px;
+                    border-radius: 50%;
+                    background: #10b98120;
+                    border: 1px solid #10b98140;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-weight: 700;
+                    color: #10b981;
+                    font-size: 13px;
+                    flex-shrink: 0;
+                  "
+                >
+                  3
+                </div>
+                <span style="font-weight: 600; font-size: 13px; color: #fff"
+                  >Watch It Run</span
+                >
+              </div>
+              <p
+                style="
+                  font-size: 12px;
+                  color: #9ca3af;
+                  line-height: 1.6;
+                  margin-bottom: 12px;
+                "
+              >
+                Your campaign starts
+                <strong style="color: #e5e7eb">immediately</strong> (9am–9pm MYT
+                only). Check the
+                <strong style="color: #e5e7eb">Live Queue</strong> tab to see
+                messages as they send. Contacts who reply are auto-removed.
+              </p>
+              <div
+                style="
+                  display: flex;
+                  align-items: center;
+                  gap: 8px;
+                  padding: 8px 10px;
+                  background: #0a0a0c;
+                  border-radius: 8px;
+                "
+              >
+                <span
+                  style="
+                    width: 8px;
+                    height: 8px;
+                    border-radius: 50%;
+                    background: #10b981;
+                    display: inline-block;
+                    flex-shrink: 0;
+                  "
+                ></span>
+                <span style="font-size: 11px; color: #6b7280"
+                  >Scheduler checks queue every 30 seconds</span
+                >
+              </div>
+            </div>
+          </div>
+          <!-- Sample test button -->
+          <div
+            style="
+              display: flex;
+              align-items: center;
+              gap: 12px;
+              padding: 14px 16px;
+              background: #10b98108;
+              border: 1px solid #10b98120;
+              border-radius: 10px;
+            "
+          >
+            <span style="font-size: 18px">🧪</span>
+            <div style="flex: 1">
+              <div style="font-size: 13px; font-weight: 600; color: #e5e7eb">
+                Want to test right now?
+              </div>
+              <div style="font-size: 12px; color: #6b7280; margin-top: 2px">
+                Click the button to open a pre-filled sample campaign. Just
+                select your contact segment and hit Create.
+              </div>
+            </div>
+            <button
+              onclick="loadSampleCampaign()"
+              class="btn btn-primary"
+              style="white-space: nowrap; flex-shrink: 0"
+            >
+              Try Sample Campaign
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab bar -->
+      <div class="flex items-center gap-3 mb-6">
+        <button
+          class="tab-btn active"
+          id="tabCampaigns"
+          onclick="switchTab('campaigns')"
+        >
+          Campaigns
+        </button>
+        <button
+          class="tab-btn inactive"
+          id="tabContacts"
+          onclick="switchTab('contacts')"
+        >
+          Import Contacts
+        </button>
+        <button
+          class="tab-btn inactive"
+          id="tabQueue"
+          onclick="switchTab('queue')"
+        >
+          Live Queue
+        </button>
+      </div>
+
+      <!-- CAMPAIGNS TAB -->
+      <div id="panelCampaigns" class="fade-in">
+        <div id="campaignsList">
+          <div class="text-center py-16 text-muted">
+            <div class="text-3xl mb-3">📢</div>
+            <p class="font-medium text-gray-400">Loading campaigns...</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- CONTACTS TAB -->
+      <div id="panelContacts" class="fade-in hidden">
+        <div class="grid md:grid-cols-2 gap-6">
+          <!-- Paste numbers -->
+          <div class="stat-card">
+            <h3 class="font-semibold text-white mb-1">Paste Numbers</h3>
+            <p class="text-xs text-muted mb-4">
+              One entry per line. Format:
+              <code class="text-emerald-400">phone</code> or
+              <code class="text-emerald-400">phone,name</code><br />
+              e.g. <code class="text-gray-400">601112223333,Ahmad</code> — name
+              used in <code class="text-emerald-400">{name}</code> template tags
+            </p>
+            <textarea
+              id="contactsTextarea"
+              rows="10"
+              placeholder="601112223333&#10;601234567890,Sarah&#10;601987654321,Boss Ahmad..."
+            ></textarea>
+            <div class="flex items-center gap-3 mt-4">
+              <input
+                type="text"
+                id="segmentNameText"
+                placeholder="Segment name (e.g. March Leads)"
+                style="flex: 1"
+              />
+              <button class="btn btn-primary" onclick="importContacts('text')">
+                Import
+              </button>
+            </div>
+            <div id="importTextResult" class="text-xs mt-3 text-muted"></div>
+          </div>
+
+          <!-- CSV upload -->
+          <div class="stat-card">
+            <div class="flex items-center justify-between mb-1">
+              <h3 class="font-semibold text-white">Upload CSV</h3>
+              <button
+                onclick="downloadCSVTemplate()"
+                style="
+                  font-size: 11px;
+                  color: #10b981;
+                  background: none;
+                  border: none;
+                  cursor: pointer;
+                  padding: 0;
+                  text-decoration: underline;
+                "
+              >
+                ⬇ Download template
+              </button>
+            </div>
+            <p class="text-xs text-muted mb-4">
+              CSV must have a
+              <code class="text-emerald-400">phone</code> column. Optional:
+              <code class="text-emerald-400">name</code>,
+              <code class="text-emerald-400">tags</code>
+            </p>
+            <div
+              class="border-2 border-dashed border-border rounded-xl p-8 text-center cursor-pointer hover:border-emerald-800 transition-colors"
+              onclick="document.getElementById('csvFile').click()"
+              id="dropZone"
+            >
+              <div class="text-2xl mb-2">📂</div>
+              <p class="text-sm text-muted">
+                Click to choose file or drag & drop
+              </p>
+              <p class="text-xs text-muted mt-1">contacts.csv</p>
+            </div>
+            <input
+              type="file"
+              id="csvFile"
+              accept=".csv"
+              class="hidden"
+              onchange="handleCSV(this)"
+            />
+            <div class="mt-4 flex items-center gap-3">
+              <input
+                type="text"
+                id="segmentNameCSV"
+                placeholder="Segment name"
+                style="flex: 1"
+              />
+              <button
+                class="btn btn-primary"
+                onclick="importContacts('csv')"
+                id="csvImportBtn"
+                disabled
+              >
+                Import
+              </button>
+            </div>
+            <div id="csvPreview" class="text-xs mt-3 text-muted"></div>
+          </div>
+        </div>
+
+        <!-- Segments list -->
+        <div class="mt-6 stat-card">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="font-semibold text-white">Contact Segments</h3>
+            <button
+              onclick="loadSegments()"
+              class="text-xs text-muted hover:text-emerald-400 transition-colors"
+            >
+              ↻ Refresh
+            </button>
+          </div>
+          <div id="segmentsList">
+            <p class="text-sm text-muted text-center py-4">
+              Loading segments...
+            </p>
+          </div>
+        </div>
+
+        <!-- TEST MESSAGE CARD -->
+        <div class="mt-6 stat-card" style="border: 1px solid #1e3a2e">
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="font-semibold text-white">🧪 Send Test Message</h3>
+            <span class="text-xs text-muted"
+              >Sends to your own WhatsApp number</span
+            >
+          </div>
+          <p class="text-xs text-muted mb-3">
+            Preview exactly how your outreach message looks before running a
+            real campaign.
+            <code class="text-emerald-400">{name}</code> will be replaced with
+            <em>Test User</em> so you can see personalization in action.
+          </p>
+          <textarea
+            id="testMessageText"
+            rows="3"
+            placeholder="Hi {name}! I'm Ahmad from Century21. Just checking in about your property search — happy to share our latest listings anytime 😊"
+            style="width: 100%; box-sizing: border-box; margin-bottom: 8px"
+          ></textarea>
+          <div class="flex gap-2 items-center">
+            <button
+              class="btn btn-primary"
+              onclick="sendTestMessage()"
+              style="flex: 1"
+            >
+              📱 Send to My Number
+            </button>
+          </div>
+          <div id="testMessageResult" class="text-xs mt-2"></div>
+        </div>
+      </div>
+
+      <!-- QUEUE TAB -->
+      <div id="panelQueue" class="fade-in hidden">
+        <div class="flex items-center justify-between mb-4">
+          <p class="text-sm text-muted">
+            Messages scheduled to send — updates every 30s
+          </p>
+          <button onclick="loadQueue()" class="btn btn-outline text-xs">
+            ↻ Refresh
+          </button>
+        </div>
+        <div id="queueList">
+          <p class="text-sm text-muted text-center py-8">Loading queue...</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- CREATE CAMPAIGN MODAL -->
+    <div id="createModal" class="modal-overlay hidden">
+      <div class="modal-box">
+        <h2>New Outreach Campaign</h2>
+        <p>
+          Set up a WhatsApp broadcast campaign with anti-spam controls built in.
+        </p>
+
+        <div class="space-y-4">
+          <div>
+            <div
+              style="
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                margin-bottom: 6px;
+              "
+            >
+              <label style="margin-bottom: 0">Campaign Name</label>
+              <button
+                type="button"
+                onclick="loadSampleCampaign()"
+                style="
+                  font-size: 11px;
+                  color: #10b981;
+                  background: none;
+                  border: none;
+                  cursor: pointer;
+                  padding: 0;
+                  text-decoration: underline;
+                "
+              >
+                ⚡ Fill with sample
+              </button>
+            </div>
+            <input
+              type="text"
+              id="newCampaignName"
+              placeholder="March Property Leads Follow-up"
+            />
+          </div>
+
+          <div>
+            <label>Message Template</label>
+            <textarea
+              id="newCampaignMsg"
+              rows="4"
+              placeholder="Hi {name}! I'm Ahmad from Century21 MK. Saw you were looking at units in Mont Kiara — I have 3 fresh listings this week. Mind if I share?"
+            ></textarea>
+            <p class="text-xs text-muted mt-1">
+              Use <code class="text-emerald-400">{name}</code> for
+              personalisation
+            </p>
+          </div>
+
+          <div>
+            <label>Contact Segment</label>
+            <select id="newCampaignSegment">
+              <option value="">Loading segments...</option>
+            </select>
+          </div>
+
+          <div class="form-row">
+            <div>
+              <label>Daily Limit (per contact)</label>
+              <input
+                type="number"
+                id="newCampaignLimit"
+                value="1"
+                min="1"
+                max="3"
+              />
+              <p class="text-xs text-muted mt-1">
+                Max messages per contact/day
+              </p>
+            </div>
+            <div>
+              <label>Delay Between Sends (sec)</label>
+              <input
+                type="number"
+                id="newCampaignDelay"
+                value="45"
+                min="30"
+                max="300"
+              />
+              <p class="text-xs text-muted mt-1">Min 30s recommended</p>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div>
+              <label>Start Date</label>
+              <input type="date" id="newCampaignStart" />
+            </div>
+            <div>
+              <label>End Date (optional)</label>
+              <input type="date" id="newCampaignEnd" />
+            </div>
+          </div>
+
+          <div
+            class="p-4 rounded-xl text-xs text-muted"
+            style="background: #0f0f12; border: 1px solid #1e1e24"
+          >
+            🛡️
+            <strong class="text-gray-400"
+              >Anti-spam protection is always on</strong
+            >
+            — messages only send during business hours (9am–9pm MYT), existing
+            active conversations are skipped, and contacts who reply are removed
+            from the queue automatically.
+          </div>
+        </div>
+
+        <div class="flex justify-end gap-3 mt-6">
+          <button class="btn btn-outline" onclick="closeCreateModal()">
+            Cancel
+          </button>
+          <button
+            class="btn btn-primary"
+            onclick="createCampaign()"
+            id="createCampaignBtn"
+          >
+            Create Campaign
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // ── Auth ──────────────────────────────────────────────────────────────────
+      const TENANT_ID =
+        localStorage.getItem("tenant_id") ||
+        new URLSearchParams(location.search).get("tenant_id") ||
+        "";
+      const ACCESS_TOKEN = localStorage.getItem("access_token");
+
+      if (!TENANT_ID) {
+        document.body.innerHTML =
+          '<div style="text-align:center;padding:80px;color:#6b7280">No session found. <a href="/login" style="color:#10b981">Log in</a></div>';
+        throw new Error("No tenant");
+      }
+
+      const HEADERS = {
+        "Content-Type": "application/json",
+        "X-Tenant-ID": TENANT_ID,
+        ...(ACCESS_TOKEN ? { Authorization: `Bearer ${ACCESS_TOKEN}` } : {}),
+      };
+
+      async function api(path, opts = {}) {
+        const res = await fetch(path, { headers: HEADERS, ...opts });
+        if (res.status === 401) {
+          localStorage.clear();
+          location.href = "/login";
+        }
+        if (!res.ok) {
+          const e = await res.json().catch(() => ({}));
+          throw new Error(e.detail || `HTTP ${res.status}`);
+        }
+        return res.json();
+      }
+
+      // ── Toast ─────────────────────────────────────────────────────────────────
+      function toast(msg, type = "success") {
+        const el = document.createElement("div");
+        el.className = `toast toast-${type}`;
+        el.textContent = msg;
+        document.body.appendChild(el);
+        setTimeout(() => el.remove(), type === "error" ? 5000 : 3000);
+      }
+
+      // ── Tabs ──────────────────────────────────────────────────────────────────
+      let currentTab = "campaigns";
+      function switchTab(tab) {
+        ["campaigns", "contacts", "queue"].forEach((t) => {
+          document
+            .getElementById("panel" + t.charAt(0).toUpperCase() + t.slice(1))
+            .classList.add("hidden");
+          document.getElementById(
+            "tab" + t.charAt(0).toUpperCase() + t.slice(1),
+          ).className = "tab-btn inactive";
+        });
+        document
+          .getElementById("panel" + tab.charAt(0).toUpperCase() + tab.slice(1))
+          .classList.remove("hidden");
+        document.getElementById(
+          "tab" + tab.charAt(0).toUpperCase() + tab.slice(1),
+        ).className = "tab-btn active";
+        currentTab = tab;
+        if (tab === "contacts") loadSegments();
+        if (tab === "queue") loadQueue();
+      }
+
+      // ── Load status & stats ───────────────────────────────────────────────────
+      async function loadStatus() {
+        try {
+          const data = await api("/api/outreach/status");
+          const dot = document.getElementById("schedulerDot");
+          const label = document.getElementById("schedulerLabel");
+          if (data.scheduler_running) {
+            dot.className = "w-2 h-2 rounded-full bg-emerald-400 inline-block";
+            label.textContent = "Scheduler running";
+          } else {
+            dot.className = "w-2 h-2 rounded-full bg-red-500 inline-block";
+            label.textContent = "Scheduler stopped";
+          }
+        } catch {}
+      }
+
+      async function loadStats() {
+        try {
+          const [campaigns, queue] = await Promise.all([
+            api("/api/outreach/campaigns"),
+            api("/api/outreach/queue/status"),
+          ]);
+          const active = (campaigns.campaigns || []).filter(
+            (c) => c.status === "active",
+          ).length;
+          document.getElementById("statActive").textContent = active;
+          document.getElementById("statQueued").textContent =
+            queue.total_queued ?? "—";
+          document.getElementById("statSent").textContent =
+            queue.sent_today ?? "—";
+          document.getElementById("statReplied").textContent = "—";
+        } catch {}
+      }
+
+      // ── Campaigns ─────────────────────────────────────────────────────────────
+      async function loadCampaigns() {
+        try {
+          const data = await api("/api/outreach/campaigns");
+          const campaigns = data.campaigns || [];
+          const el = document.getElementById("campaignsList");
+
+          if (!campaigns.length) {
+            el.innerHTML = `
+          <div class="text-center py-20 text-muted">
+            <div class="text-4xl mb-4">📢</div>
+            <p class="font-semibold text-gray-400 mb-2">No campaigns yet</p>
+            <p class="text-sm mb-6">Create your first campaign to start reaching out to leads on WhatsApp</p>
+            <div class="flex gap-3 justify-center flex-wrap">
+              <button onclick="loadSampleCampaign()" class="btn btn-primary">🧪 Try Sample Campaign</button>
+              <button onclick="openCreateModal()" class="btn btn-outline">+ New Campaign</button>
+            </div>
+          </div>`;
+            return;
+          }
+
+          el.innerHTML = campaigns
+            .map(
+              (c) => `
+        <div class="stat-card campaign-row mb-3 transition-colors">
+          <div class="flex items-start justify-between gap-4">
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-3 mb-2">
+                <h3 class="font-semibold text-white truncate">${esc(c.campaign_name || c.name || "Untitled")}</h3>
+                ${statusBadge(c.status)}
+              </div>
+              <p class="text-xs text-muted mb-3 line-clamp-2">${esc(c.message_template || "")}</p>
+              <div class="flex items-center gap-4 text-xs text-muted">
+                <span>👥 ${c.total_contacts ?? "?"} contacts</span>
+                <span>✉️ ${c.sent_count ?? 0} sent</span>
+                <span>💬 ${c.reply_count ?? 0} replies</span>
+                ${c.start_date ? `<span>📅 ${c.start_date}</span>` : ""}
+              </div>
+              ${
+                c.total_contacts
+                  ? `
+              <div class="progress-bar mt-3">
+                <div class="progress-bar-fill" style="width:${Math.min(100, Math.round(((c.sent_count || 0) / c.total_contacts) * 100))}%"></div>
+              </div>
+              <p class="text-xs text-muted mt-1">${Math.min(100, Math.round(((c.sent_count || 0) / (c.total_contacts || 1)) * 100))}% sent</p>`
+                  : ""
+              }
+            </div>
+            <div class="flex flex-col gap-2 flex-shrink-0">
+              ${
+                c.status === "active"
+                  ? `<button onclick="pauseCampaign('${c.id}')" class="btn btn-outline text-xs">⏸ Pause</button>`
+                  : c.status === "paused" || c.status === "draft"
+                    ? `<button onclick="startCampaign('${c.id}')" class="btn btn-primary text-xs">▶ Start</button>`
+                    : ""
+              }
+              <button onclick="viewStats('${c.id}')" class="btn btn-outline text-xs">📊 Stats</button>
+            </div>
+          </div>
+        </div>`,
+            )
+            .join("");
+        } catch (e) {
+          document.getElementById("campaignsList").innerHTML =
+            `<div class="text-center py-10 text-red-400 text-sm">Failed to load campaigns: ${e.message}</div>`;
+        }
+      }
+
+      function statusBadge(s) {
+        const map = {
+          active: "green",
+          paused: "amber",
+          completed: "blue",
+          draft: "gray",
+          failed: "red",
+        };
+        const cls = map[s] || "gray";
+        return `<span class="badge badge-${cls}">${s || "draft"}</span>`;
+      }
+
+      function esc(s) {
+        return String(s || "")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;");
+      }
+
+      async function startCampaign(id) {
+        try {
+          await api(`/api/outreach/campaigns/${id}/start`, { method: "POST" });
+          toast("Campaign started ✅");
+          loadCampaigns();
+          loadStats();
+        } catch (e) {
+          toast(e.message, "error");
+        }
+      }
+
+      async function pauseCampaign(id) {
+        try {
+          await api(`/api/outreach/campaigns/${id}/pause`, { method: "POST" });
+          toast("Campaign paused");
+          loadCampaigns();
+          loadStats();
+        } catch (e) {
+          toast(e.message, "error");
+        }
+      }
+
+      async function viewStats(id) {
+        try {
+          const data = await api(`/api/outreach/campaigns/${id}/stats`);
+          const s = data.stats;
+          toast(
+            `Sent: ${s.messages_sent ?? 0} | Replied: ${s.replies_received ?? 0} | Delivered: ${s.delivered ?? 0}`,
+            "info",
+          );
+        } catch (e) {
+          toast(e.message, "error");
+        }
+      }
+
+      // ── Create Campaign Modal ─────────────────────────────────────────────────
+      async function openCreateModal() {
+        document.getElementById("createModal").classList.remove("hidden");
+        // Set default start date today
+        document.getElementById("newCampaignStart").value = new Date()
+          .toISOString()
+          .split("T")[0];
+        // Load segments into select
+        try {
+          const data = await api("/api/outreach/segments");
+          const sel = document.getElementById("newCampaignSegment");
+          const segs = data.segments || [];
+          sel.innerHTML = segs.length
+            ? segs
+                .map(
+                  (s) =>
+                    `<option value="${s.id}">${esc(s.segment_name)} (${s.contact_count ?? "?"} contacts)</option>`,
+                )
+                .join("")
+            : '<option value="">No segments found — import contacts first</option>';
+        } catch {}
+      }
+
+      function closeCreateModal() {
+        document.getElementById("createModal").classList.add("hidden");
+      }
+
+      // ── Quick Start Guide ────────────────────────────────────────────────────
+      let guideOpen = true;
+      function toggleGuide() {
+        guideOpen = !guideOpen;
+        document.getElementById("guideBody").style.display = guideOpen
+          ? "block"
+          : "none";
+        document.getElementById("guideChevron").style.transform = guideOpen
+          ? "rotate(0deg)"
+          : "rotate(-90deg)";
+      }
+
+      async function loadSampleCampaign() {
+        const today = new Date().toISOString().split("T")[0];
+        document.getElementById("newCampaignName").value =
+          "🏠 Sample – New Listing Alert";
+        document.getElementById("newCampaignMsg").value =
+          "Hi {name}! I've just got 3 fresh listings in Mont Kiara this week — 2-bedroom from RM480k. Would you like me to send the details? Just reply YES and I'll get them over to you right away! 🏡";
+        document.getElementById("newCampaignLimit").value = "1";
+        document.getElementById("newCampaignDelay").value = "45";
+        document.getElementById("newCampaignStart").value = today;
+        document.getElementById("createModal").classList.remove("hidden");
+        try {
+          const data = await api("/api/outreach/segments");
+          const sel = document.getElementById("newCampaignSegment");
+          const segs = data.segments || [];
+          sel.innerHTML = segs.length
+            ? segs
+                .map(
+                  (s) =>
+                    `<option value="${s.id}">${esc(s.segment_name)} (${s.contact_count ?? "?"} contacts)</option>`,
+                )
+                .join("")
+            : '<option value="">No segments — go to Import Contacts tab first</option>';
+        } catch {}
+        toast(
+          "Sample campaign loaded! Select your contact segment and click Create. 🚀",
+        );
+      }
+
+      async function createCampaign() {
+        const name = document.getElementById("newCampaignName").value.trim();
+        const msg = document.getElementById("newCampaignMsg").value.trim();
+        const segId = document.getElementById("newCampaignSegment").value;
+        const limit =
+          parseInt(document.getElementById("newCampaignLimit").value) || 1;
+        const delay =
+          parseInt(document.getElementById("newCampaignDelay").value) || 45;
+        const start = document.getElementById("newCampaignStart").value;
+        const end = document.getElementById("newCampaignEnd").value;
+
+        if (!name || !msg) {
+          toast("Campaign name and message are required", "error");
+          return;
+        }
+
+        const btn = document.getElementById("createCampaignBtn");
+        btn.disabled = true;
+        btn.textContent = "Creating...";
+
+        try {
+          // Clamp delay: model requires min_delay ge=30, max_delay ge=60
+          const minDelay = Math.max(30, delay);
+          const maxDelay = Math.max(60, delay * 2);
+          await api("/api/outreach/campaigns", {
+            method: "POST",
+            body: JSON.stringify({
+              name: name,
+              description: msg,
+              segment_id: segId || null,
+              daily_limit: Math.max(5, Math.min(200, limit || 50)),
+              min_delay_seconds: minDelay,
+              max_delay_seconds: maxDelay,
+              send_window_start: "09:00",
+              send_window_end: "21:00",
+            }),
+          });
+          toast("Campaign created ✅");
+          closeCreateModal();
+          loadCampaigns();
+          loadStats();
+        } catch (e) {
+          toast(e.message, "error");
+        } finally {
+          btn.disabled = false;
+          btn.textContent = "Create Campaign";
+        }
+      }
+
+      // ── Contacts import ───────────────────────────────────────────────────────
+      let csvData = null;
+
+      function handleCSV(input) {
+        const file = input.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const text = e.target.result;
+          const lines = text.trim().split("\n");
+          const headers = lines[0]
+            .split(",")
+            .map((h) => h.trim().toLowerCase());
+          if (!headers.includes("phone")) {
+            document.getElementById("csvPreview").innerHTML =
+              '<span class="text-red-400">❌ CSV must have a "phone" column header</span>';
+            csvData = null;
+            document.getElementById("csvImportBtn").disabled = true;
+            return;
+          }
+          csvData = text;
+          document.getElementById("csvPreview").innerHTML =
+            `<span class="text-emerald-400">✅ ${lines.length - 1} rows detected — ready to import</span>`;
+          document.getElementById("csvImportBtn").disabled = false;
+        };
+        reader.readAsText(file);
+      }
+
+      function downloadCSVTemplate() {
+        const csv =
+          "phone,name,tags\n601112223333,Ahmad Razif,lead\n601234567890,Sarah Lim,prospect\n";
+        const blob = new Blob([csv], { type: "text/csv" });
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = "bijou_contacts_template.csv";
+        a.click();
+      }
+
+      // Parse a single paste-numbers line: "60111...,Name" or just "60111..."
+      function parseContactLine(line) {
+        const parts = line.split(",");
+        const phone = parts[0].trim();
+        const name = parts[1] ? parts[1].trim() : null;
+        return { phone, ...(name ? { name } : {}) };
+      }
+
+      async function sendTestMessage() {
+        const msg = document.getElementById("testMessageText").value.trim();
+        if (!msg) {
+          showToast("Enter a message to send", "error");
+          return;
+        }
+        const resultEl = document.getElementById("testMessageResult");
+        resultEl.innerHTML = '<span style="color:#facc15">⏳ Sending…</span>';
+        try {
+          const resp = await api(
+            `/api/outreach/send-test?tenant_id=${TENANT_ID}`,
+            { method: "POST", body: JSON.stringify({ message: msg }) },
+          );
+          resultEl.innerHTML = `<span style="color:#10b981">✅ Sent to ${resp.sent_to}</span>`;
+          showToast("Test message sent to " + resp.sent_to, "success");
+        } catch (e) {
+          resultEl.innerHTML = `<span style="color:#f87171">❌ Failed: ${e.message}</span>`;
+          showToast("Failed: " + e.message, "error");
+        }
+      }
+
+      async function importContacts(mode) {
+        const segName =
+          document
+            .getElementById(
+              mode === "text" ? "segmentNameText" : "segmentNameCSV",
+            )
+            .value.trim() || "Imported " + new Date().toLocaleDateString();
+
+        try {
+          let resp;
+          if (mode === "text") {
+            const raw = document.getElementById("contactsTextarea").value;
+            const contacts = raw
+              .split("\n")
+              .map((l) => l.trim())
+              .filter((l) => l.length > 6)
+              .map(parseContactLine);
+            if (!contacts.length) {
+              toast("No numbers found", "error");
+              return;
+            }
+            resp = await api("/api/outreach/contacts/import", {
+              method: "POST",
+              body: JSON.stringify({ segment_name: segName, contacts }),
+            });
+          } else {
+            if (!csvData) {
+              toast("Pick a CSV file first", "error");
+              return;
+            }
+            // Send as multipart FormData — backend expects UploadFile + segment_name query param
+            const blob = new Blob([csvData], { type: "text/csv" });
+            const fd = new FormData();
+            fd.append("file", blob, "contacts.csv");
+            const url = `/api/outreach/contacts/import-csv?segment_name=${encodeURIComponent(segName)}&tenant_id=${TENANT_ID}`;
+            const r = await fetch(url, {
+              method: "POST",
+              headers: {
+                "X-Tenant-ID": TENANT_ID,
+                ...(ACCESS_TOKEN
+                  ? { Authorization: `Bearer ${ACCESS_TOKEN}` }
+                  : {}),
+              },
+              body: fd,
+            });
+            if (r.status === 401) {
+              localStorage.clear();
+              location.href = "/login";
+            }
+            if (!r.ok) {
+              const e = await r.json().catch(() => ({}));
+              throw new Error(e.detail || `HTTP ${r.status}`);
+            }
+            resp = await r.json();
+          }
+          toast(
+            `Imported ${resp.successful ?? resp.imported ?? "?"} contacts into "${segName}" ✅`,
+          );
+          if (mode === "text") {
+            document.getElementById("contactsTextarea").value = "";
+            document.getElementById("importTextResult").innerHTML =
+              `<span class="text-emerald-400">✅ ${resp.successful ?? resp.imported} contacts imported</span>`;
+          } else {
+            document.getElementById("csvPreview").innerHTML =
+              `<span class="text-emerald-400">✅ ${resp.successful ?? resp.imported} contacts imported</span>`;
+            csvData = null;
+            document.getElementById("csvImportBtn").disabled = true;
+            document.getElementById("csvFile").value = "";
+          }
+          loadSegments();
+        } catch (e) {
+          toast(e.message, "error");
+        }
+      }
+
+      async function loadSegments() {
+        try {
+          const data = await api("/api/outreach/segments");
+          const segs = data.segments || [];
+          const el = document.getElementById("segmentsList");
+          el.innerHTML = segs.length
+            ? segs
+                .map(
+                  (s) => `
+          <div class="flex items-center justify-between py-3 border-b border-border last:border-0">
+            <div>
+              <p class="text-sm font-medium text-white">${esc(s.segment_name)}</p>
+              <p class="text-xs text-muted">${s.contact_count ?? "?"} contacts · created ${new Date(s.created_at).toLocaleDateString()}</p>
+            </div>
+            <span class="badge badge-green">Ready</span>
+          </div>`,
+                )
+                .join("")
+            : '<p class="text-sm text-muted text-center py-6">No segments yet — import some contacts above</p>';
+        } catch (e) {
+          document.getElementById("segmentsList").innerHTML =
+            `<p class="text-red-400 text-sm">${e.message}</p>`;
+        }
+      }
+
+      // ── Queue ─────────────────────────────────────────────────────────────────
+      async function loadQueue() {
+        try {
+          const data = await api("/api/outreach/queue/status");
+          const el = document.getElementById("queueList");
+          const items = data.recent_queue || [];
+
+          const summary = `
+        <div class="grid grid-cols-3 gap-4 mb-6">
+          <div class="stat-card text-center">
+            <div class="text-xl font-bold text-emerald-400">${data.total_queued ?? 0}</div>
+            <div class="text-xs text-muted mt-1">Queued</div>
+          </div>
+          <div class="stat-card text-center">
+            <div class="text-xl font-bold text-white">${data.sent_today ?? 0}</div>
+            <div class="text-xs text-muted mt-1">Sent Today</div>
+          </div>
+          <div class="stat-card text-center">
+            <div class="text-xl font-bold text-red-400">${data.failed_today ?? 0}</div>
+            <div class="text-xs text-muted mt-1">Failed</div>
+          </div>
+        </div>`;
+
+          if (!items.length) {
+            el.innerHTML =
+              summary +
+              '<p class="text-sm text-muted text-center py-6">Queue is empty — messages will appear here once a campaign starts</p>';
+            return;
+          }
+
+          el.innerHTML =
+            summary +
+            items
+              .map(
+                (m) => `
+        <div class="queue-item">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm font-medium text-white">${esc(m.recipient_phone)}</p>
+              <p class="text-xs text-muted mt-1 line-clamp-1">${esc(m.message_text || "")}</p>
+            </div>
+            <div class="flex flex-col items-end gap-1">
+              ${statusBadge(m.status)}
+              <span class="text-xs text-muted">${m.scheduled_at ? new Date(m.scheduled_at).toLocaleTimeString() : ""}</span>
+            </div>
+          </div>
+        </div>`,
+              )
+              .join("");
+        } catch (e) {
+          document.getElementById("queueList").innerHTML =
+            `<p class="text-red-400 text-sm text-center py-8">${e.message}</p>`;
+        }
+      }
+
+      // Drop zone drag style
+      const dz = document.getElementById("dropZone");
+      ["dragover", "dragenter"].forEach((ev) =>
+        dz.addEventListener(ev, (e) => {
+          e.preventDefault();
+          dz.style.borderColor = "#10b981";
+        }),
+      );
+      ["dragleave", "drop"].forEach((ev) =>
+        dz.addEventListener(ev, (e) => {
+          e.preventDefault();
+          dz.style.borderColor = "";
+        }),
+      );
+      dz.addEventListener("drop", (e) => {
+        const file = e.dataTransfer.files[0];
+        if (file) {
+          const inp = document.getElementById("csvFile");
+          inp.files = e.dataTransfer.files;
+          handleCSV(inp);
+        }
+      });
+
+      // ── Init ──────────────────────────────────────────────────────────────────
+      loadStatus();
+      loadStats();
+      loadCampaigns();
+      setInterval(loadStats, 30000);
+    </script>
+  </body>
+</html>

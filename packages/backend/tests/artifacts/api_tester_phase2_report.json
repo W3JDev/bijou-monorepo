@@ -1,0 +1,80 @@
+{
+  "phase": "2A-api-tester",
+  "mission": "Post-Supabase key rotation verification — staging + production",
+  "timestamp": "2026-02-21T03:14:30Z",
+
+  "staging": {
+    "base_url": "https://bijou-staging.fly.dev",
+    "tenant_id": "29d48db4-075f-45ee-8c00-a57f8fd3016a",
+    "health_check_script": "9/9",
+    "db_connectivity": true,
+    "endpoints_tested": [
+      { "name": "health",              "path": "/health",                          "status_code": 200, "db_dependent": false, "ok": true,  "response_time_ms": 155 },
+      { "name": "onboarding_health",   "path": "/api/onboarding/health",           "status_code": 200, "db_dependent": false, "ok": true,  "response_time_ms": 182 },
+      { "name": "settings_health",     "path": "/api/settings/health",             "status_code": 200, "db_dependent": false, "ok": true,  "response_time_ms": 92  },
+      { "name": "knowledge_health",    "path": "/api/knowledge/health",            "status_code": 200, "db_dependent": false, "ok": true,  "response_time_ms": 90  },
+      { "name": "conversations",       "path": "/api/dashboard/conversations",     "status_code": 200, "db_dependent": true,  "ok": true,  "response_time_ms": 200, "note": "Returned 30 active conversations" },
+      { "name": "stats",               "path": "/api/dashboard/stats",             "status_code": 200, "db_dependent": true,  "ok": true,  "response_time_ms": 571, "data": { "active_conversations": 30, "total_conversations": 30, "ai_handled": 30, "human_handled": 0, "messages_today": 4 } },
+      { "name": "escalations",         "path": "/api/dashboard/escalations",       "status_code": 200, "db_dependent": true,  "ok": true,  "response_time_ms": 301, "note": "Empty array — no pending escalations" },
+      { "name": "knowledge_list",      "path": "/api/dashboard/knowledge/list",    "status_code": 200, "db_dependent": true,  "ok": true,  "response_time_ms": 223 },
+      { "name": "settings_current",    "path": "/api/settings/current",            "status_code": 200, "db_dependent": true,  "ok": true,  "response_time_ms": 254 },
+      { "name": "blacklist",           "path": "/api/dashboard/blacklist",         "status_code": 200, "db_dependent": true,  "ok": true,  "response_time_ms": 273 },
+      { "name": "leads",               "path": "/api/dashboard/leads",             "status_code": 200, "db_dependent": true,  "ok": true,  "response_time_ms": 341 },
+      { "name": "agents",              "path": "/api/dashboard/agents",            "status_code": 200, "db_dependent": true,  "ok": true,  "response_time_ms": 261 },
+      { "name": "status",              "path": "/status",                          "status_code": 200, "db_dependent": false, "ok": true,  "response_time_ms": 112 },
+      { "name": "bridge_health",       "path": "/bridge/health",                   "status_code": 200, "db_dependent": false, "ok": true,  "response_time_ms": 102 }
+    ],
+    "staging_conversations_status": 200,
+    "staging_stats_status": 200,
+    "staging_settings_status": 200,
+    "all_endpoints_passed": true,
+    "total_endpoints_tested": 14,
+    "passed": 14,
+    "failed": 0
+  },
+
+  "production": {
+    "base_url": "https://bijou-production.fly.dev",
+    "policy": "Read-only health checks only — no write/destructive operations",
+    "endpoints_tested": [
+      { "name": "health",            "path": "/health",                  "status_code": 200, "ok": true,  "response_time_ms": 190 },
+      { "name": "onboarding_health", "path": "/api/onboarding/health",   "status_code": 200, "ok": true,  "response_time_ms": 320 },
+      { "name": "status",            "path": "/status",                  "status_code": 200, "ok": true,  "response_time_ms": 82  },
+      { "name": "bridge_health",     "path": "/bridge/health",           "status_code": 200, "ok": true,  "response_time_ms": 322, "note": "bridge_responsive: true" }
+    ],
+    "production_health": "healthy",
+    "version": "2.2.0",
+    "all_health_checks_passed": true
+  },
+
+  "key_rotation_verdict": {
+    "new_keys_working": true,
+    "evidence": [
+      "stats endpoint returned live DB data: 30 active_conversations, 4 messages_today",
+      "conversations endpoint returned paginated conversation rows from Supabase",
+      "settings_current returned tenant-scoped config from DB",
+      "leads endpoint returned lead records from DB",
+      "onboarding_health check confirmed supabase: ok on both staging and production",
+      "status endpoint on production showed database: connected"
+    ]
+  },
+
+  "regressions_found": [],
+
+  "notes": [
+    "API paths differ from task description (e.g. /api/conversations → /api/dashboard/conversations). Discovered via /openapi.json (86 routes total). All correct paths return 200.",
+    "Staging WhatsApp bridge has 0 active sessions — expected for staging environment.",
+    "Production bridge is responsive and reports devices active."
+  ],
+
+  "summary": {
+    "staging_health_check": "9/9",
+    "staging_db_connectivity": true,
+    "staging_conversations_status": 200,
+    "staging_stats_status": 200,
+    "production_health": "healthy",
+    "new_keys_working": true,
+    "regressions_found": [],
+    "all_success_criteria_met": true
+  }
+}

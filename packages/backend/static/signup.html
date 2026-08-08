@@ -1,0 +1,633 @@
+<!doctype html>
+<html lang="en">
+  <!-- edge-cache-bust:v=2026-07-28a -->
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Create Account — Bijou AI</title>
+    <link rel="icon" type="image/svg+xml" href="/static/bijou-logo.svg" />
+    <link rel="icon" type="image/png" href="/static/favicon.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        background: #0a1e1c;
+        font-family: "Inter", sans-serif;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+      }
+
+      body::before {
+        content: "";
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 700px;
+        height: 700px;
+        background: radial-gradient(
+          circle,
+          rgba(46, 241, 157, 0.05) 0%,
+          transparent 70%
+        );
+        pointer-events: none;
+        z-index: 0;
+      }
+
+      .signup-card {
+        background: #0a1e1c;
+        border: 2px solid #c9a961;
+        border-radius: 16px;
+        padding: 44px 40px;
+        width: 480px;
+        box-shadow:
+          0 0 40px rgba(0, 0, 0, 0.6),
+          0 0 80px rgba(46, 241, 157, 0.06);
+        position: relative;
+        z-index: 1;
+      }
+
+      .logo-img {
+        width: 72px;
+        height: 72px;
+        margin: 0 auto 20px;
+        display: block;
+        /* No filter — keep logo transparent on dark card */
+      }
+
+      h1 {
+        color: #e8d4a0;
+        font-size: 24px;
+        font-weight: 700;
+        text-align: center;
+        margin-bottom: 6px;
+        text-shadow: 0 0 10px rgba(232, 212, 160, 0.3);
+      }
+
+      .subtitle {
+        color: #d0d0d0;
+        font-size: 13px;
+        text-align: center;
+        margin-bottom: 28px;
+      }
+
+      /* Two-column grid for paired fields */
+      .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+      }
+
+      .form-group {
+        margin-bottom: 18px;
+        text-align: left;
+      }
+
+      label {
+        color: #e8d4a0;
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: 0.6px;
+        display: block;
+        margin-bottom: 7px;
+        text-transform: uppercase;
+      }
+
+      input,
+      select {
+        width: 100%;
+        background: #053b35;
+        border: 1px solid rgba(201, 169, 97, 0.35);
+        color: #ffffff;
+        border-radius: 8px;
+        padding: 11px 14px;
+        font-size: 14px;
+        font-family: "Inter", sans-serif;
+        transition: all 0.2s ease;
+        appearance: none;
+        -webkit-appearance: none;
+      }
+
+      select {
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23c9a961' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 14px center;
+        padding-right: 36px;
+        cursor: pointer;
+      }
+
+      select option {
+        background: #053b35;
+        color: #fff;
+      }
+
+      input:focus,
+      select:focus {
+        border-color: #2ef19d;
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(46, 241, 157, 0.1);
+        background: #064540;
+      }
+
+      input::placeholder {
+        color: rgba(208, 208, 208, 0.5);
+      }
+
+      .hint {
+        font-size: 11px;
+        color: rgba(201, 169, 97, 0.7);
+        margin-top: 5px;
+      }
+
+      /* Industry picker cards */
+      .industry-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+        margin-bottom: 0;
+      }
+
+      .industry-card {
+        background: #053b35;
+        border: 1px solid rgba(201, 169, 97, 0.25);
+        border-radius: 8px;
+        padding: 12px 14px;
+        cursor: pointer;
+        transition: all 0.15s ease;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 13px;
+        color: #d0d0d0;
+        position: relative;
+      }
+
+      .industry-card:hover {
+        border-color: rgba(46, 241, 157, 0.4);
+        background: #064540;
+      }
+
+      .industry-card.selected {
+        border-color: #2ef19d;
+        background: rgba(46, 241, 157, 0.08);
+        color: #2ef19d;
+      }
+
+      .industry-card .ic-emoji {
+        font-size: 20px;
+        flex-shrink: 0;
+      }
+      .industry-card .ic-name {
+        font-weight: 600;
+        font-size: 12px;
+      }
+      .industry-card .ic-desc {
+        font-size: 11px;
+        color: #8a8a8a;
+        margin-top: 2px;
+      }
+
+      .industry-card.selected::after {
+        content: "✓";
+        position: absolute;
+        top: 8px;
+        right: 10px;
+        color: #2ef19d;
+        font-size: 12px;
+        font-weight: 700;
+      }
+
+      /* Compact password row */
+      .pw-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+      }
+
+      /* Password strength bar */
+      .pw-strength {
+        height: 3px;
+        border-radius: 2px;
+        margin-top: 6px;
+        background: #1a3832;
+        overflow: hidden;
+      }
+      .pw-strength-bar {
+        height: 100%;
+        border-radius: 2px;
+        transition: all 0.3s ease;
+        width: 0%;
+      }
+
+      .btn-primary {
+        width: 100%;
+        background: linear-gradient(135deg, #2ef19d 0%, #00f5e4 100%);
+        border: 2px solid #c9a961;
+        color: #0a1e1c;
+        font-family: "Inter", sans-serif;
+        font-weight: 700;
+        font-size: 15px;
+        padding: 13px;
+        border-radius: 8px;
+        cursor: pointer;
+        box-shadow: 0 4px 20px rgba(46, 241, 157, 0.25);
+        transition: all 0.2s ease;
+        margin-top: 4px;
+      }
+
+      .btn-primary:hover {
+        box-shadow: 0 6px 28px rgba(46, 241, 157, 0.4);
+        transform: translateY(-1px);
+        background: linear-gradient(135deg, #00f5e4 0%, #2ef19d 100%);
+      }
+
+      .btn-primary:active {
+        transform: translateY(0);
+      }
+
+      .btn-primary:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        transform: none;
+      }
+
+      .status-message {
+        margin-top: 18px;
+        padding: 14px;
+        border-radius: 8px;
+        font-size: 13px;
+        text-align: left;
+        display: none;
+        border: 1px solid transparent;
+        line-height: 1.5;
+      }
+
+      .status-message.success {
+        background: rgba(46, 241, 157, 0.09);
+        color: #2ef19d;
+        border-color: rgba(46, 241, 157, 0.3);
+        display: block;
+      }
+
+      .status-message.error {
+        background: rgba(255, 67, 67, 0.09);
+        color: #ff6b6b;
+        border-color: rgba(255, 67, 67, 0.3);
+        display: block;
+      }
+
+      .loader {
+        border: 3px solid rgba(46, 241, 157, 0.3);
+        border-top: 3px solid #2ef19d;
+        border-radius: 50%;
+        width: 18px;
+        height: 18px;
+        animation: spin 1s linear infinite;
+        display: inline-block;
+        margin-left: 8px;
+        vertical-align: middle;
+      }
+
+      @keyframes spin {
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+
+      .login-link {
+        color: #d0d0d0;
+        font-size: 13px;
+        text-align: center;
+        margin-top: 28px;
+        padding-top: 20px;
+        border-top: 1px solid rgba(201, 169, 97, 0.15);
+      }
+
+      .login-link a {
+        color: #2ef19d;
+        text-decoration: none;
+        font-weight: 600;
+        transition: color 0.2s;
+      }
+
+      .login-link a:hover {
+        color: #00f5e4;
+        text-decoration: underline;
+      }
+
+      .section-label {
+        font-size: 11px;
+        font-weight: 700;
+        color: rgba(201, 169, 97, 0.8);
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        margin-bottom: 10px;
+      }
+
+      .divider {
+        height: 1px;
+        background: rgba(201, 169, 97, 0.2);
+        margin: 20px 0;
+      }
+
+      @media (max-width: 520px) {
+        .signup-card {
+          padding: 32px 20px;
+          width: 100%;
+        }
+        .form-row,
+        .pw-row,
+        .industry-grid {
+          grid-template-columns: 1fr;
+        }
+        h1 {
+          font-size: 20px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="signup-card">
+      <img
+        src="/static/logos/mark.svg"
+        alt="Bijou AI"
+        class="logo-img"
+      />
+      <h1>Create Your Bijou AI Account</h1>
+      <p class="subtitle">
+        Set up your AI-powered WhatsApp assistant in minutes
+      </p>
+
+      <form id="signupForm">
+        <!-- Business info -->
+        <div class="form-row">
+          <div class="form-group">
+            <label for="businessName">Business Name</label>
+            <input
+              type="text"
+              id="businessName"
+              name="businessName"
+              required
+              placeholder="Century21 KL"
+            />
+          </div>
+          <div class="form-group">
+            <label for="phone">WhatsApp Number</label>
+            <input
+              type="tel"
+              id="phone"
+              name="phone"
+              required
+              placeholder="+60123456789"
+            />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="email">Email Address</label>
+          <input
+            type="email"
+            id="email"
+            name="email"
+            required
+            placeholder="you@yourbusiness.com"
+            autocomplete="email"
+          />
+        </div>
+
+        <!-- Industry picker -->
+        <div class="form-group">
+          <p class="section-label">Your Business Type</p>
+          <div class="industry-grid" id="industryGrid">
+            <div class="industry-card" data-value="property">
+              <span class="ic-emoji">🏠</span>
+              <div>
+                <div class="ic-name">Property</div>
+                <div class="ic-desc">Agents &amp; Rentals</div>
+              </div>
+            </div>
+            <div class="industry-card" data-value="fnb">
+              <span class="ic-emoji">🍜</span>
+              <div>
+                <div class="ic-name">Food &amp; Bev</div>
+                <div class="ic-desc">Cafe, Restaurant</div>
+              </div>
+            </div>
+            <div class="industry-card" data-value="dental">
+              <span class="ic-emoji">🦷</span>
+              <div>
+                <div class="ic-name">Dental / Clinic</div>
+                <div class="ic-desc">Healthcare</div>
+              </div>
+            </div>
+            <div class="industry-card" data-value="retail">
+              <span class="ic-emoji">🛒</span>
+              <div>
+                <div class="ic-name">Retail / Other</div>
+                <div class="ic-desc">Any business</div>
+              </div>
+            </div>
+          </div>
+          <input type="hidden" id="vertical" name="vertical" />
+          <p class="hint" id="industryHint" style="margin-top: 8px">
+            Pick your industry — we'll load a ready-made AI setup for you
+          </p>
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- Passwords -->
+        <div class="pw-row">
+          <div class="form-group" style="margin-bottom: 0">
+            <label for="password">Password</label>
+            <input
+              type="password"
+              id="password"
+              name="password"
+              required
+              placeholder="Min 8 characters"
+              autocomplete="new-password"
+            />
+            <div class="pw-strength">
+              <div class="pw-strength-bar" id="pwBar"></div>
+            </div>
+          </div>
+          <div class="form-group" style="margin-bottom: 0">
+            <label for="confirmPassword">Confirm Password</label>
+            <input
+              type="password"
+              id="confirmPassword"
+              name="confirmPassword"
+              required
+              placeholder="Repeat password"
+              autocomplete="new-password"
+            />
+          </div>
+        </div>
+
+        <button
+          type="submit"
+          class="btn-primary"
+          id="signupBtn"
+          style="margin-top: 22px"
+        >
+          Create My Account
+        </button>
+      </form>
+
+      <div id="statusMessage" class="status-message"></div>
+
+      <div class="or-divider">
+        <span>or</span>
+      </div>
+
+      <a
+        href="/api/auth/google/login"
+        class="btn-google"
+        style="display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; padding: 12px 20px; background: #fff; color: #0a1e1c; border: 1px solid #d4d4d4; border-radius: 6px; font-weight: 600; text-decoration: none; box-sizing: border-box; margin-top: 4px;"
+        onmouseover="this.style.background='#f5f5f5'"
+        onmouseout="this.style.background='#fff'"
+      >
+        <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true">
+          <path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844a4.14 4.14 0 0 1-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615z"/>
+          <path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z"/>
+          <path fill="#FBBC05" d="M3.964 10.707A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.707V4.961H.957A8.997 8.997 0 0 0 0 9c0 1.452.348 2.827.957 4.039l3.007-2.332z"/>
+          <path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.961L3.964 7.293C4.672 5.163 6.656 3.58 9 3.58z"/>
+        </svg>
+        Sign up with Google
+      </a>
+
+      <div class="login-link">
+        Already have an account? <a href="/login">Sign in here</a>
+      </div>
+    </div>
+
+    <script>
+      // ── Industry card picker ──────────────────────────────────────────────────
+      let selectedVertical = "";
+      document.getElementById("industryGrid").addEventListener("click", (e) => {
+        const card = e.target.closest(".industry-card");
+        if (!card) return;
+        document
+          .querySelectorAll(".industry-card")
+          .forEach((c) => c.classList.remove("selected"));
+        card.classList.add("selected");
+        selectedVertical = card.dataset.value;
+        document.getElementById("vertical").value = selectedVertical;
+        document.getElementById("industryHint").textContent =
+          "Great! We'll auto-load a ready-made knowledge base for " +
+          card.querySelector(".ic-name").textContent +
+          " ✅";
+      });
+
+      // ── Password strength bar ────────────────────────────────────────────────
+      const pwInput = document.getElementById("password");
+      const pwBar = document.getElementById("pwBar");
+      pwInput.addEventListener("input", () => {
+        const v = pwInput.value;
+        let strength = 0;
+        if (v.length >= 8) strength++;
+        if (/[A-Z]/.test(v)) strength++;
+        if (/[0-9]/.test(v)) strength++;
+        if (/[^A-Za-z0-9]/.test(v)) strength++;
+        const colors = ["#ef4444", "#f59e0b", "#eab308", "#2ef19d"];
+        const widths = ["25%", "50%", "75%", "100%"];
+        pwBar.style.width = strength ? widths[strength - 1] : "0%";
+        pwBar.style.background = strength
+          ? colors[strength - 1]
+          : "transparent";
+      });
+
+      // ── Form submit ──────────────────────────────────────────────────────────
+      const form = document.getElementById("signupForm");
+      const statusMsg = document.getElementById("statusMessage");
+      const signupBtn = document.getElementById("signupBtn");
+
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        const businessName = document
+          .getElementById("businessName")
+          .value.trim();
+        const email = document.getElementById("email").value.trim();
+        const phone = document.getElementById("phone").value.trim();
+        const password = document.getElementById("password").value;
+        const confirmPassword =
+          document.getElementById("confirmPassword").value;
+
+        statusMsg.className = "status-message";
+        statusMsg.style.display = "none";
+
+        if (password.length < 8) {
+          showMsg("error", "❌ Password must be at least 8 characters.");
+          return;
+        }
+        if (password !== confirmPassword) {
+          showMsg("error", "❌ Passwords do not match.");
+          return;
+        }
+
+        signupBtn.disabled = true;
+        signupBtn.innerHTML =
+          'Creating account... <span class="loader"></span>';
+
+        try {
+          const response = await fetch("/api/auth/signup", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              business_name: businessName,
+              email: email,
+              phone: phone,
+              password: password,
+              vertical: selectedVertical || null,
+            }),
+          });
+
+          const data = await response.json();
+
+          if (response.ok) {
+            showMsg(
+              "success",
+              "✅ Account created! Check your email to verify, then sign in.\n\n" +
+                (selectedVertical
+                  ? "💡 We've noted your industry — your AI knowledge base template will be ready once you log in."
+                  : ""),
+            );
+            form.reset();
+            document
+              .querySelectorAll(".industry-card")
+              .forEach((c) => c.classList.remove("selected"));
+            setTimeout(() => {
+              window.location.href = "/login";
+            }, 4000);
+          } else {
+            throw new Error(data.detail || "Signup failed. Please try again.");
+          }
+        } catch (error) {
+          showMsg("error", "❌ " + error.message);
+          signupBtn.disabled = false;
+          signupBtn.innerHTML = "Create My Account";
+        }
+      });
+
+      function showMsg(type, text) {
+        statusMsg.className = "status-message " + type;
+        statusMsg.innerHTML = text.replace(/\n/g, "<br>");
+      }
+    </script>
+  </body>
+</html>

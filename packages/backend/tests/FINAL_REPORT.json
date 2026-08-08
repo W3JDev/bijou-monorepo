@@ -1,0 +1,34 @@
+{
+  "status": "complete",
+  "artifacts_created": [
+    "tests/api_test_plan.md",
+    "tests/api_report.json",
+    "tests/postman_run.log",
+    "tests/openapi.json",
+    "tests/api_tester.py",
+    "tests/TESTING_SUMMARY.md",
+    "tests/mission_complete.json"
+  ],
+  "endpoints_tested": 24,
+  "critical_failures": [
+    {
+      "endpoint": "GET /api/onboarding/status/{token}",
+      "impact": "Blocks onboarding status tracking (V1)"
+    },
+    {
+      "endpoint": "GET /api/onboarding/v2/whatsapp/qr/{tenant_id}",
+      "impact": "Blocks onboarding - WhatsApp device not provisioned"
+    },
+    {
+      "endpoint": "GET /api/tenant/{tenant_id}/device/status",
+      "impact": "Breaks device status UI - missing import"
+    }
+  ],
+  "onboarding_status": {
+    "signup": "working",
+    "payment": "unknown",
+    "qr_generation": "failing",
+    "whatsapp_webhook": "unknown"
+  },
+  "postman_collection_url": "Manual import available from tests/openapi.json (Postman MCP tools unavailable)"
+}

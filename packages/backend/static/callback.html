@@ -1,0 +1,296 @@
+<!doctype html>
+<html lang="en">
+  <!-- edge-cache-bust:v=2026-07-28a -->
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Connecting Calendar — Bijou AI</title>
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Inter", sans-serif;
+        background: #0a0a0c;
+        color: #fff;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .card {
+        background: #16161a;
+        border: 1px solid #2a2a33;
+        border-radius: 16px;
+        padding: 40px 48px;
+        max-width: 420px;
+        width: 100%;
+        text-align: center;
+      }
+      .logo {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        margin: 0 auto 20px;
+        object-fit: contain;
+        background: #10b98120;
+      }
+      h1 {
+        font-size: 18px;
+        font-weight: 700;
+        margin-bottom: 8px;
+        color: #fff;
+      }
+      .sub {
+        font-size: 13px;
+        color: #9ca3af;
+        margin-bottom: 28px;
+        line-height: 1.6;
+      }
+      .spinner {
+        width: 44px;
+        height: 44px;
+        border: 3px solid #1e1e24;
+        border-top: 3px solid #10b981;
+        border-radius: 50%;
+        animation: spin 0.9s linear infinite;
+        margin: 0 auto 20px;
+      }
+      @keyframes spin {
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+      .status {
+        font-size: 13px;
+        color: #6b7280;
+        margin-bottom: 16px;
+      }
+      .success-icon {
+        width: 52px;
+        height: 52px;
+        background: #10b98120;
+        border: 2px solid #10b98140;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+        margin: 0 auto 16px;
+      }
+      .error-icon {
+        width: 52px;
+        height: 52px;
+        background: #ef444420;
+        border: 2px solid #ef444440;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+        margin: 0 auto 16px;
+      }
+      .btn {
+        display: inline-block;
+        padding: 10px 24px;
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        border: none;
+        text-decoration: none;
+        transition: opacity 0.15s;
+      }
+      .btn:hover {
+        opacity: 0.85;
+      }
+      .btn-primary {
+        background: #10b981;
+        color: #000;
+      }
+      .btn-outline {
+        background: transparent;
+        color: #9ca3af;
+        border: 1px solid #2a2a33;
+      }
+      #stateLoading,
+      #stateSuccess,
+      #stateError {
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <img
+        src="/static/logos/mark.svg"
+        class="logo"
+        alt="Bijou AI"
+        onerror="this.style.display = 'none'"
+      />
+
+      <!-- Loading -->
+      <div id="stateLoading">
+        <h1>Connecting your calendar…</h1>
+        <p class="sub">
+          Please wait while we securely link your cal.com account to Bijou AI.
+        </p>
+        <div class="spinner"></div>
+        <div class="status" id="statusText">Exchanging tokens…</div>
+      </div>
+
+      <!-- Success -->
+      <div id="stateSuccess">
+        <div class="success-icon">✓</div>
+        <h1>Calendar Connected!</h1>
+        <p class="sub" id="successMsg">
+          Your calendar has been linked. Bijou AI can now check availability and
+          create bookings automatically.
+        </p>
+        <a href="/dashboard" class="btn btn-primary">Go to Dashboard →</a>
+      </div>
+
+      <!-- Error -->
+      <div id="stateError">
+        <div class="error-icon">✕</div>
+        <h1>Connection Failed</h1>
+        <p class="sub" id="errorMsg">
+          Something went wrong linking your calendar. Please try again.
+        </p>
+        <div style="display: flex; gap: 10px; justify-content: center">
+          <a href="/dashboard" class="btn btn-outline">Back to Dashboard</a>
+          <button onclick="retryConnect()" class="btn btn-primary">
+            Try Again
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const CAL_CLIENT_ID =
+        "3195ffcf36e5fbac1d894f625a96270418d36afb5578e051dae8b64330346652";
+      const REDIRECT_URI = "https://app.mybijou.xyz/callback";
+
+      function show(state) {
+        ["stateLoading", "stateSuccess", "stateError"].forEach((id) => {
+          document.getElementById(id).style.display =
+            id === state ? "block" : "none";
+        });
+      }
+
+      function status(msg) {
+        document.getElementById("statusText").textContent = msg;
+      }
+
+      async function retryConnect() {
+        // Clear stored PKCE state and go back so the dashboard can restart the flow
+        localStorage.removeItem("cal_code_verifier");
+        localStorage.removeItem("cal_code_verifier_ts");
+        localStorage.removeItem("cal_oauth_state");
+        window.location.href = "/dashboard";
+      }
+
+      async function run() {
+        show("stateLoading");
+
+        // 1. Read auth code from URL
+        const params = new URLSearchParams(location.search);
+        const code = params.get("code");
+        const error = params.get("error");
+
+        if (error) {
+          document.getElementById("errorMsg").textContent =
+            `cal.com returned error: ${error}. Please try again.`;
+          show("stateError");
+          return;
+        }
+
+        if (!code) {
+          document.getElementById("errorMsg").textContent =
+            "No authorization code received. Please try connecting again.";
+          show("stateError");
+          return;
+        }
+
+        // 2. Read code_verifier (generated when auth was initiated, stored in localStorage)
+        const codeVerifier = localStorage.getItem("cal_code_verifier");
+        // Expire after 10 minutes
+        const cvTs = parseInt(localStorage.getItem("cal_code_verifier_ts") || "0");
+        if (codeVerifier && Date.now() - cvTs > 10 * 60 * 1000) {
+          localStorage.removeItem("cal_code_verifier");
+          localStorage.removeItem("cal_code_verifier_ts");
+        }
+        if (!codeVerifier) {
+          document.getElementById("errorMsg").textContent =
+            "Session expired — the code verifier is missing. Please start the connection again from the dashboard.";
+          show("stateError");
+          return;
+        }
+
+        // 3. Read tenant auth from localStorage
+        const tenantId = localStorage.getItem("tenant_id");
+        const accessToken = localStorage.getItem("access_token");
+
+        if (!tenantId) {
+          document.getElementById("errorMsg").textContent =
+            "Not logged in. Please log in to your dashboard first, then connect your calendar.";
+          show("stateError");
+          return;
+        }
+
+        // 4. Exchange code for tokens (backend handles cal.com call)
+        status("Exchanging code for calendar tokens…");
+        try {
+          const headers = {
+            "Content-Type": "application/json",
+            "X-Tenant-ID": tenantId,
+          };
+          if (accessToken) headers["Authorization"] = `Bearer ${accessToken}`;
+
+          const res = await fetch("/api/dashboard/calendar/oauth-exchange", {
+            method: "POST",
+            headers,
+            body: JSON.stringify({
+              code,
+              code_verifier: codeVerifier,
+              redirect_uri: REDIRECT_URI,
+            }),
+          });
+
+          const data = await res.json();
+
+          if (!res.ok || !data.success) {
+            document.getElementById("errorMsg").textContent =
+              data.detail ||
+              data.error ||
+              `Server error (${res.status}). Please try again.`;
+            show("stateError");
+            return;
+          }
+
+          // 5. Success
+          localStorage.removeItem("cal_code_verifier");
+          localStorage.removeItem("cal_code_verifier_ts");
+          localStorage.removeItem("cal_oauth_state");
+          const username = data.username || data.email || "your account";
+          document.getElementById("successMsg").textContent =
+            `Connected as ${username}. Bijou AI can now check your availability and create bookings automatically.`;
+          show("stateSuccess");
+
+          // Auto-redirect after 3 seconds
+          setTimeout(() => {
+            window.location.href = "/dashboard?calendar=connected";
+          }, 3000);
+        } catch (e) {
+          document.getElementById("errorMsg").textContent =
+            `Network error: ${e.message}. Please check your connection and try again.`;
+          show("stateError");
+        }
+      }
+
+      run();
+    </script>
+  </body>
+</html>

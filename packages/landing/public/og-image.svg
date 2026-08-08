@@ -1,0 +1,83 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#072A1F"/>
+      <stop offset="100%" stop-color="#0B3B2E"/>
+    </linearGradient>
+    <linearGradient id="gold-grad" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#D4A24C"/>
+      <stop offset="100%" stop-color="#E3B457"/>
+    </linearGradient>
+    <linearGradient id="green-grad" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#0B3B2E"/>
+      <stop offset="100%" stop-color="#072A1F"/>
+    </linearGradient>
+    <radialGradient id="glow-gold" cx="0.18" cy="0.32" r="0.55">
+      <stop offset="0%" stop-color="#E3B457" stop-opacity="0.22"/>
+      <stop offset="100%" stop-color="#E3B457" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="glow-green" cx="0.85" cy="0.78" r="0.55">
+      <stop offset="0%" stop-color="#10b981" stop-opacity="0.16"/>
+      <stop offset="100%" stop-color="#10b981" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <rect width="1200" height="630" fill="url(#glow-gold)"/>
+  <rect width="1200" height="630" fill="url(#glow-green)"/>
+
+  <!-- Signal Gem mark (left) — scaled 2.4x from 100-unit viewBox -->
+  <g transform="translate(80, 180)">
+    <rect width="240" height="240" rx="40" fill="url(#green-grad)" stroke="#E3B457" stroke-width="2" stroke-opacity="0.35"/>
+    <!-- Gem body -->
+    <g transform="translate(36, 28) scale(1.68)">
+      <path fill="#E3B457" d="M30,12 L70,12 L88,40 L70,73 L50,73 L26,92 L33,73 L12,40 Z"/>
+      <g fill="none" stroke="#0B3B2E" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round" opacity="0.6">
+        <path d="M40,26 L60,26 L68,40 L60,54 L40,54 L32,40 Z"/>
+        <path d="M50,26 L50,54"/>
+        <path d="M40,26 L30,12 M60,26 L70,12"/>
+        <path d="M32,40 L12,40 M68,40 L88,40"/>
+        <path d="M40,54 L30,73 M60,54 L70,73"/>
+        <path d="M50,54 L50,73"/>
+        <path d="M50,73 L26,92 L33,73"/>
+      </g>
+    </g>
+  </g>
+
+  <!-- Title block (right) -->
+  <g transform="translate(380, 200)">
+    <text font-family='Optima, "Palatino Linotype", Georgia, serif'
+          font-weight="700" font-size="80" fill="#F7F4EC" letter-spacing="-1">
+      Bijou <tspan fill="url(#gold-grad)" font-weight="700">AI</tspan>
+    </text>
+    <text y="80" font-family="-apple-system, BlinkMacSystemFont, 'Inter', sans-serif"
+          font-weight="600" font-size="36" fill="#E3B457" letter-spacing="-0.5">
+      Your WhatsApp AI for Malaysia
+    </text>
+    <text y="150" font-family="-apple-system, BlinkMacSystemFont, 'Inter', sans-serif"
+          font-weight="500" font-size="24" fill="#94a3b8">
+      Replies in Manglish. Books Cal.com. Captures leads 24/7.
+    </text>
+  </g>
+
+  <!-- Price strip (bottom) -->
+  <g transform="translate(80, 500)">
+    <rect width="1040" height="80" rx="16" fill="rgba(7,42,31,0.55)" stroke="rgba(227,180,87,0.35)" stroke-width="1"/>
+    <text x="32" y="50" font-family="-apple-system, BlinkMacSystemFont, 'Inter', sans-serif"
+          font-weight="700" font-size="24" fill="#E3B457">RM299/month</text>
+    <text x="240" y="50" font-family="-apple-system, BlinkMacSystemFont, 'Inter', sans-serif"
+          font-weight="500" font-size="20" fill="#a0a8a3">30-day money-back · No credit card · 24/7 lead capture</text>
+    <text x="1040-32" y="50" text-anchor="end"
+          font-family="-apple-system, BlinkMacSystemFont, 'Inter', sans-serif"
+          font-weight="700" font-size="22" fill="#10b981">mybijou.xyz</text>
+  </g>
+
+  <!-- Domain tag (top-right) -->
+  <g transform="translate(900, 80)">
+    <rect width="220" height="44" rx="22" fill="rgba(11,59,46,0.6)" stroke="#E3B457" stroke-width="1" stroke-opacity="0.5"/>
+    <text x="110" y="29" text-anchor="middle"
+          font-family="-apple-system, BlinkMacSystemFont, 'Inter', sans-serif"
+          font-weight="600" font-size="20" fill="#E3B457">mybijou.xyz</text>
+  </g>
+</svg>

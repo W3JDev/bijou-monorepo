@@ -1,0 +1,281 @@
+# fly.production.toml - Bijou AI Production Configuration
+# Version: v301 Production
+# Documentation: https://fly.io/docs/reference/configuration/
+
+app = 'bijou-production'
+primary_region = 'sin'  # Singapore for optimal performance in Asia
+
+[build]
+  # Uses Dockerfile in current directory
+
+[deploy]
+  strategy = "immediate"  # Single machine + volume mount = must stop old before starting new
+  # "immediate" stops old machine first, then starts new one — no lease collision
+  # "rolling" (default) tries to run both simultaneously — deadlocks on single volumes
+
+[env]
+  # =================================================================
+  # ENVIRONMENT
+  # =================================================================
+  ENVIRONMENT = 'production'
+  DEBUG = 'false'  # CRITICAL: Disable debug in production
+  LOG_LEVEL = 'INFO'  # Less verbose than staging
+
+  # =================================================================
+  # AI & MODEL CONFIGURATION
+  # =================================================================
+  AI_MODEL = 'gemini-2.5-flash'
+
+  # =================================================================
+  # AGENT CONFIGURATION
+  # =================================================================
+  AGENT_NAME = 'Bijou'
+
+  # =================================================================
+  # DATABASE CONFIGURATION
+  # =================================================================
+  # Production: Using Supabase for multi-tenant persistence
+  DB_TYPE = 'supabase'
+  DEFAULT_TENANT_ID = '607690ec-4ff7-4ef4-b98e-bfb00442fe95'  # W3J tenant (first client)
+  BIJOU_DB_PATH = '/data/bijou.db'
+
+  # =================================================================
+  # MULTI-LANGUAGE SUPPORT
+  # =================================================================
+  PRIMARY_LANGUAGES = 'ms,zh,ta,en,en-my'
+  CULTURAL_CONTEXT_ENABLED = 'true'
+  MANGLISH_DETECTION = 'true'
+
+  # =================================================================
+  # BUSINESS HOURS
+  # =================================================================
+  DISABLE_BUSINESS_HOURS = 'true'  # Always allow AI replies regardless of hours
+
+  # =================================================================
+  # MULTI-TENANT CONFIGURATION
+  # =================================================================
+  MULTI_TENANT_ENABLED = 'true'
+  TENANT_DATA_PATH = '/data/tenants'
+  TENANT_ISOLATION = 'true'
+
+  # =================================================================
+  # GOOGLE INTEGRATION
+  # =================================================================
+  GOOGLE_CLIENT_ID = '698028267158-74pmib15v7ug5biv4v9vedqutsq2c78a.apps.googleusercontent.com'
+  GOOGLE_PROJECT_ID = 'gen-lang-client-0423187661'
+  GOOGLE_CREDENTIALS_PATH = '/app/credentials/google_service_account.json'
+  GOOGLE_SHEETS_ENABLED = 'false'
+  VERTEX_AI_LOCATION = 'us-central1'
+
+  ENABLE_IMAGE_TOOL = 'true'
+  ENABLE_AUDIO_TOOL = 'true'
+  ENABLE_GMAIL_TOOL = 'true'
+  ENABLE_CALENDAR_TOOL = 'true'
+  ENABLE_WHATSAPP_EVENT_TOOL = 'true'
+  ENABLE_FUNCTION_CALLING = 'true'
+
+  # =================================================================
+  # FEATURE FLAGS (PRODUCTION)
+  # =================================================================
+  ESCALATION_ENABLED = 'true'
+  TRACE_ENABLED = 'false'  # Disable expensive tracing in production
+  COST_OPTIMIZATION_ENABLED = 'true'
+  ML_JUDGE_ENABLED = 'true'
+  AUTO_RECOVERY_ENABLED = 'true'
+  HUMANIZER_ENABLED = 'true'
+
+  # =================================================================
+  # PROACTIVE MESSAGING SYSTEM
+  # =================================================================
+  ENABLE_PROACTIVE_MESSAGING = 'true'
+
+  # =================================================================
+  # MEDIA HANDLING CONFIGURATION
+  # =================================================================
+  MEDIA_TEMP_DIR = '/tmp/bijou_media'
+  MEDIA_MAX_SIZE_MB = '10'
+  MEDIA_DOWNLOAD_TIMEOUT = '30'
+  MEDIA_CLEANUP_AGE_HOURS = '1'
+
+  # Image processing
+  IMAGE_MAX_SIZE_MB = '10'
+  IMAGE_SUPPORTED_FORMATS = 'jpg,jpeg,png,gif,webp,bmp'
+
+  # Audio processing
+  AUDIO_MAX_SIZE_MB = '25'
+  AUDIO_SUPPORTED_FORMATS = 'ogg,mp3,wav,m4a,opus'
+  WHISPER_MODEL = 'whisper-1'
+  TTS_MODEL = 'tts-1'
+  TTS_VOICE = 'alloy'
+
+  # =================================================================
+  # WEBHOOK CONFIGURATION
+  # =================================================================
+  WEBHOOK_MODE = 'true'
+  PUBLIC_URL = 'https://app.mybijou.xyz'
+  # Reject messages older than 15 min (prevents history sync replay floods)
+  WEBHOOK_MAX_MESSAGE_AGE_MINUTES = '15'
+
+  # =================================================================
+  # MULTI-CHANNEL SUPPORT (Telegram)
+  # =================================================================
+  # TELEGRAM_BOT_TOKEN set via secrets
+
+  # =================================================================
+  # PERFORMANCE & OPTIMIZATION
+  # =================================================================
+  POLLING_INTERVAL = '2'
+  MAX_MESSAGES_PER_POLL = '50'
+  MAX_CONCURRENT_MESSAGES = '10'  # Higher than staging for production load
+  MAX_CONTEXT_MESSAGES = '10'
+  MAX_TOKENS = '2048'
+
+  # =================================================================
+  # MONITORING & LOGGING
+  # =================================================================
+  LOG_FILE = '/data/logs/bijou.log'
+  LOGS_PATH = '/data/logs'
+  METRICS_ENABLED = 'true'
+  HEALTH_CHECK_ENABLED = 'true'
+  PII_MASKING_ENABLED = 'true'  # CRITICAL: Enable PII masking in production
+
+  # =================================================================
+  # STRIPE CONFIGURATION
+  # =================================================================
+  STRIPE_API_VERSION = '2023-10-16'
+
+  # =================================================================
+  # SECURITY & RATE LIMITING
+  # =================================================================
+  CIRCUIT_BREAKER_ENABLED = 'true'
+  ENABLE_AI_HANDOVER_DETECTION = 'true'
+  RATE_LIMIT_MESSAGES = '1000'
+  RATE_LIMIT_WINDOW = '3600'
+  MEMORY_RETENTION_DAYS = '30'  # Longer retention in production
+
+  # =================================================================
+  # SERVER CONFIGURATION
+  # =================================================================
+  PORT = '8080'
+  WORKER_PROCESSES = '2'  # More workers for production
+
+  # =================================================================
+  # DASHBOARD CONFIGURATION (PRODUCTION-HARDENED)
+  # =================================================================
+  DASHBOARD_MODE = 'strict'  # Enforce strict tenant/session validation in production
+  REQUIRE_DASHBOARD_TOKEN = 'true'  # Require dashboard authentication in production
+
+# =================================================================
+# VOLUME MOUNTS (CRITICAL FOR DATA PERSISTENCE)
+# =================================================================
+# 2026-08-06: The original production_data_volume (vol_40lyzz0xz1gzz2m4) was
+# stranded in sin zone 44a3 which is now full. We have a fresh replacement
+# volume named production_data_volume_v2 in zone 7375. Point the mount at
+# the new volume so new machines can be created.
+[[mounts]]
+  source = 'production_data_volume_v2'
+  destination = '/data'
+  initial_size = '2gb'  # Larger volume for production
+
+# =================================================================
+# HTTP SERVICE CONFIGURATION
+# =================================================================
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = 'off'  # CRITICAL: Never auto-stop in production
+  auto_start_machines = true
+  min_machines_running = 1    # Always keep 1 machine running
+  processes = ['app']
+
+  # Health check configuration (stricter than staging)
+  [[http_service.checks]]
+    interval = '15s'      # Check every 15s (more frequent)
+    timeout = '5s'        # Timeout after 5s (faster detection)
+    grace_period = '90s'  # Wait 90s for app startup
+    method = 'GET'
+    path = '/health'
+    protocol = 'http'
+
+# =================================================================
+# VM CONFIGURATION (PRODUCTION)
+# =================================================================
+[[vm]]
+  memory = '1gb'  # More memory for production
+  cpu_kind = 'shared'
+  cpus = 2  # More CPU for production
+  memory_mb = 1024
+
+# =================================================================
+# SECRETS (Set via `fly secrets set --app bijou-production`)
+# =================================================================
+# These should be set using Fly CLI, not in this file:
+#
+# fly secrets set --app bijou-production \
+#   GEMINI_API_KEY=your-key \
+#   GEMINI_API_KEYS=key1,key2,key3 \
+#   OPENAI_API_KEY=your-key \
+#   BRIDGE_URL=https://bijou-bridge-production-v2.fly.dev \
+#   WHATSAPP_BRIDGE_URL=https://bijou-bridge-production-v2.fly.dev \
+#   BRIDGE_USER=bijou-prod \          # fallback for dashboard_api only
+#   BRIDGE_PASSWORD=<password> \      # fallback for dashboard_api only
+#   BRIDGE_API_KEY=<user>:<password> \ # format: "user:pass" for Basic Auth (primary auth)
+#   OWNER_WHATSAPP_JID=<owner-whatsapp-jid> \  # TODO: remove after REFACTOR-8
+#   SECONDARY_OWNER_JID=<secondary-owner-jid> \       # TODO: remove after REFACTOR-8
+#   ADMIN_WHATSAPP_NUMBER=<admin-whatsapp-number> \
+#   SUPABASE_URL=<supabase-url> \
+#   SUPABASE_KEY=<supabase-anon-key> \
+#   SUPABASE_SERVICE_KEY=<supabase-service-key> \
+#   SUPABASE_SERVICE_ROLE_KEY=<supabase-service-role-key> \
+#   RESEND_API_KEY=<resend-api-key> \
+#   EMAIL_FROM=<email-from-address> \
+#   EMAIL_DOMAIN=<email-domain> \
+#   SMTP_USER=<smtp-user> \
+#   SMTP_PASSWORD=<smtp-password> \
+#   SHEETS_WEBHOOK_SECRET=<sheets-webhook-secret> \
+#   CALENDER_API_KEY=<calendar-api-key> \
+#   STRIPE_PRICE_STARTER=<stripe-price-starter> \
+#   STRIPE_PRICE_PRO=<stripe-price-pro> \
+#   TELEGRAM_BOT_TOKEN=<telegram-bot-token> \
+#   GOOGLE_CLIENT_SECRET=<google-client-secret> \
+#   GOOGLE_REDIRECT_URI=https://bijou-production.fly.dev/api/auth/google/callback \
+#   GMAIL_TOKEN_B64=<gmail-token-base64>
+
+# =================================================================
+# DEPLOYMENT COMMANDS
+# =================================================================
+# 1. Create production app (DONE):
+#    fly apps create bijou-production --org personal
+#
+# 2. Volume (ALREADY CREATED — DO NOT CREATE AGAIN):
+#    Existing volume ID: vol_v3lx5q0m911mnnov (attached, 2GB, sin region)
+#    The [[mounts]] source MUST stay as 'vol_v3lx5q0m911mnnov' — never change this.
+#    If you ever see a volume mismatch error, check `fly volumes list --app bijou-production`
+#    and update [[mounts]] source to match the actual volume name shown there.
+#
+# 3. Set secrets (see above)
+#
+# 4. Deploy:
+#    fly deploy --app bijou-production --config fly.production.toml
+#
+# 5. Monitor:
+#    fly logs --app bijou-production
+#    fly status --app bijou-production
+#
+# 6. CRITICAL: Test thoroughly before switching DNS/webhooks
+
+# =================================================================
+# PRODUCTION vs STAGING DIFFERENCES
+# =================================================================
+# 1. DEBUG = 'false' (staging: 'true')
+# 2. LOG_LEVEL = 'INFO' (staging: 'DEBUG')
+# 3. TRACE_ENABLED = 'false' (staging: 'true')
+# 4. PII_MASKING_ENABLED = 'true' (staging: 'false')
+# 5. auto_stop_machines = 'off' (staging: 'suspend')
+# 6. min_machines_running = 1 (staging: 0)
+# 7. memory = '1gb' (staging: '512mb')
+# 8. cpus = 2 (staging: 1)
+# 9. WORKER_PROCESSES = '2' (staging: '1')
+# 10. MEMORY_RETENTION_DAYS = '30' (staging: '7')
+# 11. MAX_CONCURRENT_MESSAGES = '10' (staging: '5')
+# 12. volume size = 2gb (staging: 1gb)

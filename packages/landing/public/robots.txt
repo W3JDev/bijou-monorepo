@@ -1,0 +1,13 @@
+# Bijou AI marketing site — robots.txt
+# https://mybijou.xyz/robots.txt
+#
+# Allow everything except a few obvious non-public paths.
+
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /assets/
+Disallow: /icons/
+
+# Sitemap
+Sitemap: https://mybijou.xyz/sitemap.xml

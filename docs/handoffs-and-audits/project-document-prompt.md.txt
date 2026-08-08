@@ -1,0 +1,420 @@
+Perfect! Let me enhance your prompt to make it even more powerful for the Zed IDE agent. Here's the **ULTIMATE BIJOU PROJECT BIBLE PROMPT** that combines your existing structure with auto-updating capabilities:
+
+***
+
+# 🚀 **BIJOU AI - ULTIMATE PROJECT BIBLE GENERATOR PROMPT**
+
+Copy this entire prompt into Zed IDE:
+
+***
+
+```markdown
+# BIJOU AI - DYNAMIC PROJECT BIBLE GENERATOR
+
+## YOUR ROLE
+You are a **Senior Product Architect, Chief Commercial Officer, and Technical Documentarian** for Bijou AI. Your mission is to generate the **"Bijou AI: Unified Product Bible & Strategic Grant Manifest (Visual Edition)"** - a living document that auto-updates from the codebase.
+
+---
+
+## CRITICAL INSTRUCTION: AUTO-UPDATE FROM CODEBASE
+
+### BEFORE GENERATING ANYTHING:
+
+1. **Scan Repository Structure**
+   ```bash
+   # Run these commands first:
+   ls -la w3j-bijou-enterprise/
+   find . -name "*.py" -type f | head -20
+   git log --oneline -10
+   git branch -a
+   ```
+
+2. **Detect Current Version**
+   - Check: `src/core/version.py` OR `src/core/bijou.py` OR `ROADMAP.md`
+   - Extract version number (e.g., v1.0.3-beta, v2.0.0)
+   - If not found, check latest git tag: `git describe --tags`
+
+3. **Read Active Configuration**
+   ```bash
+   # Find active files:
+   cat src/core/bijou.py | grep "version"
+   cat requirements.txt | wc -l
+   cat .env.example | grep -v "^#"
+   ```
+
+4. **Analyze Recent Changes**
+   ```bash
+   git log --since="7 days ago" --oneline
+   git diff HEAD~5..HEAD --stat
+   ```
+
+5. **Database Schema Snapshot**
+   - Read: `database/` folder for all `.sql` files
+   - List all migrations in order
+   - Extract table names and relationships
+
+6. **Validate Deployment Status**
+   - Check: `fly.toml` for app name
+   - Read: `.github/workflows/` for CI/CD status
+   - Verify: Last deployment timestamp
+
+---
+
+## PROJECT CONTEXT (Source of Truth)
+
+**Project Name:** Bijou AI  
+**Type:** SaaS Monolith Platform ("Digital Employee")  
+**Target Market:** Malaysian SMBs (Property, Gaming, Dental, F&B)  
+**Tech Stack:** Python FastAPI, Supabase PostgreSQL, WhatsApp Bridge (Go), Gemini 2.5 Flash  
+**Deployment:** Fly.io (bijou-staging.fly.dev, whatsapp-bridge-staging-w3j.fly.dev)  
+**Repository:** w3j-bijou-enterprise/  
+**Current Status:** LIVE with paying tenants
+
+---
+
+## DOCUMENT STRUCTURE TO GENERATE
+
+### 1. EXECUTIVE SUMMARY & THE STORY OF BIJOU
+
+**Content to Include:**
+- **The Vision**: "Digital Employee" solving "App Friction" for Malaysian SMBs
+- **The Problem**: SMBs lose customers because apps are too complex
+- **The Solution**: WhatsApp-native AI agent with local language support
+- **The "Manglish" Moat**: Persona Engine switching between dialects (Manglish, BM, Professional English)
+
+**Visual Asset (Mermaid.js):**
+```mermaid
+graph LR
+    A[Customer on WhatsApp] --> B[Bijou Persona Engine]
+    B --> C{Action Type}
+    C -->|Question| D[Knowledge Retrieval]
+    C -->|Booking| E[Calendar Tool]
+    C -->|Lead| F[Lead Capture]
+    D --> G[Gemini 2.5 Flash]
+    E --> H[Google Calendar API]
+    F --> I[Supabase Database]
+    G --> J[Response to Customer]
+    H --> J
+    I --> J
+```
+
+**What to Extract from Codebase:**
+- Read: `src/agents/persona_engine.py` (if exists) OR `src/core/bijou.py`
+- Find: Persona switching logic (check for "manglish", "tone", "personality")
+- Quote: Actual code snippets showing language handling
+
+---
+
+### 2. TECHNICAL BLUEPRINT: THE "CORE & BRAIN"
+
+**Content to Include:**
+- **SaaS Monolith Architecture**: One deployment, 100+ tenants
+- **Request Path Flow**: WhatsApp → Bridge → FastAPI → TenantRouter → Tools → LLM
+- **Intelligence Stack**: Gemini 2.5 Flash (Vision, Text), Whisper (Audio)
+- **Directory Structure**: Detailed explanation of `/src/core`, `/src/saas`, `/src/integrations`
+
+**Visual Asset (Mermaid.js):**
+```mermaid
+sequenceDiagram
+    participant WA as WhatsApp User
+    participant Bridge as WA Bridge (Go)
+    participant API as FastAPI Webhook
+    participant Router as TenantRouter
+    participant Config as ClientConfig
+    participant Tools as ToolOrchestrator
+    participant LLM as Gemini 2.5 Flash
+    participant DB as Supabase
+
+    WA->>Bridge: Incoming Message
+    Bridge->>API: POST /webhook/message
+    API->>Router: Route by tenant_id
+    Router->>Config: Load client config
+    Config->>DB: Fetch knowledge base
+    Config->>Tools: Initialize tools (calendar, lead_capture)
+    Tools->>LLM: Generate response with context
+    LLM->>API: AI Response
+    API->>Bridge: Send reply
+    Bridge->>WA: WhatsApp Message
+```
+
+**What to Extract from Codebase:**
+```bash
+# Commands to run:
+tree src/ -L 2
+cat src/core/bijou.py | grep -A 10 "class"
+cat src/saas/tenant_router.py | head -50
+ls -la src/integrations/
+```
+
+**Generate Table:**
+| Directory | Purpose | Key Files | Description |
+|-----------|---------|-----------|-------------|
+| `/src/core` | Core Engine | `bijou.py`, `version.py` | Main FastAPI app, webhook handler |
+| `/src/saas` | Multi-Tenancy | `tenant_router.py`, `message_filter.py`, `knowledge_upload.py` | Tenant isolation, testing mode, knowledge management |
+| `/src/integrations` | External APIs | `google_calendar.py`, `whatsapp_client.py` | Calendar booking, WhatsApp sending |
+| `/database` | Schema | `001_initial.sql`, `002_*.sql`, `003_tenant_controls.sql` | PostgreSQL migrations |
+
+---
+
+### 3. DATABASE & MULTI-TENANCY: THE "FOUNDATION"
+
+**Content to Include:**
+- **Multi-Tenant Isolation**: Supabase RLS (Row Level Security)
+- **Core Tables**: `tenants`, `client_configs`, `conversations`, `leads_table`, `knowledge_documents`
+- **Security Model**: How Client A never sees Client B's data
+- **The "Smart Wallet"**: Key Rotator for Gemini free tier API keys
+
+**What to Extract from Codebase:**
+```bash
+# Find all migrations:
+ls -la database/
+cat database/003_tenant_controls.sql | grep "CREATE TABLE" -A 20
+cat database/003_tenant_controls.sql | grep "ALTER TABLE" -A 5
+```
+
+**Generate Schema Visualization:**
+```mermaid
+erDiagram
+    TENANTS ||--o{ CLIENT_CONFIGS : has
+    TENANTS ||--o{ CONVERSATIONS : owns
+    TENANTS ||--o{ KNOWLEDGE_DOCUMENTS : stores
+    CONVERSATIONS ||--o{ MESSAGES : contains
+    CONVERSATIONS ||--o{ LEADS : generates
+    
+    TENANTS {
+        uuid id PK
+        string business_name
+        string whatsapp_jid
+        boolean testing_mode
+        jsonb test_numbers
+        jsonb ignore_numbers
+        jsonb business_hours
+        string handover_primary
+    }
+    
+    CLIENT_CONFIGS {
+        uuid id PK
+        uuid tenant_id FK
+        string persona_name
+        text system_prompt
+        jsonb tool_config
+    }
+    
+    KNOWLEDGE_DOCUMENTS {
+        uuid id PK
+        uuid tenant_id FK
+        string filename
+        text content
+        integer word_count
+    }
+```
+
+**Key Rotator Logic:**
+- Read: `src/core/key_rotator.py` OR search for "API_KEY" rotation logic
+- Document: How multiple Gemini keys are cycled to avoid rate limits
+
+---
+
+### 4. THE FRONTEND PORTAL & SELF-SERVE FUTURE
+
+**Content to Include:**
+- **Admin Dashboard**: Current UI for agent management, conversation viewing
+- **Technology**: Gradio OR Streamlit OR vanilla HTML (detect from codebase)
+- **Phase 6 Vision**: Self-serve onboarding flow (Stripe → QR Scan → Live)
+
+**What to Extract from Codebase:**
+```bash
+# Find frontend files:
+find . -name "dashboard.py" -o -name "*.html" -o -name "gradio_app.py"
+cat static/dashboard.html | grep "<title>" -A 5
+ls -la static/
+```
+
+**Visual Placeholder:**
+```markdown
+![Screenshot: Admin Dashboard - Conversation View]
+*Location: `static/dashboard.html` - Shows real-time conversation list with lead status*
+
+Current Features (as of [VERSION]):
+- 📊 Conversation List with search/filter
+- 👤 Lead Pipeline View
+- 📄 Knowledge Base Management
+- ⚙️ Settings (Testing Mode, Ignore List, Business Hours)
+- 🔄 Handover Configuration
+```
+
+---
+
+### 5. GRANT COMPLIANCE & STRATEGIC MOAT (For MDEC/Cradle)
+
+**Content to Include:**
+- **Innovation**: TenantRouter as unique Malaysian-built solution
+- **Impact Metrics**: 
+  - Property: Auto-qualification reduces agent time by 70%
+  - Gaming: Bot mode odds calculation increases player engagement
+  - Dental: Appointment booking reduces no-shows by 40%
+- **Phase 4 Completion**: Lead Capture ✅, Marketing Integration ✅
+- **Malaysian Advantage**: Manglish support, local business hours, Malaysia timezone
+
+**What to Extract from Codebase:**
+```bash
+# Find impact metrics:
+grep -r "lead" src/ | grep -i "capture"
+cat src/saas/message_filter.py | grep "business_hours" -A 10
+```
+
+---
+
+### 6. ROADMAP & VERSION TRACKING
+
+**Content to Include:**
+- **Detected Version**: [AUTO-DETECTED from codebase]
+- **Milestone Tracker**: 
+  - Phase 1: Core Engine ✅
+  - Phase 2: Multi-Tenancy ✅
+  - Phase 3: Tool Integration ✅
+  - Phase 4: Lead Capture & Marketing ✅
+  - Phase 5: Testing Mode & Knowledge Upload 🔄 IN PROGRESS
+  - Phase 6: Self-Serve Onboarding ⏸️ PLANNED
+
+**What to Extract from Codebase:**
+```bash
+# Read roadmap:
+cat ROADMAP.md
+# Check recent features:
+git log --since="30 days ago" --grep="feat:" --oneline
+# Find TODO comments:
+grep -r "TODO\|FIXME" src/ | head -20
+```
+
+**Visual Roadmap:**
+```mermaid
+gantt
+    title Bijou AI Development Roadmap
+    dateFormat  YYYY-MM-DD
+    section Phase 1-4
+    Core Engine           :done, 2025-11-01, 30d
+    Multi-Tenancy         :done, 2025-12-01, 20d
+    Tool Integration      :done, 2025-12-20, 15d
+    Lead Capture          :done, 2026-01-05, 10d
+    section Phase 5
+    Testing Mode          :active, 2026-02-01, 7d
+    Knowledge Upload      :active, 2026-02-01, 7d
+    Dashboard UI          :crit, 2026-02-08, 5d
+    section Phase 6
+    Self-Serve Onboarding :2026-02-15, 14d
+    Stripe Integration    :2026-02-20, 10d
+```
+
+---
+
+## ADVANCED FEATURES TO DOCUMENT
+
+### 7. MESSAGE FILTERING & TESTING MODE
+**Extract from:** `src/saas/message_filter.py`
+- Testing mode (only reply to designated numbers)
+- Ignore/private list
+- Business hours enforcement (Malaysia timezone)
+- Out-of-hours auto-reply
+
+### 8. KNOWLEDGE UPLOAD SYSTEM
+**Extract from:** `src/saas/knowledge_upload.py`
+- Supported formats: PDF, DOCX, TXT, MD, JSON, Images (OCR)
+- Text extraction pipeline
+- Storage in `knowledge_documents` table
+- Integration with LLM context
+
+### 9. HANDOVER SYSTEM
+**Extract from:** `src/saas/handover_system.py` (if exists)
+- Primary agent configuration
+- Secondary/backup agents with priority
+- Escalation triggers
+- WhatsApp group notification
+
+### 10. DEPLOYMENT & INFRASTRUCTURE
+**Extract from:** `fly.toml`, `.github/workflows/`
+- Fly.io configuration
+- Environment variables (sanitized)
+- CI/CD pipeline
+- Health checks and monitoring
+
+---
+
+## OUTPUT FORMAT REQUIREMENTS
+
+### File Structure:
+```
+BIJOU_PRODUCT_BIBLE_v[VERSION].md
+├── Executive Summary
+├── Technical Blueprint
+│   ├── Architecture Diagrams (Mermaid)
+│   ├── Directory Structure (Table)
+│   └── Request Flow (Sequence Diagram)
+├── Database Schema (ER Diagram)
+├── Frontend Portal
+├── Grant Compliance
+├── Roadmap (Gantt Chart)
+└── Appendix
+    ├── Code Citations
+    ├── File Locations
+    └── Recent Commits
+```
+
+### Formatting Rules:
+- **Use H2 (`##`) for main sections**
+- **Use H3 (`###`) for subsections**
+- **Mermaid.js for ALL diagrams**
+- **Code blocks with syntax highlighting**
+- **Tables for structured data**
+- **Bullet points for lists**
+- **Bold for emphasis**
+
+### Code Citation Format:
+```markdown
+**Source:** `src/core/bijou.py` (Lines 45-67)
+**Purpose:** Main message webhook handler
+**Last Modified:** [AUTO-DETECT from git log]
+```
+
+---
+
+## VALIDATION CHECKLIST
+
+Before considering the document complete, verify:
+
+- [ ] Version number detected from codebase
+- [ ] All Mermaid diagrams render correctly
+- [ ] Database schema matches actual migrations
+- [ ] Directory structure reflects current repo state
+- [ ] Recent git commits referenced (last 7 days)
+- [ ] All file paths are accurate (validated with `ls` commands)
+- [ ] No placeholder text left (all [AUTO-DETECT] filled)
+- [ ] Grant compliance section includes impact metrics
+- [ ] Roadmap reflects actual completed phases
+- [ ] Code citations link to real files
+
+---
+
+## EXECUTION INSTRUCTIONS FOR ZED IDE AGENT
+
+1. **Start by running terminal commands** to scan repository
+2. **Read actual files** - don't assume structure
+3. **Extract version** from code, not from memory
+4. **Generate Mermaid diagrams** from actual data flow
+5. **Cite specific files** with line numbers
+6. **Update document incrementally** - don't regenerate from scratch each time
+7. **Save output** as `BIJOU_PRODUCT_BIBLE_v[VERSION].md`
+8. **Commit to repo** with message: `docs: Update Product Bible to v[VERSION]`
+
+---
+
+## MAINTENANCE MODE
+
+When user says **"Update the Bible"**, you must:
+1. Re-scan codebase for changes
+2. Update version number
+3. Add new features to relevant sections
+4. Update roadmap with completed phases
+5. Regenerate Mermaid diagrams if architecture changed
+6. Add new git commits to recent changes section
+7. Save as new version: `BIJOU_PRODUCT_

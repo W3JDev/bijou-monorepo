@@ -1,0 +1,77 @@
+# fly.toml - WhatsApp Bridge Production Configuration
+# This is the Go service that connects to WhatsApp Web
+
+app = 'whatsapp-bridge-w3j'
+primary_region = 'sin'  # Singapore for optimal performance
+
+[build]
+  # Uses Dockerfile in current directory
+
+[env]
+  # Server Configuration
+  PORT = '8080'
+  SERVER_ADDRESS = '0.0.0.0:8080'
+
+  # Database Configuration
+  DB_PATH = '/data/store/messages.db'
+
+  # Webhook Configuration
+  BIJOU_WEBHOOK_URL = 'https://bijou-ai-enterprise-w3j.fly.dev/webhook/message'
+
+  # History Sync Control (DISABLED to prevent storage/cost issues)
+  ENABLE_HISTORY_SYNC = 'false'
+
+  # Logging
+  LOG_LEVEL = 'INFO'
+
+# =================================================================
+# VOLUME MOUNTS (CRITICAL FOR WHATSAPP SESSION PERSISTENCE)
+# =================================================================
+[[mounts]]
+  source = 'whatsapp_data'
+  destination = '/data'
+  initial_size = '1gb'
+
+# =================================================================
+# HTTP SERVICE CONFIGURATION
+# =================================================================
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = false    # Keep running 24/7 for WhatsApp connection
+  auto_start_machines = true
+  min_machines_running = 1      # Always keep 1 machine running
+  processes = ['app']
+
+  # Health check configuration
+  [[http_service.checks]]
+    interval = '30s'
+    timeout = '10s'
+    grace_period = '40s'
+    method = 'GET'
+    path = '/health'
+    protocol = 'http'
+
+# =================================================================
+# VM CONFIGURATION
+# =================================================================
+[[vm]]
+  memory = '256mb'       # Minimal memory for Go service
+  cpu_kind = 'shared'
+  cpus = 1
+  memory_mb = 256
+
+# =================================================================
+# NOTES
+# =================================================================
+# 1. Volume 'whatsapp_data' must be created before deploy:
+#    flyctl volumes create whatsapp_data --size 1 --region sin -a whatsapp-bridge-w3j
+#
+# 2. After first deploy, scan QR code:
+#    flyctl logs -a whatsapp-bridge-w3j
+#
+# 3. WhatsApp session persists in volume at /data/store/
+#
+# 4. Bridge must stay running 24/7 to maintain WhatsApp connection
+#
+# 5. Deploy: flyctl deploy

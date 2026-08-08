@@ -1,0 +1,1166 @@
+{
+	"id": "63bfbc4d-4c2f-4651-8ff1-e221c912cb71",
+	"name": "Bijou AI WhatsApp Enterprise Copy",
+	"timestamp": "2026-02-16T18:31:56.137Z",
+	"collection_id": "d81255bd-1d7a-40f2-b318-76c6fba77fcf",
+	"folder_id": 0,
+	"environment_id": "bijou-staging-env",
+	"totalPass": 0,
+	"delay": 0,
+	"persist": true,
+	"status": "finished",
+	"startedAt": "2026-02-16T18:31:45.055Z",
+	"totalFail": 0,
+	"results": [
+		{
+			"id": "e8abd841-bc1b-496c-9992-b5ff09ddf397",
+			"name": "Google Login",
+			"url": "https://bijou-staging.fly.dev/api/auth/google/login",
+			"time": 88,
+			"responseCode": {
+				"code": 200,
+				"name": "OK"
+			},
+			"tests": {},
+			"testPassFailCounts": {},
+			"times": [
+				88
+			],
+			"allTests": [
+				{}
+			]
+		},
+		{
+			"id": "cf03e85a-3f8a-4cc8-b442-486ef56961d3",
+			"name": "Google Callback",
+			"url": "https://bijou-staging.fly.dev/api/auth/google/callback?code=&state=",
+			"time": 117,
+			"responseCode": {
+				"code": 500,
+				"name": "Internal Server Error"
+			},
+			"tests": {},
+			"testPassFailCounts": {},
+			"times": [
+				117
+			],
+			"allTests": [
+				{}
+			]
+		},
+		{
+			"id": "c9b47451-4b28-4654-81dd-07e4b3463503",
+			"name": "Get Dashboard Stats",
+			"url": "https://bijou-staging.fly.dev/api/dashboard/stats",
+			"time": 1070,
+			"responseCode": {
+				"code": 200,
+				"name": "OK"
+			},
+			"tests": {},
+			"testPassFailCounts": {},
+			"times": [
+				1070
+			],
+			"allTests": [
+				{}
+			]
+		},
+		{
+			"id": "de638e3f-94b9-4871-82bf-52cc0a7e4755",
+			"name": "Get Active Conversations",
+			"url": "https://bijou-staging.fly.dev/api/dashboard/conversations",
+			"time": 282,
+			"responseCode": {
+				"code": 200,
+				"name": "OK"
+			},
+			"tests": {},
+			"testPassFailCounts": {},
+			"times": [
+				282
+			],
+			"allTests": [
+				{}
+			]
+		},
+		{
+			"id": "6edd655c-28e9-4ead-b821-7d7063b2b71e",
+			"name": "Get Conversation Detail",
+			"url": "https://bijou-staging.fly.dev/api/dashboard/conversation/{customer_jid}",
+			"time": 481,
+			"responseCode": {
+				"code": 404,
+				"name": "Not Found"
+			},
+			"tests": {},
+			"testPassFailCounts": {},
+			"times": [
+				481
+			],
+			"allTests": [
+				{}
+			]
+		},
+		{
+			"id": "560b2416-4d66-453b-9595-96853a93b24e",
+			"name": "Takeover Conversation",
+			"url": "https://bijou-staging.fly.dev/api/dashboard/takeover",
+			"time": 327,
+			"responseCode": {
+				"code": 422,
+				"name": "Unprocessable Entity"
+			},
+			"tests": {},
+			"testPassFailCounts": {},
+			"times": [
+				327
+			],
+			"allTests": [
+				{}
+			]
+		},
+		{
+			"id": "93335e7a-75a9-4fd6-abe6-f5361d7b1b1a",
+			"name": "Return To Ai",
+			"url": "https://bijou-staging.fly.dev/api/dashboard/return-to-ai/{customer_jid}?agent_name=",
+			"time": 168,
+			"responseCode": {
+				"code": 500,
+				"name": "Internal Server Error"
+			},
+			"tests": {},
+			"testPassFailCounts": {},
+			"times": [
+				168
+			],
+			"allTests": [
+				{}
+			]
+		},
+		{
+			"id": "89d0c57a-4095-4089-9591-bbe7e8f7c79f",
+			"name": "Send Message As Agent",
+			"url": "https://bijou-staging.fly.dev/api/dashboard/send-message",
+			"time": 98,
+			"responseCode": {
+				"code": 422,
+				"name": "Unprocessable Entity"
+			},
+			"tests": {},
+			"testPassFailCounts": {},
+			"times": [
+				98
+			],
+			"allTests": [
+				{}
+			]
+		},
+		{
+			"id": "e37eca35-ad0a-4612-8d0e-16affd37f0a7",
+			"name": "Add Knowledge",
+			"url": "https://bijou-staging.fly.dev/api/dashboard/knowledge",
+			"time": 106,
+			"responseCode": {
+				"code": 422,
+				"name": "Unprocessable Entity"
+			},
+			"tests": {},
+			"testPassFailCounts": {},
+			"times": [
+				106
+			],
+			"allTests": [
+				{}
+			]
+		},
+		{
+			"id": "0f4287e5-0be1-4ea2-abc3-c1e9db448e01",
+			"name": "Get Escalations",
+			"url": "https://bijou-staging.fly.dev/api/dashboard/escalations",
+			"time": 232,
+			"responseCode": {
+				"code": 200,
+				"name": "OK"
+			},
+			"tests": {},
+			"testPassFailCounts": {},
+			"times": [
+				232
+			],
+			"allTests": [
+				{}
+			]
+		},
+		{
+			"id": "9a3832b2-4279-41b7-b0e4-607065e3f57c",
+			"name": "Claim Escalation",
+			"url": "https://bijou-staging.fly.dev/api/dashboard/escalations/{escalation_id}/claim",
+			"time": 218,
+			"responseCode": {
+				"code": 500,
+				"name": "Internal Server Error"
+			},
+			"tests": {},
+			"testPassFailCounts": {},
+			"times": [
+				218
+			],
+			"allTests": [
+				{}
+			]
+		},
+		{
+			"id": "4ce2a811-9d67-4dc0-8a82-5fee83afe23e",
+			"name": "Resolve Escalation",
+			"url": "https://bijou-staging.fly.dev/api/dashboard/escalations/{escalation_id}/resolve",
+			"time": 162,
+			"responseCode": {
+				"code": 500,
+				"name": "Internal Server Error"
+			},
+			"tests": {},
+			"testPassFailCounts": {},
+			"times": [
+				162
+			],
+			"allTests": [
+				{}
+			]
+		},
+		{
+			"id": "1a6dc4a5-ae54-4ad2-81f2-27a657791e5e",
+			"name": "Get Whatsapp Qr",
+			"url": "https://bijou-staging.fly.dev/api/dashboard/whatsapp/qr",
+			"time": 163,
+			"responseCode": {
+				"code": 200,
+				"name": "OK"
+			},
+			"tests": {},
+			"testPassFailCounts": {},
+			"times": [
+				163
+			],
+			"allTests": [
+				{}
+			]
+		},
+		{
+			"id": "36b20fa0-38e9-48e5-8e44-4ec4729eb05b",
+			"name": "Init Whatsapp",
+			"url": "https://bijou-staging.fly.dev/api/dashboard/whatsapp/init",
+			"time": 117,
+			"responseCode": {
+				"code": 200,
+				"name": "OK"
+			},
+			"tests": {},
+			"testPassFailCounts": {},
+			"times": [
+				117
+			],
+			"allTests": [
+				{}
+			]
+		},
+		{
+			"id": "7078d460-ba9a-4577-863f-d081e06647cb",
+			"name": "Get Whatsapp Status",
+			"url": "https://bijou-staging.fly.dev/api/dashboard/whatsapp/status",
+			"time": 152,
+			"responseCode": {
+				"code": 200,
+				"name": "OK"
+			},
+			"tests": {},
+			"testPassFailCounts": {},
+			"times": [
+				152
+			],
+			"allTests": [
+				{}
+			]
+		},
+		{
+			"id": "81cfa988-dc18-4e09-b5ee-876c44c762e5",
+			"name": "Get Google Auth Url",
+			"url": "https://bijou-staging.fly.dev/api/dashboard/google/auth-url",
+			"time": 205,
+			"responseCode": {
+				"code": 500,
+				"name": "Internal Server Error"
+			},
+			"tests": {},
+			"testPassFailCounts": {},
+			"times": [
+				205
+			],
+			"allTests": [
+				{}
+			]
+		},
+		{
+			"id": "8ec205a5-d4a9-4e10-97dc-4e4d9ccb9e50",
+			"name": "Google Callback",
+			"url": "https://bijou-staging.fly.dev/api/dashboard/google/callback?code=&state=",
+			"time": 18,
+			"responseCode": {
+				"code": 500,
+				"name": "Internal Server Error"
+			},
+			"tests": {},
+			"testPassFailCounts": {},
+			"times": [
+				18
+			],
+			"allTests": [
+				{}
+			]
+		},
+		{
+			"id": "4a9364ac-6273-4780-8ae3-8b1867cda9ac",
+			"name": "Get Agents",
+			"url": "https://bijou-staging.fly.dev/api/dashboard/agents",
+			"time": 212,
+			"responseCode": {
+				"code": 200,
+				"name": "OK"
+			},
+			"tests": {},
+			"testPassFailCounts": {},
+			"times": [
+				212
+			],
+			"allTests": [
+				{}
+			]
+		},
+		{
+			"id": "37d3913d-04a4-4c18-8fe1-fd181c804257",
+			"name": "Create Agent",
+			"url": "https://bijou-staging.fly.dev/api/dashboard/agents",
+			"time": 77,
+			"responseCode": {
+				"code": 422,
+				"name": "Unprocessable Entity"
+			},
+			"tests": {},
+			"testPassFailCounts": {},
+			"times": [
+				77
+			],
+			"allTests": [
+				{}
+			]
+		},
+		{
+			"id": "7557b985-f9cf-4620-9a24-f31eabe09485",
+			"name": "Delete Agent",
+			"url": "https://bijou-staging.fly.dev/api/dashboard/agents/{agent_id}",
+			"time": 135,
+			"responseCode": {
+				"code": 500,
+				"name": "Internal Server Error"
+			},
+			"tests": {},
+			"testPassFailCounts": {},
+			"times": [
+				135
+			],
+			"allTests": [
+				{}
+			]
+		},
+		{
+			"id": "d14fc80b-f4c8-4068-abe5-04d87e053460",
+			"name": "Upload Knowledge Document",
+			"url": "https://bijou-staging.fly.dev/api/knowledge/upload",
+			"time": 19,
+			"responseCode": {
+				"code": 422,
+				"name": "Unprocessable Entity"
+			},
+			"tests": {},
+			"testPassFailCounts": {},
+			"times": [
+				19
+			],
+			"allTests": [
+				{}
+			]
+		},
+		{
+			"id": "9e944960-e294-489f-9078-730e1fad39bf",
+			"name": "List Knowledge Documents",
+			"url": "https://bijou-staging.fly.dev/api/knowledge/list",
+			"time": 20,
+			"responseCode": {
+				"code": 422,
+				"name": "Unprocessable Entity"
+			},
+			"tests": {},
+			"testPassFailCounts": {},
+			"times": [
+				20
+			],
+			"allTests": [
+				{}
+			]
+		},
+		{
+			"id": "319bc019-8b95-4e2a-b88e-db2de2daac26",
+			"name": "Delete Knowledge Document",
+			"url": "https://bijou-staging.fly.dev/api/knowledge/{document_id}",
+			"time": 20,
+			"responseCode": {
+				"code": 422,
+				"name": "Unprocessable Entity"
+			},
+			"tests": {},
+			"testPassFailCounts": {},
+			"times": [
+				20
+			],
+			"allTests": [
+				{}
+			]
+		},
+		{
+			"id": "8fdcdc44-3610-4e70-8c3f-aa387665ef94",
+			"name": "Get Combined Knowledge",
+			"url": "https://bijou-staging.fly.dev/api/knowledge/combined",
+			"time": 17,
+			"responseCode": {
+				"code": 422,
+				"name": "Unprocessable Entity"
+			},
+			"tests": {},
+			"testPassFailCounts": {},
+			"times": [
+				17
+			],
+			"allTests": [
+				{}
+			]
+		},
+		{
+			"id": "8ff38e84-5a17-40b4-ae06-daaeb281ca88",
+			"name": "Knowledge Api Health",
+			"url": "https://bijou-staging.fly.dev/api/knowledge/health",
+			"time": 30,
+			"responseCode": {
+				"code": 200,
+				"name": "OK"
+			},
+			"tests": {},
+			"testPassFailCounts": {},
+			"times": [
+				30
+			],
+			"allTests": [
+				{}
+			]
+		},
+		{
+			"id": "d9c8afa9-1d69-4493-a303-879bc0e26e1d",
+			"name": "Signup Property Agent",
+			"url": "https://bijou-staging.fly.dev/api/onboarding/signup",
+			"time": 23,
+			"responseCode": {
+				"code": 422,
+				"name": "Unprocessable Entity"
+			},
+			"tests": {},
+			"testPassFailCounts": {},
+			"times": [
+				23
+			],
+			"allTests": [
+				{}
+			]
+		},
+		{
+			"id": "532af12d-1ae7-4e7f-8175-8ed1717c7a20",
+			"name": "Get Onboarding Status",
+			"url": "https://bijou-staging.fly.dev/api/onboarding/status/{token}",
+			"time": 100,
+			"responseCode": {
+				"code": 404,
+				"name": "Not Found"
+			},
+			"tests": {},
+			"testPassFailCounts": {},
+			"times": [
+				100
+			],
+			"allTests": [
+				{}
+			]
+		},
+		{
+			"id": "2c545d25-fa60-4cfa-bf59-0268f5999adf",
+			"name": "Get Qr Code",
+			"url": "https://bijou-staging.fly.dev/api/onboarding/qr/{token}",
+			"time": 76,
+			"responseCode": {
+				"code": 404,
+				"name": "Not Found"
+			},
+			"tests": {},
+			"testPassFailCounts": {},
+			"times": [
+				76
+			],
+			"allTests": [
+				{}
+			]
+		},
+		{
+			"id": "ae6a7c5f-a4e6-44c8-9b29-27983941442e",
+			"name": "Complete Onboarding",
+			"url": "https://bijou-staging.fly.dev/api/onboarding/complete/{token}",
+			"time": 100,
+			"responseCode": {
+				"code": 404,
+				"name": "Not Found"
+			},
+			"tests": {},
+			"testPassFailCounts": {},
+			"times": [
+				100
+			],
+			"allTests": [
+				{}
+			]
+		},
+		{
+			"id": "2b14d732-80a5-4cde-8158-bb1189e5674f",
+			"name": "Onboarding Health",
+			"url": "https://bijou-staging.fly.dev/api/onboarding/health",
+			"time": 646,
+			"responseCode": {
+				"code": 200,
+				"name": "OK"
+			},
+			"tests": {},
+			"testPassFailCounts": {},
+			"times": [
+				646
+			],
+			"allTests": [
+				{}
+			]
+		},
+		{
+			"id": "0988efa9-5167-46c1-b922-5b9b00d6fbf5",
+			"name": "Get Status",
+			"url": "https://bijou-staging.fly.dev/api/proactive/status",
+			"time": 95,
+			"responseCode": {
+				"code": 200,
+				"name": "OK"
+			},
+			"tests": {},
+			"testPassFailCounts": {},
+			"times": [
+				95
+			],
+			"allTests": [
+				{}
+			]
+		},
+		{
+			"id": "6bb8a3e9-005f-421c-9762-34a4259801eb",
+			"name": "Schedule Message",
+			"url": "https://bijou-staging.fly.dev/api/proactive/schedule",
+			"time": 38,
+			"responseCode": {
+				"code": 422,
+				"name": "Unprocessable Entity"
+			},
+			"tests": {},
+			"testPassFailCounts": {},
+			"times": [
+				38
+			],
+			"allTests": [
+				{}
+			]
+		},
+		{
+			"id": "89823b6d-25e9-4c82-8e09-b9b148d4f7b2",
+			"name": "Create Campaign",
+			"url": "https://bijou-staging.fly.dev/api/proactive/campaign",
+			"time": 21,
+			"responseCode": {
+				"code": 422,
+				"name": "Unprocessable Entity"
+			},
+			"tests": {},
+			"testPassFailCounts": {},
+			"times": [
+				21
+			],
+			"allTests": [
+				{}
+			]
+		},
+		{
+			"id": "d7df2444-3286-4fa0-9133-2acf06e70e51",
+			"name": "Set Silence Rule",
+			"url": "https://bijou-staging.fly.dev/api/proactive/silence-rule",
+			"time": 22,
+			"responseCode": {
+				"code": 422,
+				"name": "Unprocessable Entity"
+			},
+			"tests": {},
+			"testPassFailCounts": {},
+			"times": [
+				22
+			],
+			"allTests": [
+				{}
+			]
+		},
+		{
+			"id": "fe5f405b-81b9-4589-beba-51e2f98d0587",
+			"name": "List Campaigns",
+			"url": "https://bijou-staging.fly.dev/api/proactive/campaigns",
+			"time": 22,
+			"responseCode": {
+				"code": 200,
+				"name": "OK"
+			},
+			"tests": {},
+			"testPassFailCounts": {},
+			"times": [
+				22
+			],
+			"allTests": [
+				{}
+			]
+		},
+		{
+			"id": "38dc82b0-1a45-47a4-8f02-e75c791f25fc",
+			"name": "List Scheduled Messages",
+			"url": "https://bijou-staging.fly.dev/api/proactive/scheduled",
+			"time": 18,
+			"responseCode": {
+				"code": 200,
+				"name": "OK"
+			},
+			"tests": {},
+			"testPassFailCounts": {},
+			"times": [
+				18
+			],
+			"allTests": [
+				{}
+			]
+		},
+		{
+			"id": "c7a13461-7a15-49ce-8725-5c7d6b8aef1a",
+			"name": "Cancel Scheduled Message",
+			"url": "https://bijou-staging.fly.dev/api/proactive/scheduled/{message_id}",
+			"time": 30,
+			"responseCode": {
+				"code": 404,
+				"name": "Not Found"
+			},
+			"tests": {},
+			"testPassFailCounts": {},
+			"times": [
+				30
+			],
+			"allTests": [
+				{}
+			]
+		},
+		{
+			"id": "2765fe4b-658c-422f-9c4a-1b887dfb60c4",
+			"name": "External Webhook",
+			"url": "https://bijou-staging.fly.dev/api/webhook",
+			"time": 19,
+			"responseCode": {
+				"code": 500,
+				"name": "Internal Server Error"
+			},
+			"tests": {},
+			"testPassFailCounts": {},
+			"times": [
+				19
+			],
+			"allTests": [
+				{}
+			]
+		},
+		{
+			"id": "a809a9e7-8512-49e4-82d7-4dae1147734a",
+			"name": "Serve Onboarding",
+			"url": "https://bijou-staging.fly.dev/onboard/{token}",
+			"time": 16,
+			"responseCode": {
+				"code": 404,
+				"name": "Not Found"
+			},
+			"tests": {},
+			"testPassFailCounts": {},
+			"times": [
+				16
+			],
+			"allTests": [
+				{}
+			]
+		},
+		{
+			"id": "27ef7173-6a28-4448-86de-48bc91e33593",
+			"name": "Update Testing Mode",
+			"url": "https://bijou-staging.fly.dev/api/settings/testing-mode",
+			"time": 18,
+			"responseCode": {
+				"code": 422,
+				"name": "Unprocessable Entity"
+			},
+			"tests": {},
+			"testPassFailCounts": {},
+			"times": [
+				18
+			],
+			"allTests": [
+				{}
+			]
+		},
+		{
+			"id": "398e31b6-4bf7-4e5b-9cdd-ad26a22483bf",
+			"name": "Update Ignore List",
+			"url": "https://bijou-staging.fly.dev/api/settings/ignore-list",
+			"time": 18,
+			"responseCode": {
+				"code": 422,
+				"name": "Unprocessable Entity"
+			},
+			"tests": {},
+			"testPassFailCounts": {},
+			"times": [
+				18
+			],
+			"allTests": [
+				{}
+			]
+		},
+		{
+			"id": "51cc970a-875e-45d3-8cd1-83fc9ee24529",
+			"name": "Update Business Hours",
+			"url": "https://bijou-staging.fly.dev/api/settings/business-hours",
+			"time": 17,
+			"responseCode": {
+				"code": 422,
+				"name": "Unprocessable Entity"
+			},
+			"tests": {},
+			"testPassFailCounts": {},
+			"times": [
+				17
+			],
+			"allTests": [
+				{}
+			]
+		},
+		{
+			"id": "0666c357-b49d-46e1-a4cb-59370077ea8a",
+			"name": "Update Auto Reply",
+			"url": "https://bijou-staging.fly.dev/api/settings/auto-reply",
+			"time": 16,
+			"responseCode": {
+				"code": 422,
+				"name": "Unprocessable Entity"
+			},
+			"tests": {},
+			"testPassFailCounts": {},
+			"times": [
+				16
+			],
+			"allTests": [
+				{}
+			]
+		},
+		{
+			"id": "95c321e0-1505-4835-94df-6c11840ff03c",
+			"name": "Settings Api Health",
+			"url": "https://bijou-staging.fly.dev/api/settings/health",
+			"time": 25,
+			"responseCode": {
+				"code": 200,
+				"name": "OK"
+			},
+			"tests": {},
+			"testPassFailCounts": {},
+			"times": [
+				25
+			],
+			"allTests": [
+				{}
+			]
+		},
+		{
+			"id": "88c3e720-605d-4cb8-abb0-b9db125bcd1d",
+			"name": "Root",
+			"url": "https://bijou-staging.fly.dev/",
+			"time": 16,
+			"responseCode": {
+				"code": 200,
+				"name": "OK"
+			},
+			"tests": {},
+			"testPassFailCounts": {},
+			"times": [
+				16
+			],
+			"allTests": [
+				{}
+			]
+		},
+		{
+			"id": "1f38966a-5a0a-4f40-9f9f-7b0ef55406ef",
+			"name": "Api Documentation",
+			"url": "https://bijou-staging.fly.dev/api-docs",
+			"time": 42,
+			"responseCode": {
+				"code": 200,
+				"name": "OK"
+			},
+			"tests": {},
+			"testPassFailCounts": {},
+			"times": [
+				42
+			],
+			"allTests": [
+				{}
+			]
+		},
+		{
+			"id": "1bc7f06f-849c-4e89-bc88-5bcdf8726c74",
+			"name": "Changelog",
+			"url": "https://bijou-staging.fly.dev/changelog",
+			"time": 23,
+			"responseCode": {
+				"code": 200,
+				"name": "OK"
+			},
+			"tests": {},
+			"testPassFailCounts": {},
+			"times": [
+				23
+			],
+			"allTests": [
+				{}
+			]
+		},
+		{
+			"id": "e22a41ab-6f9a-4fce-b7f2-826c28b77404",
+			"name": "Health Check",
+			"url": "https://bijou-staging.fly.dev/health",
+			"time": 15,
+			"responseCode": {
+				"code": 200,
+				"name": "OK"
+			},
+			"tests": {},
+			"testPassFailCounts": {},
+			"times": [
+				15
+			],
+			"allTests": [
+				{}
+			]
+		},
+		{
+			"id": "a29dcbd9-f428-4e56-b823-5b90d0a88e84",
+			"name": "Status",
+			"url": "https://bijou-staging.fly.dev/status",
+			"time": 16,
+			"responseCode": {
+				"code": 200,
+				"name": "OK"
+			},
+			"tests": {},
+			"testPassFailCounts": {},
+			"times": [
+				16
+			],
+			"allTests": [
+				{}
+			]
+		},
+		{
+			"id": "9cf2659e-2c69-4d3e-84bb-04ee8031e92c",
+			"name": "Webhook Message",
+			"url": "https://bijou-staging.fly.dev/webhook/message",
+			"time": 19,
+			"responseCode": {
+				"code": 500,
+				"name": "Internal Server Error"
+			},
+			"tests": {},
+			"testPassFailCounts": {},
+			"times": [
+				19
+			],
+			"allTests": [
+				{}
+			]
+		},
+		{
+			"id": "02d91882-040c-4f36-b694-7f19bbbf836e",
+			"name": "Webhook Connection Status",
+			"url": "https://bijou-staging.fly.dev/webhook/connection",
+			"time": 20,
+			"responseCode": {
+				"code": 500,
+				"name": "Internal Server Error"
+			},
+			"tests": {},
+			"testPassFailCounts": {},
+			"times": [
+				20
+			],
+			"allTests": [
+				{}
+			]
+		},
+		{
+			"id": "e9af2f26-170c-4d64-8d0b-dbd59dc2df08",
+			"name": "Webhook Telegram",
+			"url": "https://bijou-staging.fly.dev/webhook/telegram",
+			"time": 18,
+			"responseCode": {
+				"code": 400,
+				"name": "Bad Request"
+			},
+			"tests": {},
+			"testPassFailCounts": {},
+			"times": [
+				18
+			],
+			"allTests": [
+				{}
+			]
+		}
+	],
+	"count": 1,
+	"totalTime": 6023,
+	"collection": {
+		"requests": [
+			{
+				"id": "e8abd841-bc1b-496c-9992-b5ff09ddf397",
+				"method": "GET"
+			},
+			{
+				"id": "cf03e85a-3f8a-4cc8-b442-486ef56961d3",
+				"method": "GET"
+			},
+			{
+				"id": "c9b47451-4b28-4654-81dd-07e4b3463503",
+				"method": "GET"
+			},
+			{
+				"id": "de638e3f-94b9-4871-82bf-52cc0a7e4755",
+				"method": "GET"
+			},
+			{
+				"id": "6edd655c-28e9-4ead-b821-7d7063b2b71e",
+				"method": "GET"
+			},
+			{
+				"id": "560b2416-4d66-453b-9595-96853a93b24e",
+				"method": "POST"
+			},
+			{
+				"id": "93335e7a-75a9-4fd6-abe6-f5361d7b1b1a",
+				"method": "POST"
+			},
+			{
+				"id": "89d0c57a-4095-4089-9591-bbe7e8f7c79f",
+				"method": "POST"
+			},
+			{
+				"id": "e37eca35-ad0a-4612-8d0e-16affd37f0a7",
+				"method": "POST"
+			},
+			{
+				"id": "0f4287e5-0be1-4ea2-abc3-c1e9db448e01",
+				"method": "GET"
+			},
+			{
+				"id": "9a3832b2-4279-41b7-b0e4-607065e3f57c",
+				"method": "POST"
+			},
+			{
+				"id": "4ce2a811-9d67-4dc0-8a82-5fee83afe23e",
+				"method": "POST"
+			},
+			{
+				"id": "1a6dc4a5-ae54-4ad2-81f2-27a657791e5e",
+				"method": "GET"
+			},
+			{
+				"id": "36b20fa0-38e9-48e5-8e44-4ec4729eb05b",
+				"method": "POST"
+			},
+			{
+				"id": "7078d460-ba9a-4577-863f-d081e06647cb",
+				"method": "GET"
+			},
+			{
+				"id": "81cfa988-dc18-4e09-b5ee-876c44c762e5",
+				"method": "GET"
+			},
+			{
+				"id": "8ec205a5-d4a9-4e10-97dc-4e4d9ccb9e50",
+				"method": "GET"
+			},
+			{
+				"id": "4a9364ac-6273-4780-8ae3-8b1867cda9ac",
+				"method": "GET"
+			},
+			{
+				"id": "37d3913d-04a4-4c18-8fe1-fd181c804257",
+				"method": "POST"
+			},
+			{
+				"id": "7557b985-f9cf-4620-9a24-f31eabe09485",
+				"method": "DELETE"
+			},
+			{
+				"id": "d14fc80b-f4c8-4068-abe5-04d87e053460",
+				"method": "POST"
+			},
+			{
+				"id": "9e944960-e294-489f-9078-730e1fad39bf",
+				"method": "GET"
+			},
+			{
+				"id": "319bc019-8b95-4e2a-b88e-db2de2daac26",
+				"method": "DELETE"
+			},
+			{
+				"id": "8fdcdc44-3610-4e70-8c3f-aa387665ef94",
+				"method": "GET"
+			},
+			{
+				"id": "8ff38e84-5a17-40b4-ae06-daaeb281ca88",
+				"method": "GET"
+			},
+			{
+				"id": "d9c8afa9-1d69-4493-a303-879bc0e26e1d",
+				"method": "POST"
+			},
+			{
+				"id": "532af12d-1ae7-4e7f-8175-8ed1717c7a20",
+				"method": "GET"
+			},
+			{
+				"id": "2c545d25-fa60-4cfa-bf59-0268f5999adf",
+				"method": "GET"
+			},
+			{
+				"id": "ae6a7c5f-a4e6-44c8-9b29-27983941442e",
+				"method": "POST"
+			},
+			{
+				"id": "2b14d732-80a5-4cde-8158-bb1189e5674f",
+				"method": "GET"
+			},
+			{
+				"id": "0988efa9-5167-46c1-b922-5b9b00d6fbf5",
+				"method": "GET"
+			},
+			{
+				"id": "6bb8a3e9-005f-421c-9762-34a4259801eb",
+				"method": "POST"
+			},
+			{
+				"id": "89823b6d-25e9-4c82-8e09-b9b148d4f7b2",
+				"method": "POST"
+			},
+			{
+				"id": "d7df2444-3286-4fa0-9133-2acf06e70e51",
+				"method": "POST"
+			},
+			{
+				"id": "fe5f405b-81b9-4589-beba-51e2f98d0587",
+				"method": "GET"
+			},
+			{
+				"id": "38dc82b0-1a45-47a4-8f02-e75c791f25fc",
+				"method": "GET"
+			},
+			{
+				"id": "c7a13461-7a15-49ce-8725-5c7d6b8aef1a",
+				"method": "DELETE"
+			},
+			{
+				"id": "2765fe4b-658c-422f-9c4a-1b887dfb60c4",
+				"method": "POST"
+			},
+			{
+				"id": "a809a9e7-8512-49e4-82d7-4dae1147734a",
+				"method": "GET"
+			},
+			{
+				"id": "27ef7173-6a28-4448-86de-48bc91e33593",
+				"method": "PUT"
+			},
+			{
+				"id": "398e31b6-4bf7-4e5b-9cdd-ad26a22483bf",
+				"method": "PUT"
+			},
+			{
+				"id": "51cc970a-875e-45d3-8cd1-83fc9ee24529",
+				"method": "PUT"
+			},
+			{
+				"id": "0666c357-b49d-46e1-a4cb-59370077ea8a",
+				"method": "PUT"
+			},
+			{
+				"id": "95c321e0-1505-4835-94df-6c11840ff03c",
+				"method": "GET"
+			},
+			{
+				"id": "88c3e720-605d-4cb8-abb0-b9db125bcd1d",
+				"method": "GET"
+			},
+			{
+				"id": "1f38966a-5a0a-4f40-9f9f-7b0ef55406ef",
+				"method": "GET"
+			},
+			{
+				"id": "1bc7f06f-849c-4e89-bc88-5bcdf8726c74",
+				"method": "GET"
+			},
+			{
+				"id": "e22a41ab-6f9a-4fce-b7f2-826c28b77404",
+				"method": "GET"
+			},
+			{
+				"id": "a29dcbd9-f428-4e56-b823-5b90d0a88e84",
+				"method": "GET"
+			},
+			{
+				"id": "9cf2659e-2c69-4d3e-84bb-04ee8031e92c",
+				"method": "POST"
+			},
+			{
+				"id": "02d91882-040c-4f36-b694-7f19bbbf836e",
+				"method": "POST"
+			},
+			{
+				"id": "e9af2f26-170c-4d64-8d0b-dbd59dc2df08",
+				"method": "POST"
+			}
+		]
+	}
+}

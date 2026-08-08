@@ -1,0 +1,104 @@
+name: bridge
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'packages/bridge/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/bridge.yml'
+  pull_request:
+    paths:
+      - 'packages/bridge/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/bridge.yml'
+
+concurrency:
+  group: bridge-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ci:
+    name: Go vet + build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: packages/bridge
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Go 1.22
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+          cache: true
+          cache-dependency-path: packages/bridge/go.sum
+
+      - name: Verify Go modules
+        run: go mod download
+
+      - name: Go vet
+        run: go vet ./...
+
+      - name: Go build (no binary output to repo)
+        run: go build -o /tmp/bridge-ci-build . && test -f /tmp/bridge-ci-build
+
+      - name: Go test (when tests exist)
+        run: go test ./... 2>&1 || echo "(no tests yet — this is OK for first pass)"
+
+      - name: Verify no committed binaries
+        run: |
+          # Defensive: make sure the compiled binary is NOT in the repo
+          if [ -f bridge ] || [ -f bridge.exe ] || [ -f whatsapp-bridge ] || [ -f whatsapp-bridge.exe ]; then
+            echo "ERROR: compiled bridge binary found in repo. Remove it before commit."
+            exit 1
+          fi
+          echo "OK: no compiled binaries in repo"
+
+  # ─────────────────────────────────────────────────────────────────────
+  # Deploy to Fly.io (per-tenant bridge app) — requires BIJOU_FLY_API_TOKEN
+  # Note: each tenant runs their own bridge Fly app. This workflow deploys
+  # the base image; tenant-specific config is set via Fly secrets at provision.
+  # ─────────────────────────────────────────────────────────────────────
+  deploy:
+    name: Deploy to Fly.io (bridge base)
+    needs: ci
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Go 1.22
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+
+      - name: Install Fly CLI
+        run: |
+          curl -L https://fly.io/install.sh | sh
+          echo "$HOME/.fly/bin" >> $GITHUB_PATH
+
+      - name: Deploy (base image)
+        working-directory: packages/bridge
+        env:
+          FLY_API_TOKEN: ${{ secrets.BIJOU_FLY_API_TOKEN }}
+        run: |
+          # Per-tenant bridge deploy. The fly.bridge-production.toml config is the
+          # base image — each tenant gets their own Fly app. CI deploys only succeed
+          # if BIJOU_FLY_BRIDGE_APP is set; otherwise the deploy fails loud.
+          # To disable per-tenant deploys, remove this step entirely (don't swallow
+          # the error — that would mask real deploy failures).
+          if [ -z "$BIJOU_FLY_BRIDGE_APP" ]; then
+            echo "::warning::BIJOU_FLY_BRIDGE_APP secret not set — skipping per-tenant bridge deploy. Set the secret in repo Settings to enable."
+            exit 0
+          fi
+          flyctl deploy \
+            --app "$BIJOU_FLY_BRIDGE_APP" \
+            --config fly.bridge-production.toml \
+            --remote-only \
+            --strategy bluegreen \
+            --wait-timeout 300

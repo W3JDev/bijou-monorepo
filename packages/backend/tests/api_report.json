@@ -1,0 +1,196 @@
+{
+  "timestamp": "2026-02-18T17:08:41.196072Z",
+  "environment": "staging",
+  "base_url": "https://bijou-staging.fly.dev",
+  "total_requests": 23,
+  "passed": 20,
+  "failed": 0,
+  "skipped": 3,
+  "results": {
+    "health": {
+      "GET /health": {
+        "status": "passed",
+        "description": "Basic health check",
+        "status_code": 200,
+        "expected_code": 200,
+        "response_time_ms": 0,
+        "response_body": "{\"status\":\"healthy\",\"service\":\"bijou-ai-enterprise\",\"version\":\"2.2.0\",\"timestamp\":\"2026-02-18T17:08:38.972818\",\"database\":\"supabase\"}"
+      },
+      "GET /status": {
+        "status": "passed",
+        "description": "System status",
+        "status_code": 200,
+        "expected_code": 200,
+        "response_time_ms": 0,
+        "response_body": "{\"service\":\"bijou-ai-whatsapp-enterprise\",\"version\":\"2.2.0\",\"status\":\"running\",\"environment\":\"staging\",\"database\":\"supabase\",\"ai_model\":\"gemini-2.5-flash\",\"languages\":[\"ms\",\"zh\",\"ta\",\"en\",\"en-my\"],\"features\":{\"multi_language\":true,\"cultural_context\":true,\"human_escalation\":true,\"multi_tenant\":true,\"supabase\":true}}"
+      },
+      "GET /bridge/health": {
+        "status": "passed",
+        "description": "WhatsApp bridge health",
+        "status_code": 200,
+        "expected_code": 200,
+        "response_time_ms": 0,
+        "response_body": "{\"status\":\"healthy\",\"bridge_url\":\"https://bijou-bridge-staging-v2.fly.dev\",\"bridge_responsive\":true,\"devices\":{\"total\":6,\"connected\":0,\"disconnected\":6},\"timestamp\":\"2026-02-18T17:08:39.256977\"}"
+      },
+      "GET /postman-collection": {
+        "status": "passed",
+        "description": "Postman collection export",
+        "status_code": 200,
+        "expected_code": 200,
+        "response_time_ms": 0,
+        "response_body": "{\"info\":{\"_postman_id\":\"bijou-ai-whatsapp-api\",\"name\":\"Bijou AI WhatsApp Enterprise\",\"description\":\"Bijou AI WhatsApp Enterprise API\\n\\n**Quick Start:**\\n1. Import this collection into Postman\\n2. Create an environment with variables:\\n   - `base_url`: https://bijou-staging.fly.dev\\n   - `api_key`: Your WhatsApp bridge API key\\n   - `dashboard_token`: Your dashboard auth token\\n   - `tenant_id`: Your tenant UUID\\n3. Start testing endpoints!\\n\\n**Version:** 2.2.0\\n**Documentation:** https://bijou"
+      }
+    },
+    "onboarding": {
+      "GET /api/onboarding/health": {
+        "status": "passed",
+        "description": "Onboarding service health",
+        "status_code": 200,
+        "expected_code": 200,
+        "response_time_ms": 0,
+        "response_body": "{\"status\":\"degraded\",\"checks\":{\"onboarding_api\":\"ok\",\"supabase\":\"ok\",\"whatsapp_bridge\":\"status: 401\"}}"
+      },
+      "GET /api/onboarding/v2/status/1e63900e-1b83-4dc8-ba55-9d619eae0866": {
+        "status": "passed",
+        "description": "Get onboarding V2 status",
+        "status_code": 200,
+        "expected_code": 200,
+        "response_time_ms": 0,
+        "response_body": "{\"status\":\"success\",\"current_step\":\"payment\",\"progress\":{\"tenant_id\":\"1e63900e-1b83-4dc8-ba55-9d619eae0866\",\"step_payment_completed\":true,\"step_details_completed\":false,\"step_whatsapp_completed\":false,\"step_knowledge_completed\":false,\"step_agents_completed\":false,\"step_payment_at\":\"2026-02-17T08:32:43.680949+00:00\",\"step_details_at\":null,\"step_whatsapp_at\":null,\"step_knowledge_at\":null,\"step_agents_at\":null,\"current_step\":\"details\",\"created_at\":\"2026-02-17T08:32:43.675375+00:00\",\"updated_at\":\"20"
+      },
+      "GET /api/onboarding/v2/whatsapp/qr/1e63900e-1b83-4dc8-ba55-9d619eae0866": {
+        "status": "passed",
+        "description": "Generate QR code",
+        "status_code": 200,
+        "expected_code": 200,
+        "response_time_ms": 0,
+        "response_body": "{\"code\":\"SUCCESS\",\"message\":\"Login success\",\"results\":{\"device_id\":\"a024e53e-6703-4c62-9fe9-78f80697e4ea\",\"qr_duration\":30,\"qr_link\":\"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIAAQMAAADOtka5AAAABlBMVEX///8AAABVwtN+AAAGgklEQVR42uydMc6rzg7FjVJQsoQshaUxS2MpLIGSIho/+Rx7Qvj+t3tSJshTXIkb+H1FJrbHPjaSK1euXLly5epwPRRrnYtofRwiE679k11kVhXeYxdlqQOvtgTcCvCyf5/rrDroK3bHokYb90lXWYrirkk3AvhEAvoCjKrbc5VFql1P+IIXqcNrPIwsS8GfGfdpm1W1Dq+H6p6ALgEzPpLRPpr5cz5G/pp5IdP+VNWSgFsDZNE6qN1Ge+DWGyZAzQSMusu8LioJ6BJA"
+      }
+    },
+    "dashboard": {
+      "GET /api/dashboard/stats": {
+        "status": "passed",
+        "description": "Dashboard stats",
+        "status_code": 200,
+        "expected_code": 200,
+        "response_time_ms": 0,
+        "response_body": "{\"active_conversations\":0,\"total_conversations\":0,\"ai_handled\":0,\"human_handled\":0,\"leads_generated_today\":0,\"messages_today\":0,\"avg_response_time\":\"< 1s\",\"satisfaction_rate\":95}"
+      },
+      "GET /api/dashboard/conversations": {
+        "status": "passed",
+        "description": "List conversations",
+        "status_code": 200,
+        "expected_code": 200,
+        "response_time_ms": 0,
+        "response_body": "[]"
+      },
+      "GET /api/dashboard/escalations": {
+        "status": "passed",
+        "description": "List escalations",
+        "status_code": 200,
+        "expected_code": 200,
+        "response_time_ms": 0,
+        "response_body": "[]"
+      },
+      "GET /api/dashboard/whatsapp/status": {
+        "status": "passed",
+        "description": "WhatsApp connection status",
+        "status_code": 200,
+        "expected_code": 200,
+        "response_time_ms": 0,
+        "response_body": "{\"connected\":false,\"status\":\"disconnected\"}"
+      },
+      "GET /api/dashboard/agents": {
+        "status": "passed",
+        "description": "List agents",
+        "status_code": 200,
+        "expected_code": 200,
+        "response_time_ms": 0,
+        "response_body": "[]"
+      }
+    },
+    "knowledge": {
+      "GET /api/knowledge/health": {
+        "status": "passed",
+        "description": "Knowledge service health",
+        "status_code": 200,
+        "expected_code": 200,
+        "response_time_ms": 0,
+        "response_body": "{\"status\":\"healthy\",\"service\":\"knowledge_api\",\"supabase_connected\":true}"
+      },
+      "GET /api/knowledge/list": {
+        "status": "passed",
+        "description": "List knowledge documents",
+        "status_code": 200,
+        "expected_code": 200,
+        "response_time_ms": 0,
+        "response_body": "{\"success\":true,\"tenant_id\":\"1e63900e-1b83-4dc8-ba55-9d619eae0866\",\"documents\":[],\"total_count\":0}"
+      }
+    },
+    "settings": {
+      "GET /api/settings/health": {
+        "status": "passed",
+        "description": "Settings service health",
+        "status_code": 200,
+        "expected_code": 200,
+        "response_time_ms": 0,
+        "response_body": "{\"status\":\"healthy\",\"service\":\"settings_api\",\"supabase_connected\":true}"
+      }
+    },
+    "admin": {
+      "GET /api/admin/tenants": {
+        "status": "passed",
+        "description": "List all tenants",
+        "status_code": 200,
+        "expected_code": 200,
+        "response_time_ms": 0,
+        "response_body": "{\"tenants\":[{\"id\":\"a28f495a-be57-40da-b5c6-c227a3c77a97\",\"business_name\":\"W3J LLC3\",\"email\":\"web3jewel@gmail.com\",\"phone\":\"60123456789\",\"status\":\"active\",\"whatsapp_jid\":null,\"whatsapp_connected_at\":null,\"onboarding_completed\":false,\"created_at\":\"2026-02-18T13:41:59.94076+00:00\"},{\"id\":\"eb4ac130-6deb-4e89-9492-8e976060394f\",\"business_name\":\"W3J LLC\",\"email\":\"muzecafeklang@gmail.com\",\"phone\":\"60123456789\",\"status\":\"active\",\"whatsapp_jid\":null,\"whatsapp_connected_at\":null,\"onboarding_completed\":fal"
+      }
+    },
+    "proactive": {
+      "GET /api/proactive/status": {
+        "status": "passed",
+        "description": "Proactive messaging status",
+        "status_code": 200,
+        "expected_code": 200,
+        "response_time_ms": 0,
+        "response_body": "{\"bijou_instance_exists\":false,\"proactive_messaging_exists\":false,\"system_active\":false}"
+      },
+      "GET /api/proactive/campaigns": {
+        "status": "passed",
+        "description": "List campaigns",
+        "status_code": 200,
+        "expected_code": 200,
+        "response_time_ms": 0,
+        "response_body": "{\"campaigns\":[]}"
+      },
+      "GET /api/proactive/scheduled": {
+        "status": "passed",
+        "description": "List scheduled messages",
+        "status_code": 200,
+        "expected_code": 200,
+        "response_time_ms": 0,
+        "response_body": "{\"messages\":[]}"
+      }
+    },
+    "tenant": {
+      "GET /api/tenant/1e63900e-1b83-4dc8-ba55-9d619eae0866/device/status": {
+        "status": "passed",
+        "description": "Device status",
+        "status_code": 200,
+        "expected_code": 200,
+        "response_time_ms": 0,
+        "response_body": "{\"status\":\"no_device\",\"message\":\"No device configured for this tenant\",\"tenant_id\":\"1e63900e-1b83-4dc8-ba55-9d619eae0866\"}"
+      }
+    }
+  },
+  "critical_failures": [],
+  "onboarding_health": {
+    "status_check": "working",
+    "current_step": "details",
+    "signup_working": true,
+    "qr_generation_working": false,
+    "payment_integration_working": false,
+    "whatsapp_webhook_working": "unknown"
+  }
+}

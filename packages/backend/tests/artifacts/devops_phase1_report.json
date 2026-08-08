@@ -1,0 +1,22 @@
+{
+  "phase": "1A-devops",
+  "production_secrets_updated": true,
+  "staging_secrets_updated": true,
+  "production_deploy_status": "success",
+  "staging_deploy_status": "success",
+  "production_health": "healthy",
+  "staging_health": "healthy",
+  "timestamp": "2026-02-21T03:07:00Z",
+  "notes": {
+    "production_image": "registry.fly.io/bijou-production:deployment-01KHZ2GFGTWW0G8Z307MM7JHTN",
+    "staging_image": "registry.fly.io/bijou-staging:deployment-01KHZ2JCHZQ0V8ZE2Z9K1PPV7K",
+    "production_machine": "e82d4d3bee69d8",
+    "staging_machine": "080e091f05d6e8",
+    "production_health_response": "{\"status\":\"healthy\",\"service\":\"bijou-ai-enterprise\",\"version\":\"2.2.0\",\"database\":\"supabase\"}",
+    "staging_health_response": "{\"status\":\"healthy\",\"service\":\"bijou-ai-enterprise\",\"version\":\"2.2.0\",\"database\":\"supabase\"}",
+    "secrets_staged_with_flag": "--stage (activated on deploy)",
+    "supabase_connectivity_confirmed": true,
+    "startup_warning": "Transient Fly proxy 'not listening' warning during machine boot — resolved within seconds, Uvicorn confirmed binding on 0.0.0.0:8080",
+    "region": "sin (Singapore)"
+  }
+}

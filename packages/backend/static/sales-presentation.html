@@ -1,0 +1,1473 @@
+<!doctype html>
+<html lang="en">
+  <!-- edge-cache-bust:v=2026-07-28a -->
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Bijou AI - Premium Sales Presentation</title>
+    <link rel="icon" type="image/png" href="/static/favicon.png" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/framer-motion@10.16.5/dist/framer-motion.min.js"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              "deep-obsidian": "#1A1A1A",
+              "metallic-green": "#2D5831",
+              "strategic-gold": "#DAA520",
+              "dark-emerald": "#1B4332",
+            },
+            fontFamily: {
+              premium: ["Inter", "system-ui", "sans-serif"],
+            },
+            animation: {
+              "slide-in-right": "slideInRight 0.6s ease-out",
+              "slide-in-left": "slideInLeft 0.6s ease-out",
+              "fade-in": "fadeIn 0.8s ease-out",
+              glow: "glow 2s ease-in-out infinite alternate",
+              float: "float 3s ease-in-out infinite",
+            },
+          },
+        },
+      };
+    </script>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap");
+
+      :root {
+        --deep-obsidian: #1a1a1a;
+        --metallic-green: #2d5831;
+        --strategic-gold: #daa520;
+        --dark-emerald: #1b4332;
+        --glass-bg: rgba(255, 255, 255, 0.05);
+        --glass-border: rgba(255, 255, 255, 0.1);
+      }
+
+      * {
+        font-family: "Inter", system-ui, sans-serif;
+      }
+
+      body {
+        background: var(--deep-obsidian);
+        overflow: hidden; /* prevent document-level scroll — slides scroll internally */
+        height: 100vh;
+      }
+      html {
+        height: 100vh;
+        overflow: hidden;
+      }
+
+      /* Glassmorphism Cards */
+      .glass-card {
+        background: var(--glass-bg);
+        backdrop-filter: blur(20px);
+        border: 1px solid var(--glass-border);
+        box-shadow: 0 25px 45px rgba(0, 0, 0, 0.4);
+      }
+
+      .glass-card-premium {
+        background: linear-gradient(
+          135deg,
+          rgba(45, 88, 49, 0.15) 0%,
+          rgba(218, 165, 32, 0.15) 100%
+        );
+        backdrop-filter: blur(25px);
+        border: 2px solid rgba(218, 165, 32, 0.3);
+        box-shadow: 0 30px 60px rgba(218, 165, 32, 0.2);
+      }
+
+      /* Slide Management */
+      .slide {
+        height: 100vh;
+        overflow-y: auto; /* each slide scrolls inside itself */
+        overflow-x: hidden;
+        display: none;
+        padding: 5.5rem 2rem 3rem 2rem;
+        position: relative;
+        background: linear-gradient(
+          145deg,
+          var(--deep-obsidian) 0%,
+          #252525 50%,
+          var(--deep-obsidian) 100%
+        );
+        scroll-behavior: smooth;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      .slide.active {
+        display: block; /* block, not flex — allows natural document flow & scroll */
+        animation: fadeIn 0.5s ease-out;
+      }
+      /* Center slide content vertically when it fits in viewport */
+      .slide-inner {
+        min-height: calc(100vh - 8.5rem);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+      }
+
+      /* Premium Watermark */
+      .bijou-watermark {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        opacity: 0.03;
+        z-index: 0;
+        width: 600px;
+        height: 600px;
+        pointer-events: none;
+      }
+
+      /* Animations */
+      @keyframes slideInRight {
+        from {
+          opacity: 0;
+          transform: translateX(100px);
+        }
+        to {
+          opacity: 1;
+          transform: translateX(0);
+        }
+      }
+
+      @keyframes slideInLeft {
+        from {
+          opacity: 0;
+          transform: translateX(-100px);
+        }
+        to {
+          opacity: 1;
+          transform: translateX(0);
+        }
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(30px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @keyframes glow {
+        from {
+          box-shadow: 0 0 20px rgba(218, 165, 32, 0.3);
+        }
+        to {
+          box-shadow: 0 0 40px rgba(218, 165, 32, 0.6);
+        }
+      }
+
+      @keyframes float {
+        0%,
+        100% {
+          transform: translateY(0px);
+        }
+        50% {
+          transform: translateY(-10px);
+        }
+      }
+
+      /* Premium Elements */
+      .gold-highlight {
+        color: var(--strategic-gold);
+        text-shadow: 0 0 20px rgba(218, 165, 32, 0.4);
+      }
+
+      .green-accent {
+        color: var(--metallic-green);
+        border-color: var(--metallic-green);
+      }
+
+      .premium-btn {
+        background: linear-gradient(
+          135deg,
+          var(--metallic-green) 0%,
+          var(--dark-emerald) 100%
+        );
+        transition: all 0.3s ease;
+        box-shadow: 0 10px 25px rgba(45, 88, 49, 0.3);
+      }
+
+      .premium-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 15px 35px rgba(45, 88, 49, 0.4);
+      }
+
+      .gold-btn {
+        background: linear-gradient(
+          135deg,
+          var(--strategic-gold) 0%,
+          #ffd700 100%
+        );
+        color: var(--deep-obsidian);
+        font-weight: 800;
+        animation: glow 2s ease-in-out infinite alternate;
+      }
+
+      .gold-btn:hover {
+        transform: translateY(-3px) scale(1.05);
+      }
+
+      /* Mobile Optimizations */
+      @media (max-width: 768px) {
+        .slide {
+          padding: 4.5rem 1rem 2rem 1rem;
+        }
+        .bijou-watermark {
+          width: 220px;
+          height: 220px;
+          opacity: 0.02;
+        }
+        .slide-inner {
+          min-height: calc(100vh - 6.5rem);
+        }
+      }
+
+      /* Dot indicators */
+      .slide-dots {
+        position: fixed;
+        bottom: 1.25rem;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        gap: 6px;
+        z-index: 55;
+      }
+      .slide-dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.25);
+        transition: all 0.3s;
+        cursor: pointer;
+      }
+      .slide-dot.active {
+        background: var(--strategic-gold);
+        transform: scale(1.35);
+      }
+
+      /* Navigation Enhancements */
+      .nav-glass {
+        background: rgba(26, 26, 26, 0.9);
+        backdrop-filter: blur(20px);
+        border-bottom: 1px solid var(--glass-border);
+      }
+
+      /* Progress Bar */
+      .progress-bar {
+        height: 4px;
+        background: var(--deep-obsidian);
+        position: fixed;
+        top: 0;
+        left: 0;
+        z-index: 60;
+      }
+
+      .progress-fill {
+        height: 100%;
+        background: linear-gradient(
+          90deg,
+          var(--metallic-green) 0%,
+          var(--strategic-gold) 100%
+        );
+        transition: width 0.6s ease;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Progress Bar -->
+    <div class="progress-bar w-full">
+      <div id="progressFill" class="progress-fill" style="width: 10%"></div>
+    </div>
+
+    <!-- Premium Navigation -->
+    <nav class="nav-glass fixed top-0 left-0 right-0 z-50 px-4 py-3">
+      <div class="flex justify-between items-center max-w-6xl mx-auto gap-3">
+        <img
+          src="/static/logos/mark.svg"
+          alt="Bijou AI"
+          class="h-8 brightness-110 animate-float flex-shrink-0"
+        />
+        <div class="flex gap-2 items-center">
+          <!-- Previous -->
+          <button
+            onclick="previousSlide()"
+            title="Previous"
+            class="flex items-center gap-1 px-3 py-2 glass-card text-white rounded-lg hover:bg-white hover:bg-opacity-10 transition-all duration-200 text-sm font-medium"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="w-4 h-4"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              stroke-width="2.5"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M15 19l-7-7 7-7"
+              />
+            </svg>
+            <span class="hidden sm:inline">Prev</span>
+          </button>
+          <!-- Counter -->
+          <span
+            id="slideCounter"
+            class="px-3 py-2 text-white font-semibold text-sm min-w-[3.5rem] text-center"
+            >1 / 10</span
+          >
+          <!-- Next -->
+          <button
+            onclick="nextSlide()"
+            title="Next"
+            class="flex items-center gap-1 px-3 py-2 premium-btn text-white rounded-lg font-semibold text-sm"
+          >
+            <span class="hidden sm:inline">Next</span>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="w-4 h-4"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              stroke-width="2.5"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M9 5l7 7-7 7"
+              />
+            </svg>
+          </button>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Slide 1: Premium Title Slide -->
+    <div class="slide active">
+      <img
+        src="/static/logos/mark.svg"
+        alt="Bijou AI Watermark"
+        class="bijou-watermark"
+      />
+      <div class="max-w-4xl mx-auto text-center z-10 relative">
+        <img
+          src="/static/logos/mark.svg"
+          alt="Bijou AI"
+          class="h-28 mx-auto mb-12 brightness-110 animate-float"
+        />
+        <h1 class="text-7xl font-black mb-6 text-white">
+          <span class="gold-highlight">Bijou AI</span>
+        </h1>
+        <h2 class="text-4xl font-bold mb-12 text-white">
+          Malaysia's Premier WhatsApp AI Assistant
+        </h2>
+        <p class="text-2xl text-gray-300 mb-16 leading-relaxed">
+          Transform your customer service with AI that understands Malaysian
+          culture, languages, and business needs
+        </p>
+
+        <div class="grid md:grid-cols-3 gap-8">
+          <div class="glass-card rounded-2xl p-8 text-center">
+            <div class="text-5xl font-black gold-highlight mb-4">24/7</div>
+            <div class="text-xl text-white font-medium">Customer Support</div>
+          </div>
+          <div class="glass-card rounded-2xl p-8 text-center">
+            <div class="text-5xl font-black gold-highlight mb-4">5+</div>
+            <div class="text-xl text-white font-medium">Languages</div>
+          </div>
+          <div class="glass-card rounded-2xl p-8 text-center">
+            <div class="text-5xl font-black gold-highlight mb-4">335%</div>
+            <div class="text-xl text-white font-medium">ROI Increase</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Slide 2: Problem Statement -->
+    <div class="slide">
+      <div class="max-w-5xl mx-auto z-10 relative">
+        <h2 class="text-5xl font-black text-center mb-16 text-white">
+          The Malaysian Business Challenge
+        </h2>
+        <div class="grid md:grid-cols-2 gap-10">
+          <div class="space-y-8 animate-slide-in-left">
+            <div class="glass-card border-l-4 border-red-400 p-8 rounded-2xl">
+              <h3
+                class="text-2xl font-bold text-red-300 mb-4 flex items-center"
+              >
+                <span class="text-4xl mr-4">🕐</span>
+                Missed Opportunities
+              </h3>
+              <p class="text-gray-300 text-lg">
+                67% of customer inquiries happen outside business hours
+              </p>
+            </div>
+            <div
+              class="glass-card border-l-4 border-orange-400 p-8 rounded-2xl"
+            >
+              <h3
+                class="text-2xl font-bold text-orange-300 mb-4 flex items-center"
+              >
+                <span class="text-4xl mr-4">🌍</span>
+                Language Barriers
+              </h3>
+              <p class="text-gray-300 text-lg">
+                Malaysian customers speak English, Malay, Chinese, Tamil, and
+                Manglish
+              </p>
+            </div>
+            <div
+              class="glass-card border-l-4 border-yellow-400 p-8 rounded-2xl"
+            >
+              <h3
+                class="text-2xl font-bold text-yellow-300 mb-4 flex items-center"
+              >
+                <span class="text-4xl mr-4">💰</span>
+                Rising Costs
+              </h3>
+              <p class="text-gray-300 text-lg">
+                Customer service staff costs increase 15% annually
+              </p>
+            </div>
+          </div>
+          <div class="space-y-8 animate-slide-in-right">
+            <div
+              class="glass-card border-l-4 border-purple-400 p-8 rounded-2xl"
+            >
+              <h3
+                class="text-2xl font-bold text-purple-300 mb-4 flex items-center"
+              >
+                <span class="text-4xl mr-4">📱</span>
+                WhatsApp Dependency
+              </h3>
+              <p class="text-gray-300 text-lg">
+                89% of Malaysian consumers prefer WhatsApp for business
+                communication
+              </p>
+            </div>
+            <div class="glass-card border-l-4 border-blue-400 p-8 rounded-2xl">
+              <h3
+                class="text-2xl font-bold text-blue-300 mb-4 flex items-center"
+              >
+                <span class="text-4xl mr-4">⚡</span>
+                Response Expectations
+              </h3>
+              <p class="text-gray-300 text-lg">
+                Customers expect responses within 10 minutes
+              </p>
+            </div>
+            <div class="glass-card border-l-4 border-gray-400 p-8 rounded-2xl">
+              <h3
+                class="text-2xl font-bold text-gray-300 mb-4 flex items-center"
+              >
+                <span class="text-4xl mr-4">🔄</span>
+                Repetitive Tasks
+              </h3>
+              <p class="text-gray-300 text-lg">
+                80% of inquiries are repetitive questions that could be
+                automated
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Slide 3: Solution Overview -->
+    <div class="slide">
+      <img
+        src="/static/logos/mark.svg"
+        alt="Bijou AI Watermark"
+        class="bijou-watermark"
+      />
+      <div class="max-w-5xl mx-auto text-center z-10 relative">
+        <h2 class="text-5xl font-black mb-12 text-white">
+          Meet Your <span class="gold-highlight">AI Business Partner</span>
+        </h2>
+        <p class="text-2xl mb-16 text-gray-300 leading-relaxed">
+          Bijou AI is specifically designed for Malaysian businesses,
+          understanding local culture, languages, and customer expectations
+        </p>
+
+        <div class="grid md:grid-cols-3 gap-8 mb-16">
+          <div class="glass-card-premium rounded-2xl p-8">
+            <div class="text-6xl mb-6">🧠</div>
+            <h3 class="text-2xl font-bold mb-4 text-white">
+              Artificial Social Intelligence
+            </h3>
+            <p class="text-gray-300 text-lg">
+              Understands context, emotions, and cultural nuances in
+              conversations
+            </p>
+          </div>
+          <div class="glass-card-premium rounded-2xl p-8">
+            <div class="text-6xl mb-6">🌏</div>
+            <h3 class="text-2xl font-bold mb-4 text-white">
+              Multi-Language Mastery
+            </h3>
+            <p class="text-gray-300 text-lg">
+              Fluent in English, Malay, Chinese, Tamil, and Manglish
+            </p>
+          </div>
+          <div class="glass-card-premium rounded-2xl p-8">
+            <div class="text-6xl mb-6">⚡</div>
+            <h3 class="text-2xl font-bold mb-4 text-white">
+              Instant Integration
+            </h3>
+            <p class="text-gray-300 text-lg">
+              Works with existing WhatsApp Business - no app downloads required
+            </p>
+          </div>
+        </div>
+
+        <div class="glass-card rounded-2xl p-10">
+          <h3 class="text-3xl font-bold mb-8 text-white">How It Works</h3>
+          <div
+            class="flex justify-center items-center gap-6 text-xl text-white flex-wrap"
+          >
+            <span class="glass-card px-4 py-2 rounded-lg"
+              >Customer Messages</span
+            >
+            <span class="text-3xl gold-highlight">→</span>
+            <span class="glass-card px-4 py-2 rounded-lg">AI Analysis</span>
+            <span class="text-3xl gold-highlight">→</span>
+            <span class="glass-card px-4 py-2 rounded-lg"
+              >Intelligent Response</span
+            >
+            <span class="text-3xl gold-highlight">→</span>
+            <span class="gold-highlight font-bold">Happy Customer</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Slide 4: Key Features -->
+    <div class="slide">
+      <div class="max-w-6xl mx-auto z-10 relative">
+        <h2 class="text-5xl font-black text-center mb-16 text-white">
+          Powerful Features Built for
+          <span class="gold-highlight">Malaysia</span>
+        </h2>
+
+        <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div
+            class="glass-card border border-blue-400 rounded-2xl p-8 hover:scale-105 transition-transform duration-300"
+          >
+            <div class="text-5xl mb-6">💬</div>
+            <h3 class="text-xl font-bold mb-4 text-blue-300">
+              Manglish Conversation
+            </h3>
+            <p class="text-gray-300">
+              Naturally handles "lah", "lor", "meh" and code-switching between
+              languages
+            </p>
+          </div>
+
+          <div
+            class="glass-card border border-green-400 rounded-2xl p-8 hover:scale-105 transition-transform duration-300"
+          >
+            <div class="text-5xl mb-6">📅</div>
+            <h3 class="text-xl font-bold mb-4 text-green-300">Smart Booking</h3>
+            <p class="text-gray-300">
+              Integrates with Google Calendar for seamless appointment
+              scheduling
+            </p>
+          </div>
+
+          <div
+            class="glass-card border border-purple-400 rounded-2xl p-8 hover:scale-105 transition-transform duration-300"
+          >
+            <div class="text-5xl mb-6">🎯</div>
+            <h3 class="text-xl font-bold mb-4 text-purple-300">
+              Lead Qualification
+            </h3>
+            <p class="text-gray-300">
+              Automatically qualifies prospects and routes hot leads to sales
+              team
+            </p>
+          </div>
+
+          <div
+            class="glass-card border border-red-400 rounded-2xl p-8 hover:scale-105 transition-transform duration-300"
+          >
+            <div class="text-5xl mb-6">🚨</div>
+            <h3 class="text-xl font-bold mb-4 text-red-300">
+              Smart Escalation
+            </h3>
+            <p class="text-gray-300">
+              Detects frustration and complex issues, escalating to humans when
+              needed
+            </p>
+          </div>
+
+          <div
+            class="glass-card border border-yellow-400 rounded-2xl p-8 hover:scale-105 transition-transform duration-300"
+          >
+            <div class="text-5xl mb-6">📊</div>
+            <h3 class="text-xl font-bold mb-4 text-yellow-300">
+              Business Analytics
+            </h3>
+            <p class="text-gray-300">
+              Real-time insights on customer behavior, peak hours, and service
+              performance
+            </p>
+          </div>
+
+          <div
+            class="glass-card border border-indigo-400 rounded-2xl p-8 hover:scale-105 transition-transform duration-300"
+          >
+            <div class="text-5xl mb-6">🔗</div>
+            <h3 class="text-xl font-bold mb-4 text-indigo-300">
+              CRM Integration
+            </h3>
+            <p class="text-gray-300">
+              Syncs with existing business tools via Zapier and custom webhooks
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Slide 5: ROI Calculator -->
+    <div class="slide">
+      <div class="max-w-5xl mx-auto z-10 relative">
+        <h2 class="text-5xl font-black text-center mb-16 text-white">
+          Calculate Your <span class="gold-highlight">ROI</span>
+        </h2>
+
+        <div class="grid md:grid-cols-2 gap-10">
+          <div class="glass-card rounded-2xl p-10">
+            <h3 class="text-3xl font-bold mb-8 text-red-400">
+              Current Costs (Monthly)
+            </h3>
+            <div class="space-y-6">
+              <div class="flex justify-between text-lg">
+                <span class="text-gray-300"
+                  >Customer Service Staff (2 people)</span
+                >
+                <span class="font-bold text-white">RM6,000</span>
+              </div>
+              <div class="flex justify-between text-lg">
+                <span class="text-gray-300"
+                  >Missed Opportunities (After Hours)</span
+                >
+                <span class="font-bold text-white">RM3,500</span>
+              </div>
+              <div class="flex justify-between text-lg">
+                <span class="text-gray-300"
+                  >Response Delays (Lost Customers)</span
+                >
+                <span class="font-bold text-white">RM2,200</span>
+              </div>
+              <div class="flex justify-between text-lg">
+                <span class="text-gray-300">Training & Management</span>
+                <span class="font-bold text-white">RM800</span>
+              </div>
+              <hr class="border-gray-600 my-6" />
+              <div
+                class="flex justify-between text-2xl font-black text-red-400"
+              >
+                <span>Total Monthly Cost:</span>
+                <span>RM12,500</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="glass-card-premium rounded-2xl p-10">
+            <h3 class="text-3xl font-bold mb-8 text-green-400">
+              With Bijou AI (Monthly)
+            </h3>
+            <div class="space-y-6">
+              <div class="flex justify-between text-lg">
+                <span class="text-gray-300">Bijou AI Launch Special</span>
+                <span class="font-bold gold-highlight text-xl">RM159</span>
+              </div>
+              <div class="flex justify-between text-lg">
+                <span class="text-gray-300"
+                  >Reduced Staff (1 person for complex cases)</span
+                >
+                <span class="font-bold text-white">RM3,000</span>
+              </div>
+              <div class="flex justify-between text-lg">
+                <span class="text-gray-300"
+                  >24/7 Coverage (No missed opportunities)</span
+                >
+                <span class="font-bold text-white">RM0</span>
+              </div>
+              <div class="flex justify-between text-lg">
+                <span class="text-gray-300">Instant Responses</span>
+                <span class="font-bold text-white">RM0</span>
+              </div>
+              <hr class="border-gray-600 my-6" />
+              <div
+                class="flex justify-between text-2xl font-black text-green-400"
+              >
+                <span>Total Monthly Cost:</span>
+                <span>RM3,159</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="glass-card-premium rounded-2xl p-10 mt-12 text-center">
+          <h3 class="text-4xl font-black mb-6 gold-highlight">
+            Monthly Savings: RM9,341
+          </h3>
+          <p class="text-2xl text-white">
+            Annual ROI: <span class="gold-highlight font-black">335%</span> |
+            Payback Period:
+            <span class="gold-highlight font-black">3.4 months</span>
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Slide 6: Success Stories -->
+    <div class="slide">
+      <div class="max-w-6xl mx-auto z-10 relative">
+        <h2 class="text-5xl font-black text-center mb-16 text-white">
+          Malaysian <span class="gold-highlight">Success Stories</span>
+        </h2>
+
+        <div class="grid md:grid-cols-3 gap-8">
+          <div class="glass-card rounded-2xl p-8 border-l-4 border-blue-400">
+            <div class="flex items-center mb-6">
+              <div
+                class="w-16 h-16 bg-blue-500 rounded-full flex items-center justify-center text-white font-black text-xl"
+              >
+                CK
+              </div>
+              <div class="ml-4">
+                <h4 class="font-bold text-white text-lg">Chong Kar Wei</h4>
+                <p class="text-gray-400">CEO, KL Accounting Services</p>
+              </div>
+            </div>
+            <blockquote class="text-gray-300 italic text-lg mb-4">
+              "Bijou AI transformed our customer service. We went from missing
+              40% of after-hours inquiries to capturing 100%. Our clients love
+              that they can book appointments in Manglish at 2 AM!"
+            </blockquote>
+            <div class="text-green-400 font-bold">
+              Results: +156% lead capture, -70% response time
+            </div>
+          </div>
+
+          <div class="glass-card rounded-2xl p-8 border-l-4 border-green-400">
+            <div class="flex items-center mb-6">
+              <div
+                class="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center text-white font-black text-xl"
+              >
+                SA
+              </div>
+              <div class="ml-4">
+                <h4 class="font-bold text-white text-lg">Siti Aishah</h4>
+                <p class="text-gray-400">Owner, Penang Heritage Tours</p>
+              </div>
+            </div>
+            <blockquote class="text-gray-300 italic text-lg mb-4">
+              "The AI understands when tourists ask about halal food in broken
+              English mixed with basic Malay. It's like having a multilingual
+              tour guide answering questions 24/7."
+            </blockquote>
+            <div class="text-green-400 font-bold">
+              Results: +89% booking rate, 4.9/5 customer satisfaction
+            </div>
+          </div>
+
+          <div class="glass-card rounded-2xl p-8 border-l-4 border-purple-400">
+            <div class="flex items-center mb-6">
+              <div
+                class="w-16 h-16 bg-purple-500 rounded-full flex items-center justify-center text-white font-black text-xl"
+              >
+                RT
+              </div>
+              <div class="ml-4">
+                <h4 class="font-bold text-white text-lg">Dr. Raj Tamil</h4>
+                <p class="text-gray-400">Clinic Director, Subang Medical</p>
+              </div>
+            </div>
+            <blockquote class="text-gray-300 italic text-lg mb-4">
+              "Patients can book appointments in Tamil, English, or Malay. The
+              AI handles insurance questions and knows to escalate serious
+              symptoms immediately. It's reduced our admin workload by 60%."
+            </blockquote>
+            <div class="text-green-400 font-bold">
+              Results: -60% admin work, +45% appointment bookings
+            </div>
+          </div>
+        </div>
+
+        <div class="glass-card-premium rounded-2xl p-10 mt-12 text-center">
+          <h3 class="text-3xl font-bold text-white mb-4">
+            Join 500+ Malaysian Businesses
+          </h3>
+          <p class="text-gray-300 text-xl">
+            From kedai runcit to multinational corporations, Bijou AI serves
+            businesses of all sizes across Malaysia
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Slide 7: Premium Pricing Plans with FOMO -->
+    <div class="slide">
+      <div class="max-w-6xl mx-auto z-10 relative">
+        <h2 class="text-5xl font-black text-center mb-8 text-white">
+          Limited Time <span class="gold-highlight">Launch Pricing</span>
+        </h2>
+        <div class="text-center mb-16">
+          <div class="inline-block glass-card px-8 py-4 rounded-full">
+            <span class="text-red-400 font-bold text-lg"
+              >⚠️ ONLY 100 SPOTS AVAILABLE</span
+            >
+          </div>
+        </div>
+
+        <div class="grid md:grid-cols-2 gap-10 max-w-5xl mx-auto">
+          <div class="glass-card rounded-2xl p-10 border-2 border-gray-500">
+            <div class="text-center mb-8">
+              <h3 class="text-3xl font-bold text-white">Starter Plan</h3>
+              <p class="text-gray-400 text-lg">Perfect for small businesses</p>
+            </div>
+            <div class="text-center mb-8">
+              <div class="text-gray-500 line-through text-2xl">RM499</div>
+              <span class="text-6xl font-black gold-highlight">RM159</span>
+              <span class="text-gray-400 text-xl">/month</span>
+            </div>
+            <ul class="space-y-4 mb-10 text-lg">
+              <li class="flex items-center">
+                <span class="text-green-400 mr-3 text-xl">✓</span>
+                <span class="text-gray-300"
+                  >Up to 1,000 conversations/month</span
+                >
+              </li>
+              <li class="flex items-center">
+                <span class="text-green-400 mr-3 text-xl">✓</span>
+                <span class="text-gray-300"
+                  >Multi-language support (5 languages)</span
+                >
+              </li>
+              <li class="flex items-center">
+                <span class="text-green-400 mr-3 text-xl">✓</span>
+                <span class="text-gray-300">Advanced analytics dashboard</span>
+              </li>
+              <li class="flex items-center">
+                <span class="text-green-400 mr-3 text-xl">✓</span>
+                <span class="text-gray-300">WhatsApp Business integration</span>
+              </li>
+              <li class="flex items-center">
+                <span class="text-green-400 mr-3 text-xl">✓</span>
+                <span class="text-gray-300">14-Day Free Trial</span>
+              </li>
+            </ul>
+            <button
+              onclick="window.open('https://app.mybijou.xyz/signup', '_blank')"
+              class="w-full premium-btn text-white py-4 rounded-xl font-bold text-lg transition-all duration-300"
+            >
+              Start Free Trial
+            </button>
+          </div>
+
+          <div
+            class="glass-card-premium rounded-2xl p-10 border-2 border-yellow-400 relative"
+          >
+            <div
+              class="absolute -top-4 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-yellow-400 to-yellow-600 text-black px-6 py-2 rounded-full text-sm font-black"
+            >
+              🔥 MOST POPULAR - LIMITED TIME
+            </div>
+            <div class="text-center mb-8">
+              <h3 class="text-3xl font-bold text-white">Professional Plan</h3>
+              <p class="text-gray-400 text-lg">For serious businesses</p>
+            </div>
+            <div class="text-center mb-8">
+              <div class="text-gray-500 line-through text-2xl">RM799</div>
+              <span class="text-6xl font-black gold-highlight">RM299</span>
+              <span class="text-gray-400 text-xl">/month</span>
+              <div class="text-yellow-400 text-sm font-bold mt-2">
+                Save RM500/month!
+              </div>
+            </div>
+            <ul class="space-y-4 mb-10 text-lg">
+              <li class="flex items-center">
+                <span class="text-green-400 mr-3 text-xl">✓</span>
+                <span class="text-gray-300">Unlimited conversations</span>
+              </li>
+              <li class="flex items-center">
+                <span class="text-green-400 mr-3 text-xl">✓</span>
+                <span class="text-gray-300"
+                  >Advanced AI features & Manglish</span
+                >
+              </li>
+              <li class="flex items-center">
+                <span class="text-green-400 mr-3 text-xl">✓</span>
+                <span class="text-gray-300">Google Calendar integration</span>
+              </li>
+              <li class="flex items-center">
+                <span class="text-green-400 mr-3 text-xl">✓</span>
+                <span class="text-gray-300">Advanced analytics & insights</span>
+              </li>
+              <li class="flex items-center">
+                <span class="text-green-400 mr-3 text-xl">✓</span>
+                <span class="text-gray-300">CRM integrations (Zapier)</span>
+              </li>
+              <li class="flex items-center">
+                <span class="text-green-400 mr-3 text-xl">✓</span>
+                <span class="text-gray-300">Priority WhatsApp support</span>
+              </li>
+              <li class="flex items-center">
+                <span class="text-green-400 mr-3 text-xl">✓</span>
+                <span class="text-gray-300">Custom AI training</span>
+              </li>
+              <li class="flex items-center">
+                <span class="text-green-400 mr-3 text-xl">✓</span>
+                <span class="text-gray-300">14-Day Free Trial</span>
+              </li>
+            </ul>
+            <button
+              onclick="window.open('https://app.mybijou.xyz/signup', '_blank')"
+              class="w-full gold-btn text-black py-4 rounded-xl font-black text-lg transition-all duration-300"
+            >
+              Claim Your Spot Now
+            </button>
+          </div>
+        </div>
+
+        <div class="text-center mt-12">
+          <div class="glass-card inline-block px-8 py-4 rounded-xl">
+            <p class="text-white mb-2 text-lg">
+              🎯 <strong>Limited to First 100 Customers Only</strong>
+            </p>
+            <p class="text-gray-400">
+              All plans include 14-day free trial • No setup fees • Cancel
+              anytime
+            </p>
+            <p class="text-yellow-400 font-bold mt-2">
+              After 100 customers: Standard pricing RM499-799/month
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Slide 8: Implementation Process -->
+    <div class="slide">
+      <div class="max-w-5xl mx-auto z-10 relative">
+        <h2 class="text-5xl font-black text-center mb-16 text-white">
+          Get Started in <span class="gold-highlight">30 Minutes</span>
+        </h2>
+
+        <div class="space-y-10">
+          <div class="flex items-center animate-fade-in">
+            <div
+              class="flex-shrink-0 w-16 h-16 premium-btn text-white rounded-full flex items-center justify-center font-black text-2xl"
+            >
+              1
+            </div>
+            <div class="ml-8">
+              <h3 class="text-2xl font-bold text-white mb-2">
+                Sign Up & Verify
+              </h3>
+              <p class="text-gray-300 text-lg">
+                Create account at app.mybijou.xyz and verify your email (2
+                minutes)
+              </p>
+            </div>
+          </div>
+
+          <div class="flex items-center animate-fade-in">
+            <div
+              class="flex-shrink-0 w-16 h-16 premium-btn text-white rounded-full flex items-center justify-center font-black text-2xl"
+            >
+              2
+            </div>
+            <div class="ml-8">
+              <h3 class="text-2xl font-bold text-white mb-2">Business Setup</h3>
+              <p class="text-gray-300 text-lg">
+                Complete your business profile and customize AI personality (10
+                minutes)
+              </p>
+            </div>
+          </div>
+
+          <div class="flex items-center animate-fade-in">
+            <div
+              class="flex-shrink-0 w-16 h-16 premium-btn text-white rounded-full flex items-center justify-center font-black text-2xl"
+            >
+              3
+            </div>
+            <div class="ml-8">
+              <h3 class="text-2xl font-bold text-white mb-2">
+                WhatsApp Connection
+              </h3>
+              <p class="text-gray-300 text-lg">
+                Scan QR code to connect your WhatsApp Business account (5
+                minutes)
+              </p>
+            </div>
+          </div>
+
+          <div class="flex items-center animate-fade-in">
+            <div
+              class="flex-shrink-0 w-16 h-16 premium-btn text-white rounded-full flex items-center justify-center font-black text-2xl"
+            >
+              4
+            </div>
+            <div class="ml-8">
+              <h3 class="text-2xl font-bold text-white mb-2">Test & Launch</h3>
+              <p class="text-gray-300 text-lg">
+                Send test messages and go live with 24/7 AI support (5 minutes)
+              </p>
+            </div>
+          </div>
+
+          <div class="flex items-center animate-fade-in">
+            <div
+              class="flex-shrink-0 w-16 h-16 bg-green-600 text-white rounded-full flex items-center justify-center font-black text-2xl"
+            >
+              ✓
+            </div>
+            <div class="ml-8">
+              <h3 class="text-2xl font-bold text-green-400 mb-2">
+                Ongoing Support
+              </h3>
+              <p class="text-green-300 text-lg">
+                Our team monitors your setup and provides optimization
+                recommendations
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="glass-card-premium rounded-2xl p-10 mt-16 text-center">
+          <h3 class="text-3xl font-bold text-white mb-8">
+            We Handle Everything
+          </h3>
+          <div class="grid md:grid-cols-3 gap-8">
+            <div>
+              <div class="text-5xl mb-4">🛠️</div>
+              <h4 class="font-bold text-white text-xl mb-2">Technical Setup</h4>
+              <p class="text-gray-300">
+                Our experts configure everything for you
+              </p>
+            </div>
+            <div>
+              <div class="text-5xl mb-4">📚</div>
+              <h4 class="font-bold text-white text-xl mb-2">Team Training</h4>
+              <p class="text-gray-300">Live training sessions for your staff</p>
+            </div>
+            <div>
+              <div class="text-5xl mb-4">🔄</div>
+              <h4 class="font-bold text-white text-xl mb-2">
+                Continuous Optimization
+              </h4>
+              <p class="text-gray-300">
+                Regular performance reviews and improvements
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Slide 9: Call to Action -->
+    <div class="slide">
+      <img
+        src="/static/logos/mark.svg"
+        alt="Bijou AI Watermark"
+        class="bijou-watermark"
+      />
+      <div class="max-w-5xl mx-auto text-center z-10 relative">
+        <h2 class="text-6xl font-black mb-12 text-white">
+          Ready to Transform Your Business?
+        </h2>
+        <p class="text-2xl mb-16 text-gray-300 leading-relaxed">
+          Join hundreds of Malaysian businesses already using Bijou AI to
+          deliver exceptional customer service
+        </p>
+
+        <div class="grid md:grid-cols-3 gap-8 mb-16">
+          <div class="glass-card-premium rounded-2xl p-8">
+            <div class="text-6xl mb-6">🚀</div>
+            <h3 class="text-2xl font-bold mb-4 text-white">Start Today</h3>
+            <p class="text-gray-300 text-lg">
+              14-day free trial with full access to all features
+            </p>
+          </div>
+          <div class="glass-card-premium rounded-2xl p-8">
+            <div class="text-6xl mb-6">💰</div>
+            <h3 class="text-2xl font-bold mb-4 text-white">No Risk</h3>
+            <p class="text-gray-300 text-lg">
+              Cancel anytime, no setup fees, no long-term contracts
+            </p>
+          </div>
+          <div class="glass-card-premium rounded-2xl p-8">
+            <div class="text-6xl mb-6">🎯</div>
+            <h3 class="text-2xl font-bold mb-4 text-white">
+              Guaranteed Results
+            </h3>
+            <p class="text-gray-300 text-lg">
+              Or get your money back within 30 days
+            </p>
+          </div>
+        </div>
+
+        <div class="space-y-8">
+          <button
+            onclick="window.open('https://app.mybijou.xyz/signup', '_blank')"
+            class="gold-btn px-16 py-6 text-2xl font-black rounded-xl transition-all duration-300"
+          >
+            Start Your Free Trial Now
+          </button>
+          <div class="text-xl text-white">
+            <p class="mb-4">Or schedule a personalized demo with our AI CEO:</p>
+            <div class="glass-card inline-block px-8 py-6 rounded-xl">
+              <p class="font-bold mb-2">
+                📱 WhatsApp:
+                <a
+                  href="https://wa.me/60174106981"
+                  class="gold-highlight hover:underline"
+                  >+60 17-410-6981</a
+                >
+              </p>
+              <p class="font-bold">
+                ✉️ Email:
+                <a
+                  href="mailto:mrj@mybijou.xyz"
+                  class="gold-highlight hover:underline"
+                  >mrj@mybijou.xyz</a
+                >
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-16 text-xl text-gray-400">
+          <p>
+            Questions? We're here to help in English, Malay, Chinese, Tamil, or
+            Manglish! 😊
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Slide 10: Premium Contact Information -->
+    <div class="slide">
+      <img
+        src="/static/logos/mark.svg"
+        alt="Bijou AI Watermark"
+        class="bijou-watermark"
+      />
+      <div class="max-w-5xl mx-auto text-center z-10 relative">
+        <img
+          src="/static/logos/mark.svg"
+          alt="Bijou AI"
+          class="h-20 mx-auto mb-12 brightness-110 animate-float"
+        />
+        <h2 class="text-5xl font-black mb-16 text-white">
+          Let's Grow Your Business <span class="gold-highlight">Together</span>
+        </h2>
+
+        <div class="grid md:grid-cols-2 gap-16 mb-16">
+          <div>
+            <h3 class="text-3xl font-bold mb-10 gold-highlight">
+              Contact Information
+            </h3>
+            <div class="space-y-6 text-left">
+              <div class="flex items-center glass-card p-4 rounded-xl">
+                <span class="text-4xl mr-6">🌐</span>
+                <div>
+                  <div class="font-bold text-white text-lg">Website</div>
+                  <div class="text-gray-300">app.mybijou.xyz</div>
+                </div>
+              </div>
+              <div class="flex items-center glass-card p-4 rounded-xl">
+                <span class="text-4xl mr-6">💬</span>
+                <div>
+                  <div class="font-bold text-white text-lg">
+                    WhatsApp (MR J - AI CEO)
+                  </div>
+                  <div class="text-gray-300">
+                    <a
+                      href="https://wa.me/60174106981"
+                      class="gold-highlight hover:underline"
+                      >+60 17-410-6981</a
+                    >
+                  </div>
+                </div>
+              </div>
+              <div class="flex items-center glass-card p-4 rounded-xl">
+                <span class="text-4xl mr-6">✉️</span>
+                <div>
+                  <div class="font-bold text-white text-lg">
+                    Email (MR J - Sales)
+                  </div>
+                  <div class="text-gray-300">
+                    <a
+                      href="mailto:mrj@mybijou.xyz"
+                      class="gold-highlight hover:underline"
+                      >mrj@mybijou.xyz</a
+                    >
+                  </div>
+                </div>
+              </div>
+              <div class="flex items-center glass-card p-4 rounded-xl">
+                <span class="text-4xl mr-6">🛟</span>
+                <div>
+                  <div class="font-bold text-white text-lg">Support</div>
+                  <div class="text-gray-300">
+                    <a
+                      href="mailto:support@mybijou.xyz"
+                      class="gold-highlight hover:underline"
+                      >support@mybijou.xyz</a
+                    >
+                  </div>
+                </div>
+              </div>
+              <div class="flex items-center glass-card p-4 rounded-xl">
+                <span class="text-4xl mr-6">🏢</span>
+                <div>
+                  <div class="font-bold text-white text-lg">Headquarters</div>
+                  <div class="text-gray-300">Kuala Lumpur, Malaysia</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <h3 class="text-3xl font-bold mb-10 gold-highlight">
+              Why Choose Bijou AI?
+            </h3>
+            <ul class="space-y-4 text-left">
+              <li class="flex items-start glass-card p-4 rounded-xl">
+                <span class="text-green-400 mr-4 mt-1 text-xl">✓</span>
+                <span class="text-gray-300"
+                  ><strong class="text-white">Local Expertise:</strong> Built
+                  specifically for Malaysian businesses</span
+                >
+              </li>
+              <li class="flex items-start glass-card p-4 rounded-xl">
+                <span class="text-green-400 mr-4 mt-1 text-xl">✓</span>
+                <span class="text-gray-300"
+                  ><strong class="text-white">Cultural Understanding:</strong>
+                  Knows Malaysian customs and language nuances</span
+                >
+              </li>
+              <li class="flex items-start glass-card p-4 rounded-xl">
+                <span class="text-green-400 mr-4 mt-1 text-xl">✓</span>
+                <span class="text-gray-300"
+                  ><strong class="text-white">Proven Results:</strong> 500+
+                  happy businesses across Malaysia</span
+                >
+              </li>
+              <li class="flex items-start glass-card p-4 rounded-xl">
+                <span class="text-green-400 mr-4 mt-1 text-xl">✓</span>
+                <span class="text-gray-300"
+                  ><strong class="text-white">Local Support:</strong> Malaysian
+                  team available in multiple languages</span
+                >
+              </li>
+              <li class="flex items-start glass-card p-4 rounded-xl">
+                <span class="text-green-400 mr-4 mt-1 text-xl">✓</span>
+                <span class="text-gray-300"
+                  ><strong class="text-white">Guaranteed ROI:</strong> 30-day
+                  money-back guarantee</span
+                >
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="glass-card-premium rounded-2xl p-12">
+          <h3 class="text-3xl font-bold mb-6 text-white">
+            Ready to Get Started?
+          </h3>
+          <p class="text-xl mb-8 text-gray-300">
+            Transform your customer service with AI that truly understands
+            Malaysia
+          </p>
+          <button
+            onclick="window.open('https://app.mybijou.xyz/signup', '_blank')"
+            class="gold-btn px-12 py-4 text-xl font-black rounded-xl transition-all duration-300"
+          >
+            Start Your Free Trial Today
+          </button>
+          <div class="mt-6 text-gray-400">
+            <p>
+              Contact MR J directly for enterprise solutions and custom
+              integrations
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Dot indicators -->
+    <div class="slide-dots" id="slideDots"></div>
+
+    <script>
+      let currentSlide = 0;
+      const slides = document.querySelectorAll(".slide");
+      const totalSlides = slides.length;
+      let isAnimating = false;
+
+      // Build dot indicators
+      const dotsContainer = document.getElementById("slideDots");
+      slides.forEach((_, i) => {
+        const dot = document.createElement("button");
+        dot.className = "slide-dot" + (i === 0 ? " active" : "");
+        dot.setAttribute("aria-label", `Go to slide ${i + 1}`);
+        dot.onclick = () => showSlide(i);
+        dotsContainer.appendChild(dot);
+      });
+
+      function updateProgress() {
+        const progress = ((currentSlide + 1) / totalSlides) * 100;
+        document.getElementById("progressFill").style.width = progress + "%";
+        // Update dots
+        document.querySelectorAll(".slide-dot").forEach((d, i) => {
+          d.classList.toggle("active", i === currentSlide);
+        });
+      }
+
+      function showSlide(n) {
+        if (isAnimating) return;
+        isAnimating = true;
+
+        const prev = slides[currentSlide];
+        prev.classList.remove("active");
+        prev.scrollTop = 0; // reset internal scroll
+        currentSlide = ((n % totalSlides) + totalSlides) % totalSlides;
+        const next = slides[currentSlide];
+        next.classList.add("active");
+        next.scrollTop = 0; // always start from top
+        document.getElementById("slideCounter").textContent =
+          `${currentSlide + 1} / ${totalSlides}`;
+        updateProgress();
+
+        // Trigger animation refresh
+        setTimeout(() => {
+          const animatedElements = next.querySelectorAll(
+            ".animate-slide-in-left, .animate-slide-in-right, .animate-fade-in",
+          );
+          animatedElements.forEach((el) => {
+            el.style.animation = "none";
+            setTimeout(() => {
+              if (el.classList.contains("animate-slide-in-left")) {
+                el.style.animation = "slideInLeft 0.6s ease-out";
+              } else if (el.classList.contains("animate-slide-in-right")) {
+                el.style.animation = "slideInRight 0.6s ease-out";
+              } else if (el.classList.contains("animate-fade-in")) {
+                el.style.animation = "fadeIn 0.8s ease-out";
+              }
+            }, 50);
+          });
+          isAnimating = false;
+        }, 120);
+      }
+
+      function nextSlide() {
+        showSlide(currentSlide + 1);
+      }
+      function previousSlide() {
+        showSlide(currentSlide - 1);
+      }
+
+      // ── Keyboard navigation ──────────────────────────────────────────
+      document.addEventListener("keydown", function (e) {
+        if (e.key === "ArrowRight" || e.key === "ArrowDown" || e.key === " ") {
+          e.preventDefault();
+          nextSlide();
+        } else if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
+          e.preventDefault();
+          previousSlide();
+        } else if (e.key === "Escape") {
+          showSlide(0);
+        }
+      });
+
+      // ── Mouse-wheel navigation (desktop) ────────────────────────────
+      // Only fires when the slide is scrolled to its top (prev) or bottom (next)
+      let wheelCooldown = false;
+      document.addEventListener(
+        "wheel",
+        function (e) {
+          if (wheelCooldown || isAnimating) return;
+          const slide = slides[currentSlide];
+          const atBottom =
+            slide.scrollHeight - slide.scrollTop - slide.clientHeight < 4;
+          const atTop = slide.scrollTop < 4;
+
+          if (e.deltaY > 0 && atBottom) {
+            e.preventDefault();
+            wheelCooldown = true;
+            nextSlide();
+            setTimeout(() => {
+              wheelCooldown = false;
+            }, 800);
+          } else if (e.deltaY < 0 && atTop) {
+            e.preventDefault();
+            wheelCooldown = true;
+            previousSlide();
+            setTimeout(() => {
+              wheelCooldown = false;
+            }, 800);
+          }
+        },
+        { passive: false },
+      );
+
+      // ── Touch / swipe (mobile) ───────────────────────────────────────
+      let touchStartX = 0,
+        touchStartY = 0;
+      let touchEndX = 0,
+        touchEndY = 0;
+      let touchStartScrollTop = 0;
+
+      document.addEventListener(
+        "touchstart",
+        function (e) {
+          touchStartX = e.changedTouches[0].screenX;
+          touchStartY = e.changedTouches[0].screenY;
+          touchStartScrollTop = slides[currentSlide].scrollTop;
+        },
+        { passive: true },
+      );
+
+      document.addEventListener(
+        "touchend",
+        function (e) {
+          touchEndX = e.changedTouches[0].screenX;
+          touchEndY = e.changedTouches[0].screenY;
+          const dx = touchEndX - touchStartX;
+          const dy = touchEndY - touchStartY;
+          const slide = slides[currentSlide];
+          const atBottom =
+            slide.scrollHeight - slide.scrollTop - slide.clientHeight < 8;
+          const atTop = slide.scrollTop < 8;
+
+          if (Math.abs(dx) > Math.abs(dy)) {
+            // Horizontal swipe — always navigate
+            if (dx < -50) nextSlide();
+            else if (dx > 50) previousSlide();
+          } else {
+            // Vertical swipe — only navigate when at edge
+            if (dy < -60 && atBottom) nextSlide();
+            else if (dy > 60 && atTop) previousSlide();
+          }
+        },
+        { passive: true },
+      );
+
+      // Initialize
+      showSlide(0);
+    </script>
+  </body>
+</html>

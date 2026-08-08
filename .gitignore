@@ -1,0 +1,95 @@
+# =============================================================================
+# Bijou Monorepo — Master .gitignore
+# Env vars (NEVER commit secrets) — only .env.example is tracked
+# =============================================================================
+.env
+.env.*
+!.env.example
+*.env.local
+*.env.production
+*.env.staging
+*.env.flyio
+*.env.composio
+
+# =============================================================================
+# Node / TypeScript / Vite
+# =============================================================================
+node_modules/
+dist/
+*.tsbuildinfo
+dist.tgz
+.npm/
+.eslintcache
+
+# =============================================================================
+# Python (backend)
+# =============================================================================
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.venv/
+.venv-*/
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+
+# =============================================================================
+# Go (bridge) — compiled binaries only, not the source tree
+# (The bare names "bridge" and "whatsapp-bridge" match packages/bridge/, so
+# we anchor with packages/bridge/ prefix to avoid ignoring the source code.)
+# =============================================================================
+packages/bridge/bridge
+packages/bridge/bridge.exe
+packages/bridge/whatsapp-bridge
+packages/bridge/whatsapp-bridge.exe
+*.test
+*.out
+
+# =============================================================================
+# Runtime state — logs, DB files, scratch dirs
+# =============================================================================
+*.log
+*.err.log
+*.db
+*.db-shm
+*.db-wal
+.cost_watch_scratch_*/
+outbox/
+outbox/*
+
+# =============================================================================
+# OS / editor / tooling
+# =============================================================================
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Tooling state dirs (not source)
+.playwright-mcp/
+.vercel/
+.opencode/
+.bob/
+.cursor/
+.cursorignore
+.zed/
+
+# =============================================================================
+# Build artifacts per package
+# =============================================================================
+packages/landing/dist/
+packages/landing/.vercel/
+packages/landing/.playwright-mcp/
+packages/backend/.venv/
+packages/backend/.venv-connectors/
+packages/backend/__pycache__/
+packages/bridge/bridge
+packages/bridge/whatsapp-bridge
+
+# =============================================================================
+# Legacy (the original 2 repos we moved out of — keep on disk, ignore in git)
+# =============================================================================
+legacy/

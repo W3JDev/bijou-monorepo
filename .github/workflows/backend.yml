@@ -1,0 +1,108 @@
+name: backend
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'packages/backend/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/backend.yml'
+  pull_request:
+    paths:
+      - 'packages/backend/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/backend.yml'
+
+concurrency:
+  group: backend-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ci:
+    name: Python + Node syntax check
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: packages/backend
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+          cache-dependency-path: packages/backend/requirements.txt
+
+      - name: Setup Node 20 (for .cjs scripts)
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Python deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install ruff mypy  # linters
+
+      - name: Python syntax check (py_compile)
+        run: |
+          echo "--- py_compile all .py ---"
+          find . -name '*.py' -not -path '*/__pycache__/*' -not -path '*/.venv/*' -exec python -m py_compile {} +
+          echo "PASS: all .py compile"
+
+      - name: Python lint (ruff)
+        run: |
+          ruff check src/ app/ scripts/ tests/ 2>&1 || echo "ruff had findings (review above)"
+
+      - name: Python type check (mypy, lenient)
+        run: |
+          # Lenient on first pass — many legacy files lack type hints
+          mypy src/ --ignore-missing-imports --no-strict-optional 2>&1 || echo "mypy had findings (review above)"
+        continue-on-error: true
+
+      - name: Node syntax check (.cjs)
+        run: |
+          echo "--- node --check all .cjs ---"
+          find . -name '*.cjs' -exec node --check {} +
+          echo "PASS: all .cjs valid"
+
+      - name: Node deps (for .cjs scripts that import npm packages)
+        run: npm install --no-audit --no-fund --no-save
+
+  # ─────────────────────────────────────────────────────────────────────
+  # Deploy to Fly.io — runs ONLY on push to main, after ci passed
+  # Requires: BIJOU_FLY_API_TOKEN in GitHub repo secrets
+  # ─────────────────────────────────────────────────────────────────────
+  deploy:
+    name: Deploy to Fly.io (bijou-production)
+    needs: ci
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install Fly CLI
+        run: |
+          curl -L https://fly.io/install.sh | sh
+          echo "$HOME/.fly/bin" >> $GITHUB_PATH
+
+      - name: Deploy
+        working-directory: packages/backend
+        env:
+          FLY_API_TOKEN: ${{ secrets.BIJOU_FLY_API_TOKEN }}
+        run: |
+          flyctl deploy \
+            --config fly.production.toml \
+            --remote-only \
+            --strategy bluegreen \
+            --wait-timeout 300

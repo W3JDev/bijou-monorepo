@@ -1,0 +1,13 @@
+{
+  "event": "message",
+  "device_id": "device123",
+  "payload": {
+    "id": "missed-call-test-2026-02-23",
+    "chat_id": "+1234567890@s.whatsapp.net",
+    "from": "+1234567890@s.whatsapp.net",
+    "from_name": "Test Customer",
+    "timestamp": "2026-02-23T10:30:00Z",
+    "is_from_me": false,
+    "body": "📞 MISSED_CALL"
+  }
+}
