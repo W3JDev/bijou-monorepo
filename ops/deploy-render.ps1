@@ -1,5 +1,28 @@
+# ============================================================================
+# ⚠️  DEPRECATED — DO NOT RUN (2026-08-09)
+# ----------------------------------------------------------------------------
+# Targets Render.com, not the current Fly.io infra. Bijou was migrated to
+# Fly.io; Render is no longer in use.
+#
+# ALSO: this file contains a hardcoded Render API key
+#   $RENDER_API_KEY = "rnd_OXcBzcJ53fkTlzH2CAtjHMBK3xMM"
+# at line 7. That key should be ROTATED on Render ASAP — anyone with read
+# access to this repo can use it to create/modify Render services until
+# the key is revoked.
+#
+# For the current backend, use:
+#   cd packages/backend
+#   fly deploy --app bijou-production --config fly.production.toml
+# For the per-tenant bridge:
+#   fly deploy --app <tenant-app> --config packages/bridge/fly.bridge-production.toml
+# Kept for historical reference only.
+# ============================================================================
+
 # Automated Render Deployment Script for Bijou AI WhatsApp System
 # This script deploys both WhatsApp Bridge and Bijou AI to Render with live monitoring
+
+Write-Host "⚠️  This script is DEPRECATED. See banner above. Exiting." -ForegroundColor Red
+exit 1
 
 $ErrorActionPreference = "Stop"
 

@@ -1,4 +1,20 @@
+# ============================================================================
+# ⚠️  DEPRECATED — DO NOT RUN (2026-08-09)
+# ----------------------------------------------------------------------------
+# Targets the dead single-tenant Fly app 'whatsapp-bridge-w3j' (replaced by
+# the multi-tenant 'bijou-bridge-production-v2' stack in
+# packages/bridge/fly.bridge-production.toml).
+#
+# For the current bridge, use:
+#   fly logs -a <tenant-app-name>
+#   # or the QR endpoint exposed by the new bridge: GET /qr?tenant_id=<id>
+# Kept for historical reference only.
+# ============================================================================
+
 # Get Fresh WhatsApp QR Code from Cloud Bridge
+
+Write-Host "⚠️  This script is DEPRECATED. See banner above. Exiting." -ForegroundColor Red
+exit 1
 
 Write-Host "`n==========================================" -ForegroundColor Cyan
 Write-Host "  WHATSAPP QR CODE - SCAN WITH YOUR PHONE" -ForegroundColor Cyan
