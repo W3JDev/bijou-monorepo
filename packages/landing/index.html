@@ -223,9 +223,8 @@
       as="style"
     />
 
-    <!-- DNS prefetch for external services -->
+    <!-- DNS prefetch for external services (bijou-staging.fly.dev removed 2026-08-09: dead app) -->
     <link rel="dns-prefetch" href="//mybijou.xyz" />
-    <link rel="dns-prefetch" href="//bijou-staging.fly.dev" />
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
       // Signal Gem brand tokens — keep in lock-step with
@@ -616,20 +615,15 @@
       };
     </script>
 
-    <!-- Signal Gem: audio controller (init on user interaction) -->
+    <!--
+      Signal Gem · Audio + state controller
+      ----------------------------------------------------------------------------
+      Controller self-initialises on DOMContentLoaded and exposes itself as
+      `window.BjAudio` (NOT `BijouAudio` — common gotcha). MP3s live at
+      the public root (/bj-*.mp3), so we override the default
+      `audio-identity/` base to "/" BEFORE the controller script loads.
+    -->
+    <script>window.BJ_AUDIO_BASE = '/';</script>
     <script src="/signal-gem-audio.js"></script>
-    <script>
-      // Wire BijouAudio for the landing demo chat
-      window.addEventListener('DOMContentLoaded', function () {
-        if (typeof BijouAudio !== 'undefined') {
-          BijouAudio.init({
-            intro:    '/bj-intro.mp3',
-            tick:     '/bj-tick.mp3',
-            notify:   '/bj-notify.mp3',
-            engage:   '/bj-engage.mp3'
-          });
-        }
-      });
-    </script>
   </body>
 </html>
