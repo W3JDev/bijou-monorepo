@@ -3780,11 +3780,17 @@
           scrollBottom();
         }
 
+        // HTML-attribute AND inline-JS safe escaper.
+        // Previous version only escaped &<> which broke (a) inline onclick
+        // strings when transcripts contained single quotes, and (b) any
+        // `value="..."` attribute when a tenant name/email contained `"`.
         function escHtml(s) {
           return String(s)
             .replace(/&/g, "&amp;")
             .replace(/</g, "&lt;")
             .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#39;")
             .replace(/\n/g, "<br>");
         }
 
@@ -3854,6 +3860,13 @@
               return (m.role === "user" ? "You: " : "Bijou: ") + m.content;
             })
             .join("\n");
+          // IMPORTANT: don't put the transcript into an inline `onclick="..."`.
+          // The HTML attribute parser decodes `&quot;` / `&#39;` BEFORE the JS
+          // parser sees the string literal, so an apostrophe in a user
+          // message would still break the handler. Use a data attribute +
+          // addEventListener instead, and JSON-encode the transcript so it's
+          // safe to drop into a JS string.
+          var safeTranscript = JSON.stringify(transcript);
           appendHtml(
             '<div class="bc-msg bot"><div class="bc-bubble">No problem! I\'ll create a support ticket and our team will follow up by email. 📋</div></div>' +
               '<div class="bc-ticket-form" id="bc-ticket-form">' +
@@ -3866,12 +3879,26 @@
               '<textarea id="bc-ticket-msg" placeholder="Describe your issue…">' +
               escHtml(state.pendingTicket || "") +
               "</textarea>" +
-              '<button class="bc-opt-btn primary" onclick="BijouChat.submitTicket(\'' +
-              escHtml(transcript) +
-              "')\">📋 Submit Ticket →</button>" +
+              // data-transcript holds the JSON-encoded transcript. The
+              // listener below (added after appendHtml) reads it back.
+              '<button class="bc-opt-btn primary" id="bc-ticket-submit" data-transcript=\'' +
+              safeTranscript +
+              "'>📋 Submit Ticket →</button>" +
               '<button class="bc-opt-btn" onclick="BijouChat.backToChat()" style="font-size:12px;padding:8px">← Back to chat</button>' +
               "</div>",
           );
+          var submitBtn = document.getElementById("bc-ticket-submit");
+          if (submitBtn) {
+            submitBtn.addEventListener("click", function () {
+              var raw = submitBtn.getAttribute("data-transcript") || '""';
+              try {
+                var transcriptValue = JSON.parse(raw);
+              } catch (e) {
+                var transcriptValue = "";
+              }
+              BijouChat.submitTicket(transcriptValue);
+            });
+          }
         }
 
         window.BijouChat = {
