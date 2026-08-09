@@ -556,8 +556,46 @@
       const statusMsg = document.getElementById("statusMessage");
       const signupBtn = document.getElementById("signupBtn");
 
+      // Hard guard against double-submit. The button.disabled = true below
+      // is the right thing, but if a user double-clicks before the disabled
+      // attr takes effect, the form fires twice and we get two POSTs to
+      // /api/auth/signup. With Supabase's free tier rate limit (4 signups
+      // per IP per hour-ish) the second POST trips 429 and the user sees
+      // a confusing "Too many sign-up attempts" instead of the real
+      // success/error from the first POST. This JS-level lock is the fix.
+      let inFlight = false;
+
+      // Translate FastAPI's `data.detail` into a user-readable string.
+      // FastAPI returns:
+      //   - string for HTTPException (e.g. "An account with this email
+      //     already exists. Try signing in instead.")
+      //   - ARRAY for Pydantic 422 validation (e.g. [{type, loc, msg}, ...])
+      //   - sometimes nested arrays for nested models.
+      // We flatten all of these to the first human-readable message.
+      function formatApiError(data) {
+        if (!data) return "Unknown error. Please try again.";
+        const d = data.detail;
+        if (typeof d === "string") return d;
+        if (Array.isArray(d) && d.length) {
+          // Take the first error and surface its msg + which field
+          const first = d[0];
+          if (first && typeof first === "object" && first.msg) {
+            const field = Array.isArray(first.loc) ? first.loc.slice(1).join(".") : "";
+            return field
+              ? `${field}: ${first.msg}`
+              : first.msg;
+          }
+          if (typeof first === "string") return first;
+        }
+        return "Signup failed. Please try again.";
+      }
+
       form.addEventListener("submit", async (e) => {
         e.preventDefault();
+
+        // Guard 1: refuse to even start a second submission while one is in flight
+        if (inFlight) return;
+        inFlight = true;
 
         const businessName = document
           .getElementById("businessName")
@@ -573,10 +611,12 @@
 
         if (password.length < 8) {
           showMsg("error", "❌ Password must be at least 8 characters.");
+          inFlight = false;
           return;
         }
         if (password !== confirmPassword) {
           showMsg("error", "❌ Passwords do not match.");
+          inFlight = false;
           return;
         }
 
@@ -615,12 +655,36 @@
               window.location.href = "/login";
             }, 4000);
           } else {
-            throw new Error(data.detail || "Signup failed. Please try again.");
+            // Map status code to a friendlier prefix when the body is
+            // opaque (e.g. Fly-edge 500 with empty body) and add the
+            // structured detail from FastAPI.
+            const statusHint = {
+              400: "Please check the form and try again.",
+              409: "Looks like you already have an account with that email — try signing in instead.",
+              422: "Some required fields are missing or invalid.",
+              429: "You're signing up too quickly. Please wait a minute and try again.",
+              500: "Our server had a hiccup. Please try again, and if it keeps happening, contact support.",
+              502: "Service temporarily unavailable. Please try again in a moment.",
+              503: "The signup service is temporarily unreachable. Please try again in a moment.",
+            }[response.status] || "Signup failed. Please try again.";
+            const detail = formatApiError(data);
+            // If the detail is just a raw exception class name, hide it —
+            // it's not useful to a user.
+            const safeDetail = /^[A-Z][A-Za-z0-9_.]*$/.test(detail) ? "" : detail;
+            const msg = safeDetail && safeDetail !== statusHint
+              ? `${statusHint}\n\nDetails: ${safeDetail}`
+              : statusHint;
+            throw new Error(msg);
           }
         } catch (error) {
           showMsg("error", "❌ " + error.message);
           signupBtn.disabled = false;
           signupBtn.innerHTML = "Create My Account";
+        } finally {
+          // Release the JS-level lock so a retry (after a 4xx) is possible.
+          // For 2xx success, the page navigates away within 4s, so this
+          // also runs, but the user is already on /login by then.
+          inFlight = false;
         }
       });
 

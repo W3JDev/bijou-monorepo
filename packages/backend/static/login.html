@@ -499,11 +499,17 @@
       form.addEventListener("submit", async (e) => {
         e.preventDefault();
 
+        // Hard guard against double-submit. JS-level lock so a double-click
+        // before submitBtn.disabled takes effect doesn't fire two POSTs.
+        if (window.__loginInFlight) return;
+        window.__loginInFlight = true;
+
         const email = emailInput.value.trim();
         const password = passwordInput.value;
 
         if (!email || !password) {
           showMessage("error", "Please enter both email and password.");
+          window.__loginInFlight = false;
           return;
         }
 
@@ -546,22 +552,24 @@
               window.location.href = "/dashboard";
             }, 1000);
           } else {
-            // Error from backend
-            if (response.status === 401) {
-              showMessage(
-                "error",
-                "❌ Invalid email or password. Please try again.",
-              );
-            } else if (response.status === 404) {
-              showMessage(
-                "error",
-                "❌ No account found. Please sign up first.",
-              );
-            } else {
-              showMessage(
-                "error",
-                `❌ ${data.detail || "Login failed. Please try again."}`,
-              );
+            // Error from backend. Same formatApiError helper as signup.html
+            // so 422 validation arrays render as a readable string instead of
+            // "[object Object]". Mirror of the pattern in signup.html.
+            const detail = formatApiError(data);
+            const safeDetail = /^[A-Z][A-Za-z0-9_.]*$/.test(detail) ? "" : detail;
+            const statusHint = {
+              400: "Please check the form and try again.",
+              401: "❌ Invalid email or password. Please try again.",
+              404: "❌ No account found with that email. Please sign up first.",
+              422: "Some required fields are missing or invalid.",
+              429: "You're trying too often. Please wait a minute and try again.",
+              500: "Our server had a hiccup. Please try again, and if it keeps happening, contact support.",
+              503: "The login service is temporarily unreachable. Please try again in a moment.",
+            }[response.status] || "Login failed. Please try again.";
+            const msg = safeDetail && safeDetail !== statusHint
+              ? `${statusHint}\n\nDetails: ${safeDetail}`
+              : statusHint;
+            showMessage("error", msg);
             }
           }
         } catch (error) {
@@ -574,6 +582,11 @@
           // Re-enable form
           submitBtn.disabled = false;
           submitBtn.innerHTML = "Sign In";
+          // Release the JS-level lock so the user can retry.
+          // (On 2xx success the redirect fires within 1s, so this also
+          // runs after navigation, but that's fine — the user is already
+          // on /dashboard by then.)
+          window.__loginInFlight = false;
         }
       });
 
@@ -581,6 +594,28 @@
         statusMessage.className = `status-message ${type}`;
         statusMessage.innerHTML = message.replace(/\n/g, "<br>");
         statusMessage.style.display = "block";
+      }
+
+      // Translate FastAPI's `data.detail` into a user-readable string.
+      // FastAPI returns:
+      //   - string for HTTPException (e.g. "Invalid email or password")
+      //   - ARRAY for Pydantic 422 validation (e.g. [{type, loc, msg}, ...])
+      // We flatten all of these to the first human-readable message.
+      function formatApiError(data) {
+        if (!data) return "Unknown error. Please try again.";
+        const d = data.detail;
+        if (typeof d === "string") return d;
+        if (Array.isArray(d) && d.length) {
+          const first = d[0];
+          if (first && typeof first === "object" && first.msg) {
+            const field = Array.isArray(first.loc) ? first.loc.slice(1).join(".") : "";
+            return field
+              ? `${field}: ${first.msg}`
+              : first.msg;
+          }
+          if (typeof first === "string") return first;
+        }
+        return "Login failed. Please try again.";
       }
 
       // Password Recovery Modal
