@@ -61,7 +61,11 @@ primary_region = 'sin'  # Singapore for optimal performance in Asia
   # =================================================================
   # GOOGLE INTEGRATION
   # =================================================================
-  GOOGLE_CLIENT_ID = '698028267158-74pmib15v7ug5biv4v9vedqutsq2c78a.apps.googleusercontent.com'
+  # GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET / GOOGLE_REDIRECT_URI are managed as Fly secrets
+  # (set 2026-08-09 to the new Google Cloud project "bijou-your-digital-staff", OAuth client
+  # 838922156536-...googleusercontent.com). Hardcoding a stale client_id here is a footgun:
+  # if the secret is ever removed the app would fall back to a client whose redirect URIs
+  # don't match the new project.
   GOOGLE_PROJECT_ID = 'gen-lang-client-0423187661'
   GOOGLE_CREDENTIALS_PATH = '/app/credentials/google_service_account.json'
   GOOGLE_SHEETS_ENABLED = 'false'
