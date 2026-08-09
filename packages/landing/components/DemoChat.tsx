@@ -100,6 +100,14 @@ export const DemoChat: React.FC<DemoChatProps> = ({ onOpenModal }) => {
     setIsLoading(true);
     setShowQuickReplies(false);
 
+    // Signal Gem: soft "sent" tick on user send. The visual `state-thinking`
+    // is driven by React's isLoading, and the audio controller's
+    // MutationObserver picks up the data-bj-state flip and syncs setState.
+    try {
+      const w = window as unknown as { BjAudio?: { tick?: () => void } };
+      w.BjAudio && w.BjAudio.tick && w.BjAudio.tick();
+    } catch (_) { /* BjAudio not loaded yet */ }
+
     // Filter history for API context
     const history = messages.map((m) => ({ role: m.role, content: m.content }));
 
@@ -115,12 +123,10 @@ export const DemoChat: React.FC<DemoChatProps> = ({ onOpenModal }) => {
     setMessages((prev) => [...prev, { role: "model", content: responseText }]);
     setIsLoading(false);
 
-    // PostHog: track demo chat response (without leaking message text)
-    trackPostHog("demo_chat_response_received", {
-      turn: messages.length + 1,
-      response_length: responseText?.length || 0,
-    });
-
+    // Signal Gem: trigger the excited glow + speaking pulse (which
+    // drives state-speaking via chatState derivation). The data-bj-state
+    // change is auto-detected by the audio controller's MutationObserver
+    // and broadcasts to all gems on the page.
     // Check for Manglish keywords to trigger animation
     const manglishKeywords =
       /walao|boss|can|settle|aiyo|fuyoh|best|swee|on|roger/i;
@@ -128,6 +134,12 @@ export const DemoChat: React.FC<DemoChatProps> = ({ onOpenModal }) => {
       setIsExcited(true);
       setTimeout(() => setIsExcited(false), 2000); // Glow for 2 seconds
     }
+
+    // PostHog: track demo chat response (without leaking message text)
+    trackPostHog("demo_chat_response_received", {
+      turn: messages.length + 1,
+      response_length: responseText?.length || 0,
+    });
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {

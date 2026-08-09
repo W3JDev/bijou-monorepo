@@ -3,7 +3,9 @@ import re
 from pathlib import Path
 from collections import Counter
 
-src = Path(r"C:\Users\W3jde\local-projects\Bijou-AI---Digital-Employee-main\Bijou-AI---Digital-Employee-main\i18n.ts").read_text(encoding="utf-8")
+SCRIPT_DIR = Path(__file__).resolve().parent
+PACKAGE_ROOT = SCRIPT_DIR.parent
+src = (PACKAGE_ROOT / "i18n.ts").read_text(encoding="utf-8")
 
 # Split on top-level "  xx: {" blocks. Each starts with 2-space indent and ends before next 2-space-indented key.
 def extract_blocks(text):
