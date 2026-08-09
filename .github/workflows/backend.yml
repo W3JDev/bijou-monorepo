@@ -101,8 +101,15 @@ jobs:
         env:
           FLY_API_TOKEN: ${{ secrets.BIJOU_FLY_API_TOKEN }}
         run: |
+          # NOTE (2026-08-09): removed --strategy bluegreen. fly.production.toml
+          # already sets strategy = "immediate" (required for single-machine +
+          # volume-mount). bluegreen deadlocks with `volume already claimed by
+          # machine <id>` on this layout — verified by 2026-08-08 manual deploy.
+          # Also explicitly export FLY_API_TOKEN so flyctl picks it up even
+          # when the install.sh init writes a placeholder config.
+          export FLY_API_TOKEN="${FLY_API_TOKEN}"
+          flyctl auth whoami
           flyctl deploy \
             --config fly.production.toml \
             --remote-only \
-            --strategy bluegreen \
             --wait-timeout 300
