@@ -2178,7 +2178,7 @@ async def get_google_auth_url(tenant_id: str = Depends(verify_session)):
             "https://www.googleapis.com/auth/spreadsheets",
         ]
 
-        public_url = os.getenv("PUBLIC_URL", "https://bijou-staging.fly.dev").rstrip("/")
+        public_url = os.getenv("PUBLIC_URL", "https://app.mybijou.xyz").rstrip("/")
         redirect_uri = f"{public_url}/api/dashboard/google/callback"
 
         client_config = {
@@ -2257,7 +2257,7 @@ async def google_callback(code: str, state: str):
             "https://www.googleapis.com/auth/calendar.events",
             "https://www.googleapis.com/auth/spreadsheets",
         ]
-        public_url = os.getenv("PUBLIC_URL", "https://bijou-staging.fly.dev").rstrip("/")
+        public_url = os.getenv("PUBLIC_URL", "https://app.mybijou.xyz").rstrip("/")
         redirect_uri = f"{public_url}/api/dashboard/google/callback"
 
         client_config = {

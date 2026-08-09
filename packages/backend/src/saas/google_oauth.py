@@ -39,7 +39,7 @@ def get_google_config():
     return {
         "client_id": os.getenv("GOOGLE_CLIENT_ID", ""),
         "client_secret": os.getenv("GOOGLE_CLIENT_SECRET", ""),
-        "redirect_uri": os.getenv("GOOGLE_REDIRECT_URI", "https://bijou-staging.fly.dev/api/auth/google/callback"),
+        "redirect_uri": os.getenv("GOOGLE_REDIRECT_URI", "https://bijou-production.fly.dev/api/auth/google/callback"),
         "scopes": [
             "openid",
             "https://www.googleapis.com/auth/userinfo.email",
