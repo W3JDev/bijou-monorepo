@@ -18,7 +18,7 @@ from datetime import datetime
 from typing import Any, Dict, List, Optional
 
 import httpx
-from fastapi import APIRouter, HTTPException, Response
+from fastapi import APIRouter, Depends, Header, HTTPException, Response
 from pydantic import BaseModel
 from supabase import create_client
 
@@ -26,6 +26,42 @@ logger = logging.getLogger(__name__)
 
 # Create router
 router = APIRouter(prefix="/api/admin", tags=["admin"])
+
+
+# ════════════════════════════════════════════════════════════════
+# AUTH GATE
+# ════════════════════════════════════════════════════════════════
+# The admin API is for internal operator use only and exposes full
+# tenant PII (phone numbers, emails, business names). It MUST NOT be
+# reachable from the public internet without a shared secret.
+#
+# Set ADMIN_API_KEY in the environment and pass the same value as the
+# `X-Admin-Key` request header. The operator stores the key in
+# `localStorage.admin_api_key` on the /admin page (one-time, per browser).
+#
+# If ADMIN_API_KEY is unset, the admin endpoints return 503 — never 200.
+# This is a behavior change: the legacy open endpoints are now locked.
+# To re-enable, set ADMIN_API_KEY and reload the operator's browser
+# with the key in localStorage.admin_api_key.
+
+
+def _check_admin_key(x_admin_key: str | None = Header(default=None)) -> None:
+    expected = os.getenv("ADMIN_API_KEY", "").strip()
+    if not expected:
+        # Fail closed: refusing service is safer than leaking tenant PII.
+        raise HTTPException(
+            status_code=503,
+            detail="Admin API not configured. Set ADMIN_API_KEY env var.",
+        )
+    # Constant-time-ish compare. Not perfect, but no early-return timing leak.
+    if not x_admin_key or not _secrets_equal(x_admin_key.strip(), expected):
+        raise HTTPException(status_code=401, detail="Missing or invalid X-Admin-Key")
+
+
+def _secrets_equal(a: str, b: str) -> bool:
+    import hmac
+
+    return hmac.compare_digest(a.encode(), b.encode())
 
 
 # ════════════════════════════════════════════════════════════════
@@ -108,7 +144,7 @@ def get_bridge_headers() -> dict:
 
 
 @router.get("/tenants", response_model=TenantsResponse)
-async def list_tenants():
+async def list_tenants(_: None = Depends(_check_admin_key)):
     """
     Get list of all tenants with their WhatsApp connection status
 
@@ -154,7 +190,7 @@ async def list_tenants():
 
 
 @router.post("/qr/{tenant_id}")
-async def generate_qr_code(tenant_id: str):
+async def generate_qr_code(tenant_id: str, _: None = Depends(_check_admin_key)):
     """
     Generate WhatsApp QR code for a tenant
 
@@ -302,7 +338,7 @@ class SeedTemplatesRequest(BaseModel):
 
 
 @router.post("/seed-templates")
-async def seed_official_templates(body: SeedTemplatesRequest) -> Dict[str, Any]:
+async def seed_official_templates(body: SeedTemplatesRequest, _: None = Depends(_check_admin_key)) -> Dict[str, Any]:
     """
     Idempotently seed Bijou-official message templates for a tenant.
 
@@ -343,7 +379,7 @@ _TEMPLATES_DIR = pathlib.Path(__file__).parent.parent.parent / "bijou_templates"
 
 
 @router.get("/templates/documents")
-async def list_document_templates() -> Dict[str, Any]:
+async def list_document_templates(_: None = Depends(_check_admin_key)) -> Dict[str, Any]:
     """
     List all official document templates available in `bijou_templates/official/`.
 
@@ -366,7 +402,7 @@ async def list_document_templates() -> Dict[str, Any]:
 
 
 @router.get("/templates/documents/{slug}")
-async def get_document_template(slug: str) -> Dict[str, Any]:
+async def get_document_template(slug: str, _: None = Depends(_check_admin_key)) -> Dict[str, Any]:
     """
     Return the raw Markdown content of an official document template.
 

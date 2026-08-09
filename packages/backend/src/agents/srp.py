@@ -19,9 +19,12 @@ Author: W3J Bijou AI
 """
 
 import json
+import logging
 import os
 from datetime import datetime
 from typing import Any, Dict, List, Optional
+
+logger = logging.getLogger(__name__)
 
 import google.generativeai as genai
 
@@ -195,7 +198,7 @@ Respond in JSON format:
             return result
 
         except Exception as e:
-            print(f"Error in strategy planning: {e}")
+            logger.exception("Error in strategy planning")
             # Fallback strategy
             return self._fallback_strategy(emotion, urgency_level, knowledge)
 
