@@ -1229,7 +1229,13 @@ func main() {
 
 	waLogger.Infof("🔍 Checking database configuration...")
 	if dbURL != "" {
-		waLogger.Infof("📊 WHATSAPP_DB_URL found: %s", dbURL[:20]+"...")
+		// Don't log the URL itself — even truncated PG URLs can leak credentials.
+		// Just log the scheme so operators can confirm config.
+		scheme := "unknown"
+		if i := strings.Index(dbURL, "://"); i > 0 {
+			scheme = dbURL[:i]
+		}
+		waLogger.Infof("📊 WHATSAPP_DB_URL configured: scheme=%s", scheme)
 		// PostgreSQL connection provided
 		if strings.Contains(dbURL, "postgres://") || strings.Contains(dbURL, "postgresql://") {
 			dbDriver = "postgres"

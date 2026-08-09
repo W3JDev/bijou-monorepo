@@ -446,7 +446,6 @@ app.add_middleware(
         "http://localhost:3001",
         "https://mybijou.xyz",  # Production domain
         "https://www.mybijou.xyz",  # Production domain (www)
-        "https://bijou-staging.fly.dev",  # Backend itself
         "*",  # Allow all origins temporarily for testing
     ],
     allow_credentials=True,
