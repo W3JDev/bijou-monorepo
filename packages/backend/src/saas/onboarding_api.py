@@ -99,7 +99,7 @@ class SignupResponse(BaseModel):
 
 
 class StatusResponse(BaseModel):
-    """WhatsApp connection status"""
+    """WhatsApp connection status + business-info completeness flag"""
 
     tenant_id: str
     business_name: str
@@ -109,6 +109,12 @@ class StatusResponse(BaseModel):
     onboarding_completed: bool
     whatsapp_jid: Optional[str] = None
     created_at: str
+    # Business-info fields — used by the onboard page to decide whether to
+    # show the "Tell us about your business" form before the QR step
+    phone: Optional[str] = None
+    business_type: Optional[str] = None
+    owner_name: Optional[str] = None
+    needs_business_info: bool = False  # True if business_type or phone is empty
 
 
 # ════════════════════════════════════════════════════════════════
@@ -439,9 +445,10 @@ async def signup_property_agent(request: SignupRequest):
 @router.get("/status/{token}", response_model=StatusResponse)
 async def get_onboarding_status(token: str):
     """
-    Step 2: Check WhatsApp connection status
+    Step 2: Check WhatsApp connection status + business-info completeness
 
     Called by onboarding page every 3 seconds to detect when QR is scanned
+    and to decide whether the "Tell us about your business" form should be shown.
     """
     try:
         supabase = get_supabase()
@@ -451,7 +458,8 @@ async def get_onboarding_status(token: str):
             supabase.table("tenants")
             .select(
                 "id, business_name, email, status, whatsapp_jid, "
-                "whatsapp_connected_at, onboarding_completed, created_at"
+                "whatsapp_connected_at, onboarding_completed, created_at, "
+                "phone, business_type, owner_name"
             )
             .eq("signup_token", token)
             .execute()
@@ -473,6 +481,12 @@ async def get_onboarding_status(token: str):
         else:
             onboarding_status = "pending"
 
+        # Business-info completeness flag — True if the user (likely a Google signup)
+        # never went through the manual signup form so phone/business_type are empty
+        phone_val = (tenant.get("phone") or "").strip()
+        btype_val = (tenant.get("business_type") or "").strip()
+        needs_info = (not phone_val) or (not btype_val)
+
         return StatusResponse(
             tenant_id=tenant["id"],
             business_name=tenant["business_name"],
@@ -482,6 +496,10 @@ async def get_onboarding_status(token: str):
             onboarding_completed=tenant.get("onboarding_completed", False),
             whatsapp_jid=tenant.get("whatsapp_jid"),
             created_at=tenant.get("created_at", ""),
+            phone=phone_val or None,
+            business_type=btype_val or None,
+            owner_name=(tenant.get("owner_name") or "").strip() or None,
+            needs_business_info=needs_info,
         )
 
     except HTTPException:

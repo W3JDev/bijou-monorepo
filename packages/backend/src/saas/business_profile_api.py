@@ -74,6 +74,10 @@ class BusinessProfileRequest(BaseModel):
     tenant_id: str
     business_name: Optional[str] = None
     owner_name: Optional[str] = None
+    # Primary WhatsApp number for the business — also written to tenants.phone
+    phone: Optional[str] = None
+    # Business vertical (e.g. "restaurant", "retail", "service", "salon")
+    business_type: Optional[str] = None
     handover_contacts: Optional[List[HandoverContact]] = Field(default_factory=list)
     business_hours: Optional[str] = None
     notes: Optional[str] = None
@@ -213,6 +217,7 @@ async def upsert_business_profile(request: BusinessProfileRequest):
             "tenant_id": request.tenant_id,
             "business_name": request.business_name,
             "owner_name": request.owner_name,
+            "business_type": request.business_type,
             "handover_contacts": handover_contacts_json,
             "business_hours": request.business_hours,
             "notes": request.notes,
@@ -237,6 +242,24 @@ async def upsert_business_profile(request: BusinessProfileRequest):
                 .execute()
             )
 
+        # Also sync phone/business_type/business_name/owner_name to the tenants
+        # row so the status endpoint + downstream code (WhatsApp bridge, billing,
+        # etc.) see the same canonical values. tenants.business_name is the
+        # primary identifier used everywhere.
+        tenant_patch: Dict[str, Any] = {}
+        if request.phone is not None:
+            tenant_patch["phone"] = request.phone
+        if request.business_type is not None:
+            tenant_patch["business_type"] = request.business_type
+        if request.business_name is not None:
+            tenant_patch["business_name"] = request.business_name
+        if request.owner_name is not None:
+            tenant_patch["owner_name"] = request.owner_name
+        if tenant_patch:
+            tenant_patch["updated_at"] = datetime.now().isoformat()
+            supabase.table("tenants").update(tenant_patch).eq("id", request.tenant_id).execute()
+            logger.info(f"🔄 Synced {list(tenant_patch.keys())} to tenants row {request.tenant_id}")
+
         if result.data:
             profile = result.data[0]
             logger.info(f"✅ Business profile saved for tenant {request.tenant_id}")
@@ -246,6 +269,7 @@ async def upsert_business_profile(request: BusinessProfileRequest):
                 profile={
                     "business_name": profile.get("business_name"),
                     "owner_name": profile.get("owner_name"),
+                    "business_type": profile.get("business_type"),
                     "handover_contacts": profile.get("handover_contacts", []),
                     "business_hours": profile.get("business_hours"),
                     "notes": profile.get("notes"),

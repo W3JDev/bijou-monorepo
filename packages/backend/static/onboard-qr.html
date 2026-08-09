@@ -252,10 +252,116 @@
               </svg>
             </div>
             <h2 style="font-size:20px;font-weight:600;margin-bottom:8px;">Connection Failed</h2>
-            <p style="color:rgba(255,255,255,0.7);margin-bottom:16px;font-size:14px;">${message || 'Network error. Please check your connection and refresh.'}</p>
+            <p style="color:rgba(255,255,255,0.7);margin-bottom:16px;font-size:14px;">${escapeHtml(message || 'Network error. Please check your connection and refresh.')}</p>
             <button class="btn" onclick="window.location.reload()">Retry</button>
           </div>
         `);
+      }
+
+      // Render the "Tell us about your business" form — shown when a Google
+      // signup leaves business_type/phone empty in the tenants row.
+      function renderBusinessForm() {
+        const tn = statusData || {};
+        setHTML(`
+          <div class="fade-in">
+            <div style="text-align:center;margin-bottom:18px;">
+              <h2 style="font-size:20px;font-weight:600;margin-bottom:4px;">Tell us about your business</h2>
+              <p style="color:rgba(255,255,255,0.7);font-size:13px;">
+                Just a couple of details so we can set up WhatsApp the right way.
+              </p>
+            </div>
+            <form id="biz-form" autocomplete="on">
+              <div class="form-row">
+                <label for="biz-business_name">Business name</label>
+                <input id="biz-business_name" name="business_name" type="text" required
+                       minlength="2" maxlength="80"
+                       value="${escapeHtml(tn.business_name || '')}"
+                       placeholder="e.g. Sunrise Cafe" />
+              </div>
+              <div class="form-row">
+                <label for="biz-business_type">Business type</label>
+                <select id="biz-business_type" name="business_type" required>
+                  <option value="">Select…</option>
+                  <option value="restaurant">Restaurant / F&B</option>
+                  <option value="retail">Retail / Shop</option>
+                  <option value="salon">Salon / Beauty / Spa</option>
+                  <option value="service">Service business (consulting, repair, etc.)</option>
+                  <option value="healthcare">Healthcare / Clinic</option>
+                  <option value="realestate">Real estate / Property</option>
+                  <option value="education">Education / Tutoring</option>
+                  <option value="fitness">Fitness / Gym / Yoga</option>
+                  <option value="ecommerce">E-commerce / Online store</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+              <div class="form-row">
+                <label for="biz-owner_name">Your name (owner / main contact)</label>
+                <input id="biz-owner_name" name="owner_name" type="text" required
+                       minlength="2" maxlength="80"
+                       value="${escapeHtml(tn.owner_name || '')}"
+                       placeholder="e.g. Aisha Tan" />
+              </div>
+              <div class="form-row">
+                <label for="biz-phone">WhatsApp number (with country code)</label>
+                <input id="biz-phone" name="phone" type="tel" required
+                       minlength="8" maxlength="20"
+                       value="${escapeHtml(tn.phone || '')}"
+                       placeholder="+60123456789" />
+              </div>
+              <div id="biz-form-error" class="form-error" style="display:none;"></div>
+              <button id="biz-submit" type="submit" class="btn" style="width:100%;margin-top:6px;">
+                Continue to WhatsApp setup →
+              </button>
+            </form>
+          </div>
+        `);
+        document.getElementById('biz-form').addEventListener('submit', onBizFormSubmit);
+      }
+
+      async function onBizFormSubmit(ev) {
+        ev.preventDefault();
+        const form = ev.target;
+        const submitBtn = document.getElementById('biz-submit');
+        const errorEl = document.getElementById('biz-form-error');
+        errorEl.style.display = 'none';
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Saving…';
+
+        const data = {
+          tenant_id: statusData.tenant_id,
+          business_name: form.business_name.value.trim(),
+          business_type: form.business_type.value,
+          owner_name: form.owner_name.value.trim(),
+          phone: form.phone.value.trim(),
+        };
+
+        try {
+          const res = await fetch(`${API_BASE}/api/business/profile`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data),
+          });
+          if (!res.ok) {
+            const errBody = await res.json().catch(() => ({}));
+            throw new Error(errBody.detail || `HTTP ${res.status}`);
+          }
+          // Form saved. Restart the status poll — the form's needs_business_info
+          // flag is now false, so the next poll will render the QR state.
+          state = 'loading';
+          renderLoading();
+          if (pollTimer) clearInterval(pollTimer);
+          pollTimer = setInterval(async () => {
+            const ok = await checkStatus();
+            if (!ok && pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+          }, POLL_INTERVAL);
+          // Fire one immediate check
+          checkStatus();
+        } catch (e) {
+          errorEl.textContent = e.message || 'Failed to save business info. Please try again.';
+          errorEl.style.display = 'block';
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Continue to WhatsApp setup →';
+        }
       }
 
       function renderBizInfo() {
@@ -284,6 +390,14 @@
           if (!res.ok) throw new Error(`HTTP ${res.status}`);
           const data = await res.json();
           statusData = data;
+
+          // FIRST: if business info is missing (Google signup), show the form
+          // and pause the rest of the flow until the user submits.
+          if (data.needs_business_info && state !== 'biz_form' && state !== 'qr' && state !== 'connecting' && state !== 'success') {
+            state = 'biz_form';
+            renderBusinessForm();
+            return false; // pause polling; form submit resumes it
+          }
 
           if (data.whatsapp_connected) {
             state = 'connecting';
