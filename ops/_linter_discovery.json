@@ -1,0 +1,4095 @@
+{
+  "functions": {
+    "err": "{\"message\":\"Failed to run sql query: ERROR:  42846: cannot cast type aclitem[] to oid[]\\nLINE 13:             SELECT b.rolname FROM pg_roles b WHERE b.oid = ANY (p2.proacl::oid[])\\n                                                                                  ^\\n\"}"
+  },
+  "policies": [
+    {
+      "tablename": "action_items",
+      "policyname": "Service role full access to action_items",
+      "cmd": "ALL",
+      "roles": "{service_role}",
+      "qual": "true",
+      "with_check": "true"
+    },
+    {
+      "tablename": "action_items",
+      "policyname": "Users can view accessible action items",
+      "cmd": "SELECT",
+      "roles": "{authenticated}",
+      "qual": "((assigned_to = auth.uid()) OR (department_id IN ( SELECT user_profiles.department_id\n   FROM user_profiles\n  WHERE (user_profiles.id = auth.uid()))) OR (EXISTS ( SELECT 1\n   FROM user_profiles\n  WHERE ((user_profiles.id = auth.uid()) AND (user_profiles.role = ANY (ARRAY['owner'::text, 'admin'::text]))))))",
+      "with_check": null
+    },
+    {
+      "tablename": "agent_activity",
+      "policyname": "Service role full access to agent_activity",
+      "cmd": "ALL",
+      "roles": "{service_role}",
+      "qual": "true",
+      "with_check": "true"
+    },
+    {
+      "tablename": "agent_activity",
+      "policyname": "Users can view activity of own agents",
+      "cmd": "SELECT",
+      "roles": "{authenticated}",
+      "qual": "(connection_id IN ( SELECT agent_connections.id\n   FROM agent_connections\n  WHERE (agent_connections.user_id = auth.uid())))",
+      "with_check": null
+    },
+    {
+      "tablename": "agent_activity",
+      "policyname": "activity_read",
+      "cmd": "SELECT",
+      "roles": "{public}",
+      "qual": "(EXISTS ( SELECT 1\n   FROM agent_connections ac\n  WHERE ((ac.id = agent_activity.connection_id) AND ((ac.user_id = auth.uid()) OR (EXISTS ( SELECT 1\n           FROM user_profiles\n          WHERE ((user_profiles.id = auth.uid()) AND (user_profiles.role = 'owner'::text))))))))",
+      "with_check": null
+    },
+    {
+      "tablename": "agent_commands",
+      "policyname": "Service role full access to agent_commands",
+      "cmd": "ALL",
+      "roles": "{service_role}",
+      "qual": "true",
+      "with_check": "true"
+    },
+    {
+      "tablename": "agent_commands",
+      "policyname": "Authenticated users can insert commands",
+      "cmd": "INSERT",
+      "roles": "{authenticated}",
+      "qual": null,
+      "with_check": "(auth.uid() = issued_by)"
+    },
+    {
+      "tablename": "agent_commands",
+      "policyname": "Users can view own commands",
+      "cmd": "SELECT",
+      "roles": "{authenticated}",
+      "qual": "(issued_by = auth.uid())",
+      "with_check": null
+    },
+    {
+      "tablename": "agent_connections",
+      "policyname": "Users can delete own agent connections",
+      "cmd": "DELETE",
+      "roles": "{authenticated}",
+      "qual": "(user_id = auth.uid())",
+      "with_check": null
+    },
+    {
+      "tablename": "agent_connections",
+      "policyname": "connections_delete",
+      "cmd": "DELETE",
+      "roles": "{public}",
+      "qual": "(auth.uid() = user_id)",
+      "with_check": null
+    },
+    {
+      "tablename": "agent_connections",
+      "policyname": "Users can insert own agent connections",
+      "cmd": "INSERT",
+      "roles": "{authenticated}",
+      "qual": null,
+      "with_check": "(user_id = auth.uid())"
+    },
+    {
+      "tablename": "agent_connections",
+      "policyname": "Department members can view dept agent connections",
+      "cmd": "SELECT",
+      "roles": "{authenticated}",
+      "qual": "((user_id = auth.uid()) OR can_view_user(auth.uid(), user_id))",
+      "with_check": null
+    },
+    {
+      "tablename": "agent_connections",
+      "policyname": "Users can view own agent connections",
+      "cmd": "SELECT",
+      "roles": "{authenticated}",
+      "qual": "(user_id = auth.uid())",
+      "with_check": null
+    },
+    {
+      "tablename": "agent_connections",
+      "policyname": "connections_read",
+      "cmd": "SELECT",
+      "roles": "{public}",
+      "qual": "((auth.uid() = user_id) OR (EXISTS ( SELECT 1\n   FROM user_profiles\n  WHERE ((user_profiles.id = auth.uid()) AND (user_profiles.access_level = ANY (ARRAY['executive'::text, 'director'::text, 'owner'::text]))))) OR (EXISTS ( SELECT 1\n   FROM user_profiles v\n  WHERE ((v.id = auth.uid()) AND (v.access_level = ANY (ARRAY['manager'::text, 'lead'::text])) AND (v.department_id = ( SELECT user_profiles.department_id\n           FROM user_profiles\n          WHERE (user_profiles.id = agent_connections.user_id)))))))",
+      "with_check": null
+    },
+    {
+      "tablename": "agent_connections",
+      "policyname": "Users can update own agent connections",
+      "cmd": "UPDATE",
+      "roles": "{authenticated}",
+      "qual": "(user_id = auth.uid())",
+      "with_check": "(user_id = auth.uid())"
+    },
+    {
+      "tablename": "agent_connections",
+      "policyname": "connections_update",
+      "cmd": "UPDATE",
+      "roles": "{public}",
+      "qual": "(auth.uid() = user_id)",
+      "with_check": null
+    },
+    {
+      "tablename": "agent_conversations",
+      "policyname": "Service role full access to agent_conversations",
+      "cmd": "ALL",
+      "roles": "{service_role}",
+      "qual": "true",
+      "with_check": "true"
+    },
+    {
+      "tablename": "agent_conversations",
+      "policyname": "Users can insert own conversations",
+      "cmd": "INSERT",
+      "roles": "{authenticated}",
+      "qual": null,
+      "with_check": "(user_id = auth.uid())"
+    },
+    {
+      "tablename": "agent_conversations",
+      "policyname": "Users can view own conversations",
+      "cmd": "SELECT",
+      "roles": "{authenticated}",
+      "qual": "(user_id = auth.uid())",
+      "with_check": null
+    },
+    {
+      "tablename": "agent_conversations",
+      "policyname": "Users can update own conversations",
+      "cmd": "UPDATE",
+      "roles": "{authenticated}",
+      "qual": "(user_id = auth.uid())",
+      "with_check": "(user_id = auth.uid())"
+    },
+    {
+      "tablename": "agent_messages",
+      "policyname": "Service role full access to agent_messages",
+      "cmd": "ALL",
+      "roles": "{service_role}",
+      "qual": "true",
+      "with_check": "true"
+    },
+    {
+      "tablename": "agent_messages",
+      "policyname": "Users can insert messages in own conversations",
+      "cmd": "INSERT",
+      "roles": "{authenticated}",
+      "qual": null,
+      "with_check": "(conversation_id IN ( SELECT agent_conversations.id\n   FROM agent_conversations\n  WHERE (agent_conversations.user_id = auth.uid())))"
+    },
+    {
+      "tablename": "agent_messages",
+      "policyname": "Users can view messages in own conversations",
+      "cmd": "SELECT",
+      "roles": "{authenticated}",
+      "qual": "(conversation_id IN ( SELECT agent_conversations.id\n   FROM agent_conversations\n  WHERE (agent_conversations.user_id = auth.uid())))",
+      "with_check": null
+    },
+    {
+      "tablename": "agent_status",
+      "policyname": "Service role full access to agent_status",
+      "cmd": "ALL",
+      "roles": "{service_role}",
+      "qual": "true",
+      "with_check": "true"
+    },
+    {
+      "tablename": "agent_status",
+      "policyname": "Users can view status of own agents",
+      "cmd": "SELECT",
+      "roles": "{authenticated}",
+      "qual": "(connection_id IN ( SELECT agent_connections.id\n   FROM agent_connections\n  WHERE (agent_connections.user_id = auth.uid())))",
+      "with_check": null
+    },
+    {
+      "tablename": "agent_status",
+      "policyname": "status_read",
+      "cmd": "SELECT",
+      "roles": "{public}",
+      "qual": "(EXISTS ( SELECT 1\n   FROM agent_connections ac\n  WHERE ((ac.id = agent_status.connection_id) AND ((ac.user_id = auth.uid()) OR (EXISTS ( SELECT 1\n           FROM user_profiles\n          WHERE ((user_profiles.id = auth.uid()) AND (user_profiles.role = 'owner'::text))))))))",
+      "with_check": null
+    },
+    {
+      "tablename": "analytics",
+      "policyname": "analytics_policy",
+      "cmd": "ALL",
+      "roles": "{public}",
+      "qual": "((auth.role() = 'service_role'::text) OR (tenant_id = (current_setting('app.current_tenant_id'::text, true))::uuid))",
+      "with_check": null
+    },
+    {
+      "tablename": "api_keys",
+      "policyname": "service_role_only_api_keys",
+      "cmd": "ALL",
+      "roles": "{public}",
+      "qual": "(auth.role() = 'service_role'::text)",
+      "with_check": null
+    },
+    {
+      "tablename": "availability_overrides",
+      "policyname": "availability_overrides_tenant_isolation",
+      "cmd": "ALL",
+      "roles": "{public}",
+      "qual": "((tenant_id)::text = current_setting('app.current_tenant_id'::text, true))",
+      "with_check": null
+    },
+    {
+      "tablename": "blocked_numbers",
+      "policyname": "tenant_isolation_blocked",
+      "cmd": "ALL",
+      "roles": "{public}",
+      "qual": "((auth.role() = 'service_role'::text) OR (tenant_id = (current_setting('app.current_tenant_id'::text, true))::uuid))",
+      "with_check": null
+    },
+    {
+      "tablename": "business_profiles",
+      "policyname": "business_profiles_service_role",
+      "cmd": "ALL",
+      "roles": "{service_role}",
+      "qual": "true",
+      "with_check": null
+    },
+    {
+      "tablename": "business_profiles",
+      "policyname": "business_profiles_tenant_isolation",
+      "cmd": "ALL",
+      "roles": "{public}",
+      "qual": "(tenant_id = (current_setting('app.tenant_id'::text, true))::uuid)",
+      "with_check": null
+    },
+    {
+      "tablename": "calendar_events",
+      "policyname": "Service role full access to calendar_events",
+      "cmd": "ALL",
+      "roles": "{service_role}",
+      "qual": "true",
+      "with_check": "true"
+    },
+    {
+      "tablename": "calendar_events",
+      "policyname": "Users can view own calendar events",
+      "cmd": "SELECT",
+      "roles": "{authenticated}",
+      "qual": "((user_id = auth.uid()) OR can_view_user(auth.uid(), user_id))",
+      "with_check": null
+    },
+    {
+      "tablename": "call_availability",
+      "policyname": "call_availability_tenant_isolation",
+      "cmd": "ALL",
+      "roles": "{public}",
+      "qual": "((tenant_id)::text = current_setting('app.current_tenant_id'::text, true))",
+      "with_check": null
+    },
+    {
+      "tablename": "call_bookings",
+      "policyname": "call_bookings_tenant_isolation",
+      "cmd": "ALL",
+      "roles": "{public}",
+      "qual": "((tenant_id)::text = current_setting('app.current_tenant_id'::text, true))",
+      "with_check": null
+    },
+    {
+      "tablename": "call_settings",
+      "policyname": "call_settings_tenant_isolation",
+      "cmd": "ALL",
+      "roles": "{public}",
+      "qual": "((tenant_id)::text = current_setting('app.current_tenant_id'::text, true))",
+      "with_check": null
+    },
+    {
+      "tablename": "call_types",
+      "policyname": "call_types_tenant_isolation",
+      "cmd": "ALL",
+      "roles": "{public}",
+      "qual": "((tenant_id)::text = current_setting('app.current_tenant_id'::text, true))",
+      "with_check": null
+    },
+    {
+      "tablename": "campaign_analytics",
+      "policyname": "campaign_analytics_isolation",
+      "cmd": "ALL",
+      "roles": "{public}",
+      "qual": "(EXISTS ( SELECT 1\n   FROM campaigns\n  WHERE ((campaigns.id = campaign_analytics.campaign_id) AND (campaigns.tenant_id = (current_setting('app.tenant_id'::text, true))::uuid))))",
+      "with_check": null
+    },
+    {
+      "tablename": "campaign_templates",
+      "policyname": "campaign_templates_isolation",
+      "cmd": "ALL",
+      "roles": "{public}",
+      "qual": "(EXISTS ( SELECT 1\n   FROM campaigns\n  WHERE ((campaigns.id = campaign_templates.campaign_id) AND (campaigns.tenant_id = (current_setting('app.tenant_id'::text, true))::uuid))))",
+      "with_check": null
+    },
+    {
+      "tablename": "campaigns",
+      "policyname": "campaigns_tenant_isolation",
+      "cmd": "ALL",
+      "roles": "{public}",
+      "qual": "(tenant_id = (current_setting('app.tenant_id'::text, true))::uuid)",
+      "with_check": null
+    },
+    {
+      "tablename": "checklist_state",
+      "policyname": "Authenticated users can insert checklist",
+      "cmd": "INSERT",
+      "roles": "{authenticated}",
+      "qual": null,
+      "with_check": "true"
+    },
+    {
+      "tablename": "checklist_state",
+      "policyname": "Authenticated users can view checklist",
+      "cmd": "SELECT",
+      "roles": "{authenticated}",
+      "qual": "true",
+      "with_check": null
+    },
+    {
+      "tablename": "checklist_state",
+      "policyname": "Authenticated users can update checklist",
+      "cmd": "UPDATE",
+      "roles": "{authenticated}",
+      "qual": "true",
+      "with_check": "true"
+    },
+    {
+      "tablename": "client_configs",
+      "policyname": "tenant_isolation_client_configs",
+      "cmd": "ALL",
+      "roles": "{public}",
+      "qual": "((auth.role() = 'service_role'::text) OR (tenant_id = (current_setting('app.current_tenant_id'::text, true))::uuid))",
+      "with_check": null
+    },
+    {
+      "tablename": "contact_segment_members",
+      "policyname": "contact_segment_members_isolation",
+      "cmd": "ALL",
+      "roles": "{public}",
+      "qual": "(EXISTS ( SELECT 1\n   FROM contact_segments\n  WHERE ((contact_segments.id = contact_segment_members.segment_id) AND (contact_segments.tenant_id = (current_setting('app.tenant_id'::text, true))::uuid))))",
+      "with_check": null
+    },
+    {
+      "tablename": "contact_segments",
+      "policyname": "contact_segments_tenant_isolation",
+      "cmd": "ALL",
+      "roles": "{public}",
+      "qual": "(tenant_id = (current_setting('app.tenant_id'::text, true))::uuid)",
+      "with_check": null
+    },
+    {
+      "tablename": "contacts",
+      "policyname": "contacts_tenant_isolation",
+      "cmd": "ALL",
+      "roles": "{public}",
+      "qual": "(tenant_id = current_setting('app.tenant_id'::text, true))",
+      "with_check": null
+    },
+    {
+      "tablename": "conversation_logs",
+      "policyname": "conversation_logs_tenant_isolation",
+      "cmd": "ALL",
+      "roles": "{public}",
+      "qual": "(tenant_id = (current_setting('app.current_tenant'::text))::uuid)",
+      "with_check": null
+    },
+    {
+      "tablename": "conversations",
+      "policyname": "tenant_isolation_policy",
+      "cmd": "ALL",
+      "roles": "{public}",
+      "qual": "((auth.role() = 'service_role'::text) OR (tenant_id = (current_setting('app.current_tenant_id'::text, true))::uuid))",
+      "with_check": null
+    },
+    {
+      "tablename": "daily_digests",
+      "policyname": "Service role full access to daily_digests",
+      "cmd": "ALL",
+      "roles": "{service_role}",
+      "qual": "true",
+      "with_check": "true"
+    },
+    {
+      "tablename": "daily_digests",
+      "policyname": "Users can view own digests",
+      "cmd": "SELECT",
+      "roles": "{authenticated}",
+      "qual": "(user_id = auth.uid())",
+      "with_check": null
+    },
+    {
+      "tablename": "dashboard_views",
+      "policyname": "Admins can manage all views",
+      "cmd": "ALL",
+      "roles": "{authenticated}",
+      "qual": "(EXISTS ( SELECT 1\n   FROM user_profiles\n  WHERE ((user_profiles.id = auth.uid()) AND (user_profiles.role = ANY (ARRAY['owner'::text, 'admin'::text])))))",
+      "with_check": "(EXISTS ( SELECT 1\n   FROM user_profiles\n  WHERE ((user_profiles.id = auth.uid()) AND (user_profiles.role = ANY (ARRAY['owner'::text, 'admin'::text])))))"
+    },
+    {
+      "tablename": "dashboard_views",
+      "policyname": "Creator can manage own views",
+      "cmd": "ALL",
+      "roles": "{authenticated}",
+      "qual": "(created_by = (auth.uid())::text)",
+      "with_check": "(created_by = (auth.uid())::text)"
+    },
+    {
+      "tablename": "dashboard_views",
+      "policyname": "Service role full access to dashboard_views",
+      "cmd": "ALL",
+      "roles": "{service_role}",
+      "qual": "true",
+      "with_check": "true"
+    },
+    {
+      "tablename": "dashboard_views",
+      "policyname": "All users can view org views",
+      "cmd": "SELECT",
+      "roles": "{authenticated}",
+      "qual": "(visibility = 'org'::text)",
+      "with_check": null
+    },
+    {
+      "tablename": "dashboard_views",
+      "policyname": "Creator can view own private views",
+      "cmd": "SELECT",
+      "roles": "{authenticated}",
+      "qual": "((visibility = 'private'::text) AND (created_by = (auth.uid())::text))",
+      "with_check": null
+    },
+    {
+      "tablename": "dashboard_views",
+      "policyname": "Dept members can view dept views",
+      "cmd": "SELECT",
+      "roles": "{authenticated}",
+      "qual": "((visibility = 'department'::text) AND (department_id IN ( SELECT user_profiles.department_id\n   FROM user_profiles\n  WHERE (user_profiles.id = auth.uid()))))",
+      "with_check": null
+    },
+    {
+      "tablename": "decisions",
+      "policyname": "Service role full access to decisions",
+      "cmd": "ALL",
+      "roles": "{service_role}",
+      "qual": "true",
+      "with_check": "true"
+    },
+    {
+      "tablename": "decisions",
+      "policyname": "Users can view dept decisions",
+      "cmd": "SELECT",
+      "roles": "{authenticated}",
+      "qual": "((decision_maker = auth.uid()) OR (auth.uid() = ANY (stakeholders)) OR (department_id IN ( SELECT user_profiles.department_id\n   FROM user_profiles\n  WHERE (user_profiles.id = auth.uid()))) OR (EXISTS ( SELECT 1\n   FROM user_profiles\n  WHERE ((user_profiles.id = auth.uid()) AND (user_profiles.role = ANY (ARRAY['owner'::text, 'admin'::text]))))))",
+      "with_check": null
+    },
+    {
+      "tablename": "departments",
+      "policyname": "departments_admin",
+      "cmd": "ALL",
+      "roles": "{public}",
+      "qual": "(EXISTS ( SELECT 1\n   FROM user_profiles\n  WHERE ((user_profiles.id = auth.uid()) AND (user_profiles.access_level = ANY (ARRAY['executive'::text, 'director'::text])))))",
+      "with_check": null
+    },
+    {
+      "tablename": "device_sessions",
+      "policyname": "Allow service role full access to device_sessions",
+      "cmd": "ALL",
+      "roles": "{service_role}",
+      "qual": "true",
+      "with_check": "true"
+    },
+    {
+      "tablename": "drive_documents",
+      "policyname": "Service role full access to drive_documents",
+      "cmd": "ALL",
+      "roles": "{service_role}",
+      "qual": "true",
+      "with_check": "true"
+    },
+    {
+      "tablename": "drive_documents",
+      "policyname": "Users can view accessible drive docs",
+      "cmd": "SELECT",
+      "roles": "{authenticated}",
+      "qual": "((owner_user_id = auth.uid()) OR ((owner_user_id IS NOT NULL) AND can_view_user(auth.uid(), owner_user_id)))",
+      "with_check": null
+    },
+    {
+      "tablename": "email_summaries",
+      "policyname": "Service role full access to email_summaries",
+      "cmd": "ALL",
+      "roles": "{service_role}",
+      "qual": "true",
+      "with_check": "true"
+    },
+    {
+      "tablename": "email_summaries",
+      "policyname": "Users can view own emails",
+      "cmd": "SELECT",
+      "roles": "{authenticated}",
+      "qual": "((user_id = auth.uid()) OR can_view_user(auth.uid(), user_id))",
+      "with_check": null
+    },
+    {
+      "tablename": "email_templates",
+      "policyname": "email_templates_select",
+      "cmd": "SELECT",
+      "roles": "{public}",
+      "qual": "((tenant_id IS NULL) OR (tenant_id = auth.uid()))",
+      "with_check": null
+    },
+    {
+      "tablename": "escalations",
+      "policyname": "escalations_policy",
+      "cmd": "ALL",
+      "roles": "{public}",
+      "qual": "((auth.role() = 'service_role'::text) OR (tenant_id = (current_setting('app.current_tenant_id'::text, true))::uuid))",
+      "with_check": null
+    },
+    {
+      "tablename": "feedback",
+      "policyname": "tenant_isolation_feedback",
+      "cmd": "ALL",
+      "roles": "{public}",
+      "qual": "((auth.role() = 'service_role'::text) OR (tenant_id = (current_setting('app.current_tenant_id'::text, true))::uuid))",
+      "with_check": null
+    },
+    {
+      "tablename": "google_sheets_sync",
+      "policyname": "sheets_sync_policy",
+      "cmd": "ALL",
+      "roles": "{public}",
+      "qual": "((auth.role() = 'service_role'::text) OR (tenant_id = (current_setting('app.current_tenant_id'::text, true))::uuid))",
+      "with_check": null
+    },
+    {
+      "tablename": "handover_agents",
+      "policyname": "service_role_only_handover_agents",
+      "cmd": "ALL",
+      "roles": "{public}",
+      "qual": "(auth.role() = 'service_role'::text)",
+      "with_check": null
+    },
+    {
+      "tablename": "help_tickets",
+      "policyname": "Tenant isolation on help_tickets",
+      "cmd": "ALL",
+      "roles": "{public}",
+      "qual": "(tenant_id = (current_setting('app.tenant_id'::text, true))::uuid)",
+      "with_check": null
+    },
+    {
+      "tablename": "holiday_exceptions",
+      "policyname": "holiday_exceptions_tenant_isolation",
+      "cmd": "ALL",
+      "roles": "{public}",
+      "qual": "((tenant_id)::text = current_setting('app.current_tenant_id'::text, true))",
+      "with_check": null
+    },
+    {
+      "tablename": "jid_mappings",
+      "policyname": "jid_mappings_tenant_isolation",
+      "cmd": "ALL",
+      "roles": "{public}",
+      "qual": "(tenant_id = (current_setting('app.tenant_id'::text, true))::uuid)",
+      "with_check": null
+    },
+    {
+      "tablename": "knowledge_base",
+      "policyname": "Service role full access to knowledge_base",
+      "cmd": "ALL",
+      "roles": "{service_role}",
+      "qual": "true",
+      "with_check": "true"
+    },
+    {
+      "tablename": "knowledge_base",
+      "policyname": "tenant_isolation_knowledge",
+      "cmd": "ALL",
+      "roles": "{public}",
+      "qual": "((auth.role() = 'service_role'::text) OR (tenant_id = (current_setting('app.current_tenant_id'::text, true))::uuid))",
+      "with_check": null
+    },
+    {
+      "tablename": "knowledge_base",
+      "policyname": "Users can insert knowledge",
+      "cmd": "INSERT",
+      "roles": "{authenticated}",
+      "qual": null,
+      "with_check": "(created_by = auth.uid())"
+    },
+    {
+      "tablename": "knowledge_base",
+      "policyname": "Users can view accessible knowledge",
+      "cmd": "SELECT",
+      "roles": "{authenticated}",
+      "qual": "((visibility = 'public'::text) OR (created_by = auth.uid()) OR ((visibility = 'department'::text) AND (department_id IN ( SELECT user_profiles.department_id\n   FROM user_profiles\n  WHERE (user_profiles.id = auth.uid())))) OR (EXISTS ( SELECT 1\n   FROM user_profiles\n  WHERE ((user_profiles.id = auth.uid()) AND (user_profiles.access_level = ANY (ARRAY['executive'::text, 'director'::text]))))) OR (EXISTS ( SELECT 1\n   FROM user_profiles\n  WHERE ((user_profiles.id = auth.uid()) AND (user_profiles.role = ANY (ARRAY['owner'::text, 'admin'::text]))))))",
+      "with_check": null
+    },
+    {
+      "tablename": "knowledge_bases",
+      "policyname": "knowledge_policy",
+      "cmd": "ALL",
+      "roles": "{public}",
+      "qual": "((auth.role() = 'service_role'::text) OR (tenant_id = (current_setting('app.current_tenant_id'::text, true))::uuid))",
+      "with_check": null
+    },
+    {
+      "tablename": "knowledge_documents",
+      "policyname": "service_role_only_knowledge_documents",
+      "cmd": "ALL",
+      "roles": "{public}",
+      "qual": "(auth.role() = 'service_role'::text)",
+      "with_check": null
+    },
+    {
+      "tablename": "leads",
+      "policyname": "Enable full access for service role",
+      "cmd": "ALL",
+      "roles": "{public}",
+      "qual": "(auth.role() = 'service_role'::text)",
+      "with_check": null
+    },
+    {
+      "tablename": "meeting_minutes",
+      "policyname": "Service role full access to meeting_minutes",
+      "cmd": "ALL",
+      "roles": "{service_role}",
+      "qual": "true",
+      "with_check": "true"
+    },
+    {
+      "tablename": "meeting_minutes",
+      "policyname": "Users can view dept meeting minutes",
+      "cmd": "SELECT",
+      "roles": "{authenticated}",
+      "qual": "((created_by = auth.uid()) OR (department_id IN ( SELECT user_profiles.department_id\n   FROM user_profiles\n  WHERE (user_profiles.id = auth.uid()))) OR (EXISTS ( SELECT 1\n   FROM user_profiles\n  WHERE ((user_profiles.id = auth.uid()) AND (user_profiles.role = ANY (ARRAY['owner'::text, 'admin'::text]))))))",
+      "with_check": null
+    },
+    {
+      "tablename": "messages",
+      "policyname": "tenant_isolation_messages",
+      "cmd": "ALL",
+      "roles": "{public}",
+      "qual": "((auth.role() = 'service_role'::text) OR (tenant_id = (current_setting('app.current_tenant_id'::text, true))::uuid))",
+      "with_check": null
+    },
+    {
+      "tablename": "notification_groups",
+      "policyname": "Service role has full access to notification_groups",
+      "cmd": "ALL",
+      "roles": "{service_role}",
+      "qual": "true",
+      "with_check": "true"
+    },
+    {
+      "tablename": "notification_logs",
+      "policyname": "Service role has full access to notification_logs",
+      "cmd": "ALL",
+      "roles": "{service_role}",
+      "qual": "true",
+      "with_check": "true"
+    },
+    {
+      "tablename": "notifications",
+      "policyname": "Service role full access to notifications",
+      "cmd": "ALL",
+      "roles": "{service_role}",
+      "qual": "true",
+      "with_check": "true"
+    },
+    {
+      "tablename": "notifications",
+      "policyname": "Users can view own notifications",
+      "cmd": "SELECT",
+      "roles": "{authenticated}",
+      "qual": "(user_id = auth.uid())",
+      "with_check": null
+    },
+    {
+      "tablename": "notifications",
+      "policyname": "Users can update own notifications",
+      "cmd": "UPDATE",
+      "roles": "{authenticated}",
+      "qual": "(user_id = auth.uid())",
+      "with_check": "(user_id = auth.uid())"
+    },
+    {
+      "tablename": "onboarding_sessions",
+      "policyname": "Service role bypass for onboarding_sessions",
+      "cmd": "ALL",
+      "roles": "{service_role}",
+      "qual": "true",
+      "with_check": "true"
+    },
+    {
+      "tablename": "onboarding_sessions",
+      "policyname": "Users can read own onboarding sessions",
+      "cmd": "SELECT",
+      "roles": "{authenticated}",
+      "qual": "(email = (( SELECT users.email\n   FROM auth.users\n  WHERE (users.id = auth.uid())))::text)",
+      "with_check": null
+    },
+    {
+      "tablename": "outbound_queue",
+      "policyname": "outbound_queue_tenant_isolation",
+      "cmd": "ALL",
+      "roles": "{public}",
+      "qual": "(tenant_id = (current_setting('app.tenant_id'::text, true))::uuid)",
+      "with_check": null
+    },
+    {
+      "tablename": "outreach_campaign_configs",
+      "policyname": "occ_tenant_isolation",
+      "cmd": "ALL",
+      "roles": "{public}",
+      "qual": "(tenant_id = (current_setting('app.current_tenant_id'::text, true))::uuid)",
+      "with_check": null
+    },
+    {
+      "tablename": "outreach_logs",
+      "policyname": "outreach_logs_tenant_isolation",
+      "cmd": "ALL",
+      "roles": "{public}",
+      "qual": "(tenant_id = (current_setting('app.tenant_id'::text, true))::uuid)",
+      "with_check": null
+    },
+    {
+      "tablename": "owner_commands",
+      "policyname": "tenant_isolation_commands",
+      "cmd": "ALL",
+      "roles": "{public}",
+      "qual": "((auth.role() = 'service_role'::text) OR (tenant_id = (current_setting('app.current_tenant_id'::text, true))::uuid))",
+      "with_check": null
+    },
+    {
+      "tablename": "owner_devices",
+      "policyname": "service_role_only_owner_devices",
+      "cmd": "ALL",
+      "roles": "{public}",
+      "qual": "(auth.role() = 'service_role'::text)",
+      "with_check": null
+    },
+    {
+      "tablename": "owner_notifications",
+      "policyname": "service_role_full_access_notifications",
+      "cmd": "ALL",
+      "roles": "{public}",
+      "qual": "(auth.role() = 'service_role'::text)",
+      "with_check": "(auth.role() = 'service_role'::text)"
+    },
+    {
+      "tablename": "personas",
+      "policyname": "tenant_isolation_personas",
+      "cmd": "ALL",
+      "roles": "{public}",
+      "qual": "((auth.role() = 'service_role'::text) OR (tenant_id = (current_setting('app.current_tenant_id'::text, true))::uuid))",
+      "with_check": null
+    },
+    {
+      "tablename": "projects",
+      "policyname": "Service role full access to projects",
+      "cmd": "ALL",
+      "roles": "{service_role}",
+      "qual": "true",
+      "with_check": "true"
+    },
+    {
+      "tablename": "projects",
+      "policyname": "Users can view dept projects",
+      "cmd": "SELECT",
+      "roles": "{authenticated}",
+      "qual": "((owner_id = auth.uid()) OR (department_id IN ( SELECT user_profiles.department_id\n   FROM user_profiles\n  WHERE (user_profiles.id = auth.uid()))) OR (EXISTS ( SELECT 1\n   FROM user_profiles\n  WHERE ((user_profiles.id = auth.uid()) AND (user_profiles.role = ANY (ARRAY['owner'::text, 'admin'::text]))))) OR (EXISTS ( SELECT 1\n   FROM user_profiles\n  WHERE ((user_profiles.id = auth.uid()) AND (user_profiles.access_level = ANY (ARRAY['executive'::text, 'director'::text]))))))",
+      "with_check": null
+    },
+    {
+      "tablename": "shared_briefs",
+      "policyname": "shared_briefs_public_read",
+      "cmd": "SELECT",
+      "roles": "{anon}",
+      "qual": "(is_public = true)",
+      "with_check": null
+    },
+    {
+      "tablename": "sheet_data",
+      "policyname": "Service role full access to sheet_data",
+      "cmd": "ALL",
+      "roles": "{service_role}",
+      "qual": "true",
+      "with_check": "true"
+    },
+    {
+      "tablename": "sheet_data",
+      "policyname": "Authenticated users can view sheet data",
+      "cmd": "SELECT",
+      "roles": "{authenticated}",
+      "qual": "true",
+      "with_check": null
+    },
+    {
+      "tablename": "tasks",
+      "policyname": "Service role full access to tasks",
+      "cmd": "ALL",
+      "roles": "{service_role}",
+      "qual": "true",
+      "with_check": "true"
+    },
+    {
+      "tablename": "tasks",
+      "policyname": "Users can insert tasks",
+      "cmd": "INSERT",
+      "roles": "{authenticated}",
+      "qual": null,
+      "with_check": "(created_by = auth.uid())"
+    },
+    {
+      "tablename": "tasks",
+      "policyname": "Users can view accessible tasks",
+      "cmd": "SELECT",
+      "roles": "{authenticated}",
+      "qual": "((assigned_to = auth.uid()) OR (created_by = auth.uid()) OR (department_id IN ( SELECT user_profiles.department_id\n   FROM user_profiles\n  WHERE (user_profiles.id = auth.uid()))) OR (EXISTS ( SELECT 1\n   FROM user_profiles\n  WHERE ((user_profiles.id = auth.uid()) AND (user_profiles.role = ANY (ARRAY['owner'::text, 'admin'::text]))))))",
+      "with_check": null
+    },
+    {
+      "tablename": "team_activity",
+      "policyname": "Authenticated users can insert activity",
+      "cmd": "INSERT",
+      "roles": "{authenticated}",
+      "qual": null,
+      "with_check": "true"
+    },
+    {
+      "tablename": "team_activity",
+      "policyname": "Authenticated users can view activity",
+      "cmd": "SELECT",
+      "roles": "{authenticated}",
+      "qual": "true",
+      "with_check": null
+    },
+    {
+      "tablename": "tenant_calendars",
+      "policyname": "tenant_calendars_select_own",
+      "cmd": "SELECT",
+      "roles": "{public}",
+      "qual": "(tenant_id = auth.uid())",
+      "with_check": null
+    },
+    {
+      "tablename": "tenant_calendars",
+      "policyname": "tenant_calendars_update_own",
+      "cmd": "UPDATE",
+      "roles": "{public}",
+      "qual": "(tenant_id = auth.uid())",
+      "with_check": null
+    },
+    {
+      "tablename": "tenant_email_config",
+      "policyname": "tenant_email_config_select_own",
+      "cmd": "SELECT",
+      "roles": "{public}",
+      "qual": "(tenant_id = auth.uid())",
+      "with_check": null
+    },
+    {
+      "tablename": "tenant_email_config",
+      "policyname": "tenant_email_config_update_own",
+      "cmd": "UPDATE",
+      "roles": "{public}",
+      "qual": "(tenant_id = auth.uid())",
+      "with_check": null
+    },
+    {
+      "tablename": "tenant_kb_template_instances",
+      "policyname": "tenant_kb_instances_isolation",
+      "cmd": "ALL",
+      "roles": "{public}",
+      "qual": "(tenant_id = (current_setting('app.tenant_id'::text, true))::uuid)",
+      "with_check": null
+    },
+    {
+      "tablename": "tenant_users",
+      "policyname": "tenant_users_select_own",
+      "cmd": "SELECT",
+      "roles": "{public}",
+      "qual": "(auth.uid() = user_id)",
+      "with_check": null
+    },
+    {
+      "tablename": "tenant_users_legacy",
+      "policyname": "service_role_only_tenant_users",
+      "cmd": "ALL",
+      "roles": "{public}",
+      "qual": "(auth.role() = 'service_role'::text)",
+      "with_check": null
+    },
+    {
+      "tablename": "tenant_verticals",
+      "policyname": "tenant_verticals_select_own",
+      "cmd": "SELECT",
+      "roles": "{public}",
+      "qual": "(tenant_id = auth.uid())",
+      "with_check": null
+    },
+    {
+      "tablename": "tenants",
+      "policyname": "service_role_all_tenants",
+      "cmd": "ALL",
+      "roles": "{public}",
+      "qual": "(auth.role() = 'service_role'::text)",
+      "with_check": null
+    },
+    {
+      "tablename": "tenants",
+      "policyname": "tenant_read_own",
+      "cmd": "SELECT",
+      "roles": "{public}",
+      "qual": "((auth.role() = 'service_role'::text) OR (id = (current_setting('app.current_tenant_id'::text, true))::uuid))",
+      "with_check": null
+    },
+    {
+      "tablename": "user_profiles",
+      "policyname": "Users can insert own profile",
+      "cmd": "INSERT",
+      "roles": "{authenticated}",
+      "qual": null,
+      "with_check": "(auth.uid() = id)"
+    },
+    {
+      "tablename": "user_profiles",
+      "policyname": "Users can view all profiles",
+      "cmd": "SELECT",
+      "roles": "{authenticated}",
+      "qual": "true",
+      "with_check": null
+    },
+    {
+      "tablename": "user_profiles",
+      "policyname": "Users can update own profile",
+      "cmd": "UPDATE",
+      "roles": "{authenticated}",
+      "qual": "(auth.uid() = id)",
+      "with_check": "(auth.uid() = id)"
+    },
+    {
+      "tablename": "user_profiles",
+      "policyname": "profiles_update",
+      "cmd": "UPDATE",
+      "roles": "{public}",
+      "qual": "(auth.uid() = id)",
+      "with_check": null
+    },
+    {
+      "tablename": "whatsapp_devices",
+      "policyname": "service_role_only_whatsapp_devices",
+      "cmd": "ALL",
+      "roles": "{public}",
+      "qual": "(auth.role() = 'service_role'::text)",
+      "with_check": null
+    },
+    {
+      "tablename": "whatsmeow_app_state_mutation_macs",
+      "policyname": "service_role_only_mutation_macs",
+      "cmd": "ALL",
+      "roles": "{public}",
+      "qual": "(auth.role() = 'service_role'::text)",
+      "with_check": null
+    },
+    {
+      "tablename": "whatsmeow_app_state_sync_keys",
+      "policyname": "service_role_only_sync_keys",
+      "cmd": "ALL",
+      "roles": "{public}",
+      "qual": "(auth.role() = 'service_role'::text)",
+      "with_check": null
+    },
+    {
+      "tablename": "whatsmeow_app_state_version",
+      "policyname": "service_role_only_state_version",
+      "cmd": "ALL",
+      "roles": "{public}",
+      "qual": "(auth.role() = 'service_role'::text)",
+      "with_check": null
+    },
+    {
+      "tablename": "whatsmeow_chat_settings",
+      "policyname": "service_role_only_chat_settings",
+      "cmd": "ALL",
+      "roles": "{public}",
+      "qual": "(auth.role() = 'service_role'::text)",
+      "with_check": null
+    },
+    {
+      "tablename": "whatsmeow_contacts",
+      "policyname": "service_role_only_contacts",
+      "cmd": "ALL",
+      "roles": "{public}",
+      "qual": "(auth.role() = 'service_role'::text)",
+      "with_check": null
+    },
+    {
+      "tablename": "whatsmeow_device",
+      "policyname": "service_role_only_whatsmeow_device",
+      "cmd": "ALL",
+      "roles": "{public}",
+      "qual": "(auth.role() = 'service_role'::text)",
+      "with_check": null
+    },
+    {
+      "tablename": "whatsmeow_event_buffer",
+      "policyname": "service_role_only_event_buffer",
+      "cmd": "ALL",
+      "roles": "{public}",
+      "qual": "(auth.role() = 'service_role'::text)",
+      "with_check": null
+    },
+    {
+      "tablename": "whatsmeow_identity_keys",
+      "policyname": "service_role_only_identity_keys",
+      "cmd": "ALL",
+      "roles": "{public}",
+      "qual": "(auth.role() = 'service_role'::text)",
+      "with_check": null
+    },
+    {
+      "tablename": "whatsmeow_lid_map",
+      "policyname": "service_role_only_lid_map",
+      "cmd": "ALL",
+      "roles": "{public}",
+      "qual": "(auth.role() = 'service_role'::text)",
+      "with_check": null
+    },
+    {
+      "tablename": "whatsmeow_message_secrets",
+      "policyname": "service_role_only_message_secrets",
+      "cmd": "ALL",
+      "roles": "{public}",
+      "qual": "(auth.role() = 'service_role'::text)",
+      "with_check": null
+    },
+    {
+      "tablename": "whatsmeow_pre_keys",
+      "policyname": "service_role_only_pre_keys",
+      "cmd": "ALL",
+      "roles": "{public}",
+      "qual": "(auth.role() = 'service_role'::text)",
+      "with_check": null
+    },
+    {
+      "tablename": "whatsmeow_privacy_tokens",
+      "policyname": "service_role_only_privacy_tokens",
+      "cmd": "ALL",
+      "roles": "{public}",
+      "qual": "(auth.role() = 'service_role'::text)",
+      "with_check": null
+    },
+    {
+      "tablename": "whatsmeow_sender_keys",
+      "policyname": "service_role_only_sender_keys",
+      "cmd": "ALL",
+      "roles": "{public}",
+      "qual": "(auth.role() = 'service_role'::text)",
+      "with_check": null
+    },
+    {
+      "tablename": "whatsmeow_sessions",
+      "policyname": "service_role_only_whatsmeow_sessions",
+      "cmd": "ALL",
+      "roles": "{public}",
+      "qual": "(auth.role() = 'service_role'::text)",
+      "with_check": null
+    },
+    {
+      "tablename": "whatsmeow_version",
+      "policyname": "service_role_only_version",
+      "cmd": "ALL",
+      "roles": "{public}",
+      "qual": "(auth.role() = 'service_role'::text)",
+      "with_check": null
+    }
+  ],
+  "indexes": [
+    {
+      "schemaname": "public",
+      "tablename": "Conversation",
+      "indexname": "Conversation_pkey",
+      "indexdef": "CREATE UNIQUE INDEX \"Conversation_pkey\" ON public.\"Conversation\" USING btree (id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "Message",
+      "indexname": "Message_pkey",
+      "indexdef": "CREATE UNIQUE INDEX \"Message_pkey\" ON public.\"Message\" USING btree (id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "SearchRun",
+      "indexname": "SearchRun_pkey",
+      "indexdef": "CREATE UNIQUE INDEX \"SearchRun_pkey\" ON public.\"SearchRun\" USING btree (id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "User",
+      "indexname": "User_email_key",
+      "indexdef": "CREATE UNIQUE INDEX \"User_email_key\" ON public.\"User\" USING btree (email)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "User",
+      "indexname": "User_pkey",
+      "indexdef": "CREATE UNIQUE INDEX \"User_pkey\" ON public.\"User\" USING btree (id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "User",
+      "indexname": "User_supabaseId_key",
+      "indexdef": "CREATE UNIQUE INDEX \"User_supabaseId_key\" ON public.\"User\" USING btree (\"supabaseId\")"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "action_items",
+      "indexname": "action_items_pkey",
+      "indexdef": "CREATE UNIQUE INDEX action_items_pkey ON public.action_items USING btree (id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "action_items",
+      "indexname": "idx_action_items_deadline",
+      "indexdef": "CREATE INDEX idx_action_items_deadline ON public.action_items USING btree (deadline)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "action_items",
+      "indexname": "idx_action_items_owner",
+      "indexdef": "CREATE INDEX idx_action_items_owner ON public.action_items USING btree (owner_id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "action_items",
+      "indexname": "idx_action_items_status",
+      "indexdef": "CREATE INDEX idx_action_items_status ON public.action_items USING btree (status)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "agent_activity",
+      "indexname": "agent_activity_pkey",
+      "indexdef": "CREATE UNIQUE INDEX agent_activity_pkey ON public.agent_activity USING btree (id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "agent_activity",
+      "indexname": "idx_agent_activity_connection",
+      "indexdef": "CREATE INDEX idx_agent_activity_connection ON public.agent_activity USING btree (connection_id, created_at DESC)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "agent_activity",
+      "indexname": "idx_agent_activity_connection_id",
+      "indexdef": "CREATE INDEX idx_agent_activity_connection_id ON public.agent_activity USING btree (connection_id, created_at DESC)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "agent_activity",
+      "indexname": "idx_agent_activity_event_type",
+      "indexdef": "CREATE INDEX idx_agent_activity_event_type ON public.agent_activity USING btree (event_type)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "agent_activity",
+      "indexname": "idx_agent_activity_severity",
+      "indexdef": "CREATE INDEX idx_agent_activity_severity ON public.agent_activity USING btree (severity)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "agent_activity",
+      "indexname": "idx_agent_activity_type",
+      "indexdef": "CREATE INDEX idx_agent_activity_type ON public.agent_activity USING btree (event_type, created_at DESC)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "agent_commands",
+      "indexname": "agent_commands_pkey",
+      "indexdef": "CREATE UNIQUE INDEX agent_commands_pkey ON public.agent_commands USING btree (id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "agent_commands",
+      "indexname": "idx_agent_commands_agent_status",
+      "indexdef": "CREATE INDEX idx_agent_commands_agent_status ON public.agent_commands USING btree (agent_id, status)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "agent_commands",
+      "indexname": "idx_agent_commands_created_at",
+      "indexdef": "CREATE INDEX idx_agent_commands_created_at ON public.agent_commands USING btree (created_at DESC)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "agent_commands",
+      "indexname": "idx_agent_commands_issued_by",
+      "indexdef": "CREATE INDEX idx_agent_commands_issued_by ON public.agent_commands USING btree (issued_by)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "agent_connections",
+      "indexname": "agent_connections_pkey",
+      "indexdef": "CREATE UNIQUE INDEX agent_connections_pkey ON public.agent_connections USING btree (id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "agent_connections",
+      "indexname": "idx_agent_connections_agent_type",
+      "indexdef": "CREATE INDEX idx_agent_connections_agent_type ON public.agent_connections USING btree (agent_type)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "agent_connections",
+      "indexname": "idx_agent_connections_user",
+      "indexdef": "CREATE INDEX idx_agent_connections_user ON public.agent_connections USING btree (user_id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "agent_connections",
+      "indexname": "idx_agent_connections_user_id",
+      "indexdef": "CREATE INDEX idx_agent_connections_user_id ON public.agent_connections USING btree (user_id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "agent_conversations",
+      "indexname": "agent_conversations_pkey",
+      "indexdef": "CREATE UNIQUE INDEX agent_conversations_pkey ON public.agent_conversations USING btree (id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "agent_conversations",
+      "indexname": "idx_agent_conversations_agent_id",
+      "indexdef": "CREATE INDEX idx_agent_conversations_agent_id ON public.agent_conversations USING btree (agent_id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "agent_conversations",
+      "indexname": "idx_agent_conversations_status",
+      "indexdef": "CREATE INDEX idx_agent_conversations_status ON public.agent_conversations USING btree (status)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "agent_conversations",
+      "indexname": "idx_agent_conversations_user_id",
+      "indexdef": "CREATE INDEX idx_agent_conversations_user_id ON public.agent_conversations USING btree (user_id, updated_at DESC)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "agent_messages",
+      "indexname": "agent_messages_pkey",
+      "indexdef": "CREATE UNIQUE INDEX agent_messages_pkey ON public.agent_messages USING btree (id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "agent_messages",
+      "indexname": "idx_agent_messages_agent_id",
+      "indexdef": "CREATE INDEX idx_agent_messages_agent_id ON public.agent_messages USING btree (agent_id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "agent_messages",
+      "indexname": "idx_agent_messages_conversation_created",
+      "indexdef": "CREATE INDEX idx_agent_messages_conversation_created ON public.agent_messages USING btree (conversation_id, created_at)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "agent_runs",
+      "indexname": "agent_runs_pkey",
+      "indexdef": "CREATE UNIQUE INDEX agent_runs_pkey ON public.agent_runs USING btree (id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "agent_runs",
+      "indexname": "idx_agent_runs_created",
+      "indexdef": "CREATE INDEX idx_agent_runs_created ON public.agent_runs USING btree (created_at DESC)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "agent_status",
+      "indexname": "agent_status_pkey",
+      "indexdef": "CREATE UNIQUE INDEX agent_status_pkey ON public.agent_status USING btree (id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "agent_status",
+      "indexname": "idx_agent_status_connection",
+      "indexdef": "CREATE INDEX idx_agent_status_connection ON public.agent_status USING btree (connection_id, checked_at DESC)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "agent_status",
+      "indexname": "idx_agent_status_connection_id",
+      "indexdef": "CREATE INDEX idx_agent_status_connection_id ON public.agent_status USING btree (connection_id, checked_at DESC)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "agent_trajectory",
+      "indexname": "agent_trajectory_pkey",
+      "indexdef": "CREATE UNIQUE INDEX agent_trajectory_pkey ON public.agent_trajectory USING btree (id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "agent_trajectory",
+      "indexname": "idx_agent_trajectory_tenant_chat",
+      "indexdef": "CREATE INDEX idx_agent_trajectory_tenant_chat ON public.agent_trajectory USING btree (tenant_id, chat_jid, ts)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "analytics",
+      "indexname": "analytics_pkey",
+      "indexdef": "CREATE UNIQUE INDEX analytics_pkey ON public.analytics USING btree (id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "analytics",
+      "indexname": "idx_analytics_date",
+      "indexdef": "CREATE INDEX idx_analytics_date ON public.analytics USING btree (date DESC)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "analytics",
+      "indexname": "idx_analytics_tenant",
+      "indexdef": "CREATE INDEX idx_analytics_tenant ON public.analytics USING btree (tenant_id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "analytics",
+      "indexname": "unique_tenant_date",
+      "indexdef": "CREATE UNIQUE INDEX unique_tenant_date ON public.analytics USING btree (tenant_id, date)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "api_keys",
+      "indexname": "api_keys_key_hash_key",
+      "indexdef": "CREATE UNIQUE INDEX api_keys_key_hash_key ON public.api_keys USING btree (key_hash)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "api_keys",
+      "indexname": "api_keys_pkey",
+      "indexdef": "CREATE UNIQUE INDEX api_keys_pkey ON public.api_keys USING btree (id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "api_keys",
+      "indexname": "idx_api_keys_hash",
+      "indexdef": "CREATE INDEX idx_api_keys_hash ON public.api_keys USING btree (key_hash)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "api_keys",
+      "indexname": "idx_api_keys_tenant",
+      "indexdef": "CREATE INDEX idx_api_keys_tenant ON public.api_keys USING btree (tenant_id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "availability_overrides",
+      "indexname": "availability_overrides_pkey",
+      "indexdef": "CREATE UNIQUE INDEX availability_overrides_pkey ON public.availability_overrides USING btree (id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "availability_overrides",
+      "indexname": "idx_availability_overrides_date",
+      "indexdef": "CREATE INDEX idx_availability_overrides_date ON public.availability_overrides USING btree (date)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "availability_overrides",
+      "indexname": "idx_availability_overrides_tenant_id",
+      "indexdef": "CREATE INDEX idx_availability_overrides_tenant_id ON public.availability_overrides USING btree (tenant_id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "availability_overrides",
+      "indexname": "unique_availability_override",
+      "indexdef": "CREATE UNIQUE INDEX unique_availability_override ON public.availability_overrides USING btree (tenant_id, date)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "bjx_agent_runs",
+      "indexname": "bjx_agent_runs_pkey",
+      "indexdef": "CREATE UNIQUE INDEX bjx_agent_runs_pkey ON public.bjx_agent_runs USING btree (id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "bjx_agent_runs",
+      "indexname": "idx_bjx_agent_runs_agent",
+      "indexdef": "CREATE INDEX idx_bjx_agent_runs_agent ON public.bjx_agent_runs USING btree (agent_name)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "bjx_agent_runs",
+      "indexname": "idx_bjx_agent_runs_created",
+      "indexdef": "CREATE INDEX idx_bjx_agent_runs_created ON public.bjx_agent_runs USING btree (created_at DESC)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "bjx_agent_runs",
+      "indexname": "idx_bjx_agent_runs_status",
+      "indexdef": "CREATE INDEX idx_bjx_agent_runs_status ON public.bjx_agent_runs USING btree (status)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "bjx_content_drafts",
+      "indexname": "bjx_content_drafts_pkey",
+      "indexdef": "CREATE UNIQUE INDEX bjx_content_drafts_pkey ON public.bjx_content_drafts USING btree (id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "bjx_content_drafts",
+      "indexname": "idx_bjx_content_drafts_kind",
+      "indexdef": "CREATE INDEX idx_bjx_content_drafts_kind ON public.bjx_content_drafts USING btree (kind)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "bjx_content_drafts",
+      "indexname": "idx_bjx_content_drafts_pillar",
+      "indexdef": "CREATE INDEX idx_bjx_content_drafts_pillar ON public.bjx_content_drafts USING btree (pillar_id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "bjx_content_drafts",
+      "indexname": "idx_bjx_content_drafts_scheduled",
+      "indexdef": "CREATE INDEX idx_bjx_content_drafts_scheduled ON public.bjx_content_drafts USING btree (scheduled_for)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "bjx_content_drafts",
+      "indexname": "idx_bjx_content_drafts_status",
+      "indexdef": "CREATE INDEX idx_bjx_content_drafts_status ON public.bjx_content_drafts USING btree (status)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "bjx_listener_opportunities",
+      "indexname": "bjx_listener_opportunities_pkey",
+      "indexdef": "CREATE UNIQUE INDEX bjx_listener_opportunities_pkey ON public.bjx_listener_opportunities USING btree (id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "bjx_listener_opportunities",
+      "indexname": "bjx_listener_opportunities_source_source_url_key",
+      "indexdef": "CREATE UNIQUE INDEX bjx_listener_opportunities_source_source_url_key ON public.bjx_listener_opportunities USING btree (source, source_url)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "bjx_listener_opportunities",
+      "indexname": "idx_agent_listener_match",
+      "indexdef": "CREATE INDEX idx_agent_listener_match ON public.bjx_listener_opportunities USING btree (match_score DESC)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "bjx_listener_opportunities",
+      "indexname": "idx_agent_listener_status",
+      "indexdef": "CREATE INDEX idx_agent_listener_status ON public.bjx_listener_opportunities USING btree (status)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "bjx_prospect_scores",
+      "indexname": "bjx_prospect_scores_pkey",
+      "indexdef": "CREATE UNIQUE INDEX bjx_prospect_scores_pkey ON public.bjx_prospect_scores USING btree (id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "bjx_prospect_scores",
+      "indexname": "idx_bjx_prospect_scores_fit",
+      "indexdef": "CREATE INDEX idx_bjx_prospect_scores_fit ON public.bjx_prospect_scores USING btree (fit_score DESC)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "bjx_prospect_scores",
+      "indexname": "idx_bjx_prospect_scores_prospect",
+      "indexdef": "CREATE INDEX idx_bjx_prospect_scores_prospect ON public.bjx_prospect_scores USING btree (prospect_id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "bjx_prospects",
+      "indexname": "bjx_prospects_pkey",
+      "indexdef": "CREATE UNIQUE INDEX bjx_prospects_pkey ON public.bjx_prospects USING btree (id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "bjx_prospects",
+      "indexname": "bjx_prospects_source_source_id_key",
+      "indexdef": "CREATE UNIQUE INDEX bjx_prospects_source_source_id_key ON public.bjx_prospects USING btree (source, source_id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "bjx_prospects",
+      "indexname": "idx_bjx_prospects_area",
+      "indexdef": "CREATE INDEX idx_bjx_prospects_area ON public.bjx_prospects USING btree (area)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "bjx_prospects",
+      "indexname": "idx_bjx_prospects_created",
+      "indexdef": "CREATE INDEX idx_bjx_prospects_created ON public.bjx_prospects USING btree (created_at DESC)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "bjx_prospects",
+      "indexname": "idx_bjx_prospects_status",
+      "indexdef": "CREATE INDEX idx_bjx_prospects_status ON public.bjx_prospects USING btree (status)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "bjx_prospects",
+      "indexname": "idx_bjx_prospects_vertical",
+      "indexdef": "CREATE INDEX idx_bjx_prospects_vertical ON public.bjx_prospects USING btree (vertical)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "bjx_publish_log",
+      "indexname": "bjx_publish_log_pkey",
+      "indexdef": "CREATE UNIQUE INDEX bjx_publish_log_pkey ON public.bjx_publish_log USING btree (id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "bjx_publish_log",
+      "indexname": "idx_bjx_publish_log_draft",
+      "indexdef": "CREATE INDEX idx_bjx_publish_log_draft ON public.bjx_publish_log USING btree (content_draft_id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "bjx_publish_log",
+      "indexname": "idx_bjx_publish_log_status",
+      "indexdef": "CREATE INDEX idx_bjx_publish_log_status ON public.bjx_publish_log USING btree (status)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "bjx_review_queue",
+      "indexname": "bjx_review_queue_pkey",
+      "indexdef": "CREATE UNIQUE INDEX bjx_review_queue_pkey ON public.bjx_review_queue USING btree (id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "bjx_review_queue",
+      "indexname": "idx_bjx_review_queue_expires",
+      "indexdef": "CREATE INDEX idx_bjx_review_queue_expires ON public.bjx_review_queue USING btree (expires_at)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "bjx_review_queue",
+      "indexname": "idx_bjx_review_queue_priority",
+      "indexdef": "CREATE INDEX idx_bjx_review_queue_priority ON public.bjx_review_queue USING btree (priority DESC, created_at)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "bjx_review_queue",
+      "indexname": "idx_bjx_review_queue_status",
+      "indexdef": "CREATE INDEX idx_bjx_review_queue_status ON public.bjx_review_queue USING btree (status)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "bjx_touches",
+      "indexname": "bjx_touches_pkey",
+      "indexdef": "CREATE UNIQUE INDEX bjx_touches_pkey ON public.bjx_touches USING btree (id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "bjx_touches",
+      "indexname": "idx_bjx_touches_channel",
+      "indexdef": "CREATE INDEX idx_bjx_touches_channel ON public.bjx_touches USING btree (channel)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "bjx_touches",
+      "indexname": "idx_bjx_touches_prospect",
+      "indexdef": "CREATE INDEX idx_bjx_touches_prospect ON public.bjx_touches USING btree (prospect_id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "bjx_touches",
+      "indexname": "idx_bjx_touches_sent_at",
+      "indexdef": "CREATE INDEX idx_bjx_touches_sent_at ON public.bjx_touches USING btree (sent_at DESC)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "blocked_numbers",
+      "indexname": "blocked_numbers_pkey",
+      "indexdef": "CREATE UNIQUE INDEX blocked_numbers_pkey ON public.blocked_numbers USING btree (id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "blocked_numbers",
+      "indexname": "blocked_numbers_tenant_id_customer_jid_key",
+      "indexdef": "CREATE UNIQUE INDEX blocked_numbers_tenant_id_customer_jid_key ON public.blocked_numbers USING btree (tenant_id, customer_jid)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "blocked_numbers",
+      "indexname": "idx_blocked_active",
+      "indexdef": "CREATE INDEX idx_blocked_active ON public.blocked_numbers USING btree (is_active)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "blocked_numbers",
+      "indexname": "idx_blocked_expires",
+      "indexdef": "CREATE INDEX idx_blocked_expires ON public.blocked_numbers USING btree (expires_at) WHERE (expires_at IS NOT NULL)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "blocked_numbers",
+      "indexname": "idx_blocked_jid",
+      "indexdef": "CREATE INDEX idx_blocked_jid ON public.blocked_numbers USING btree (customer_jid) WHERE (is_active = true)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "blocked_numbers",
+      "indexname": "idx_blocked_tenant",
+      "indexdef": "CREATE INDEX idx_blocked_tenant ON public.blocked_numbers USING btree (tenant_id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "business_profiles",
+      "indexname": "business_profiles_pkey",
+      "indexdef": "CREATE UNIQUE INDEX business_profiles_pkey ON public.business_profiles USING btree (id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "business_profiles",
+      "indexname": "idx_business_profiles_tenant",
+      "indexdef": "CREATE INDEX idx_business_profiles_tenant ON public.business_profiles USING btree (tenant_id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "business_profiles",
+      "indexname": "unique_tenant_profile",
+      "indexdef": "CREATE UNIQUE INDEX unique_tenant_profile ON public.business_profiles USING btree (tenant_id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "calendar_events",
+      "indexname": "calendar_events_pkey",
+      "indexdef": "CREATE UNIQUE INDEX calendar_events_pkey ON public.calendar_events USING btree (id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "calendar_events",
+      "indexname": "calendar_events_user_id_google_event_id_key",
+      "indexdef": "CREATE UNIQUE INDEX calendar_events_user_id_google_event_id_key ON public.calendar_events USING btree (user_id, google_event_id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "calendar_events",
+      "indexname": "idx_calendar_events_start_time",
+      "indexdef": "CREATE INDEX idx_calendar_events_start_time ON public.calendar_events USING btree (start_time)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "calendar_events",
+      "indexname": "idx_calendar_events_user_id",
+      "indexdef": "CREATE INDEX idx_calendar_events_user_id ON public.calendar_events USING btree (user_id, start_time)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "call_availability",
+      "indexname": "call_availability_pkey",
+      "indexdef": "CREATE UNIQUE INDEX call_availability_pkey ON public.call_availability USING btree (id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "call_availability",
+      "indexname": "idx_call_availability_active",
+      "indexdef": "CREATE INDEX idx_call_availability_active ON public.call_availability USING btree (is_active)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "call_availability",
+      "indexname": "idx_call_availability_day",
+      "indexdef": "CREATE INDEX idx_call_availability_day ON public.call_availability USING btree (day_of_week)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "call_availability",
+      "indexname": "idx_call_availability_tenant_id",
+      "indexdef": "CREATE INDEX idx_call_availability_tenant_id ON public.call_availability USING btree (tenant_id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "call_availability",
+      "indexname": "unique_availability_slot",
+      "indexdef": "CREATE UNIQUE INDEX unique_availability_slot ON public.call_availability USING btree (tenant_id, day_of_week, start_time)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "call_bookings",
+      "indexname": "call_bookings_pkey",
+      "indexdef": "CREATE UNIQUE INDEX call_bookings_pkey ON public.call_bookings USING btree (id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "call_bookings",
+      "indexname": "idx_call_bookings_customer_jid",
+      "indexdef": "CREATE INDEX idx_call_bookings_customer_jid ON public.call_bookings USING btree (customer_jid)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "call_bookings",
+      "indexname": "idx_call_bookings_scheduled_date",
+      "indexdef": "CREATE INDEX idx_call_bookings_scheduled_date ON public.call_bookings USING btree (scheduled_date)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "call_bookings",
+      "indexname": "idx_call_bookings_scheduled_time",
+      "indexdef": "CREATE INDEX idx_call_bookings_scheduled_time ON public.call_bookings USING btree (scheduled_time)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "call_bookings",
+      "indexname": "idx_call_bookings_status",
+      "indexdef": "CREATE INDEX idx_call_bookings_status ON public.call_bookings USING btree (status)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "call_bookings",
+      "indexname": "idx_call_bookings_tenant_date",
+      "indexdef": "CREATE INDEX idx_call_bookings_tenant_date ON public.call_bookings USING btree (tenant_id, scheduled_date)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "call_bookings",
+      "indexname": "idx_call_bookings_tenant_id",
+      "indexdef": "CREATE INDEX idx_call_bookings_tenant_id ON public.call_bookings USING btree (tenant_id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "call_logs",
+      "indexname": "call_logs_pkey",
+      "indexdef": "CREATE UNIQUE INDEX call_logs_pkey ON public.call_logs USING btree (id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "call_settings",
+      "indexname": "call_settings_pkey",
+      "indexdef": "CREATE UNIQUE INDEX call_settings_pkey ON public.call_settings USING btree (id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "call_settings",
+      "indexname": "call_settings_tenant_id_key",
+      "indexdef": "CREATE UNIQUE INDEX call_settings_tenant_id_key ON public.call_settings USING btree (tenant_id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "call_settings",
+      "indexname": "idx_call_settings_tenant_id",
+      "indexdef": "CREATE INDEX idx_call_settings_tenant_id ON public.call_settings USING btree (tenant_id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "call_types",
+      "indexname": "call_types_pkey",
+      "indexdef": "CREATE UNIQUE INDEX call_types_pkey ON public.call_types USING btree (id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "call_types",
+      "indexname": "idx_call_types_active",
+      "indexdef": "CREATE INDEX idx_call_types_active ON public.call_types USING btree (is_active)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "call_types",
+      "indexname": "idx_call_types_tenant_id",
+      "indexdef": "CREATE INDEX idx_call_types_tenant_id ON public.call_types USING btree (tenant_id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "call_types",
+      "indexname": "unique_call_type_name",
+      "indexdef": "CREATE UNIQUE INDEX unique_call_type_name ON public.call_types USING btree (tenant_id, name)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "campaign_analytics",
+      "indexname": "campaign_analytics_campaign_id_date_key",
+      "indexdef": "CREATE UNIQUE INDEX campaign_analytics_campaign_id_date_key ON public.campaign_analytics USING btree (campaign_id, date)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "campaign_analytics",
+      "indexname": "campaign_analytics_pkey",
+      "indexdef": "CREATE UNIQUE INDEX campaign_analytics_pkey ON public.campaign_analytics USING btree (id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "campaign_analytics",
+      "indexname": "idx_campaign_analytics_date",
+      "indexdef": "CREATE INDEX idx_campaign_analytics_date ON public.campaign_analytics USING btree (campaign_id, date DESC)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "campaign_templates",
+      "indexname": "campaign_templates_campaign_id_sequence_step_key",
+      "indexdef": "CREATE UNIQUE INDEX campaign_templates_campaign_id_sequence_step_key ON public.campaign_templates USING btree (campaign_id, sequence_step)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "campaign_templates",
+      "indexname": "campaign_templates_pkey",
+      "indexdef": "CREATE UNIQUE INDEX campaign_templates_pkey ON public.campaign_templates USING btree (id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "campaigns",
+      "indexname": "campaigns_pkey",
+      "indexdef": "CREATE UNIQUE INDEX campaigns_pkey ON public.campaigns USING btree (id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "campaigns",
+      "indexname": "idx_campaigns_scheduled_start",
+      "indexdef": "CREATE INDEX idx_campaigns_scheduled_start ON public.campaigns USING btree (scheduled_start_at) WHERE (status = 'scheduled'::text)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "campaigns",
+      "indexname": "idx_campaigns_tenant_status",
+      "indexdef": "CREATE INDEX idx_campaigns_tenant_status ON public.campaigns USING btree (tenant_id, status) WHERE (status = ANY (ARRAY['scheduled'::text, 'running'::text]))"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "checklist_state",
+      "indexname": "checklist_state_pkey",
+      "indexdef": "CREATE UNIQUE INDEX checklist_state_pkey ON public.checklist_state USING btree (id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "client_configs",
+      "indexname": "client_configs_pkey",
+      "indexdef": "CREATE UNIQUE INDEX client_configs_pkey ON public.client_configs USING btree (id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "client_configs",
+      "indexname": "client_configs_tenant_id_key",
+      "indexdef": "CREATE UNIQUE INDEX client_configs_tenant_id_key ON public.client_configs USING btree (tenant_id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "client_configs",
+      "indexname": "idx_client_configs_tenant_id",
+      "indexdef": "CREATE INDEX idx_client_configs_tenant_id ON public.client_configs USING btree (tenant_id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "command_center_state",
+      "indexname": "command_center_state_pkey",
+      "indexdef": "CREATE UNIQUE INDEX command_center_state_pkey ON public.command_center_state USING btree (id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "command_center_state",
+      "indexname": "command_center_state_state_key_key",
+      "indexdef": "CREATE UNIQUE INDEX command_center_state_state_key_key ON public.command_center_state USING btree (state_key)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "contact_segment_members",
+      "indexname": "contact_segment_members_pkey",
+      "indexdef": "CREATE UNIQUE INDEX contact_segment_members_pkey ON public.contact_segment_members USING btree (id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "contact_segment_members",
+      "indexname": "contact_segment_members_segment_id_contact_id_key",
+      "indexdef": "CREATE UNIQUE INDEX contact_segment_members_segment_id_contact_id_key ON public.contact_segment_members USING btree (segment_id, contact_id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "contact_segment_members",
+      "indexname": "idx_segment_members_contact",
+      "indexdef": "CREATE INDEX idx_segment_members_contact ON public.contact_segment_members USING btree (contact_id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "contact_segment_members",
+      "indexname": "idx_segment_members_segment",
+      "indexdef": "CREATE INDEX idx_segment_members_segment ON public.contact_segment_members USING btree (segment_id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "contact_segments",
+      "indexname": "contact_segments_pkey",
+      "indexdef": "CREATE UNIQUE INDEX contact_segments_pkey ON public.contact_segments USING btree (id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "contact_segments",
+      "indexname": "contact_segments_tenant_id_name_key",
+      "indexdef": "CREATE UNIQUE INDEX contact_segments_tenant_id_name_key ON public.contact_segments USING btree (tenant_id, name)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "contact_segments",
+      "indexname": "idx_contact_segments_tenant",
+      "indexdef": "CREATE INDEX idx_contact_segments_tenant ON public.contact_segments USING btree (tenant_id, segment_type)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "contacts",
+      "indexname": "contacts_pkey",
+      "indexdef": "CREATE UNIQUE INDEX contacts_pkey ON public.contacts USING btree (id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "contacts",
+      "indexname": "contacts_tenant_jid_unique",
+      "indexdef": "CREATE UNIQUE INDEX contacts_tenant_jid_unique ON public.contacts USING btree (tenant_id, jid)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "contacts",
+      "indexname": "idx_contacts_campaign_config",
+      "indexdef": "CREATE INDEX idx_contacts_campaign_config ON public.contacts USING btree (campaign_config_id) WHERE (campaign_config_id IS NOT NULL)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "contacts",
+      "indexname": "idx_contacts_do_not_contact",
+      "indexdef": "CREATE INDEX idx_contacts_do_not_contact ON public.contacts USING btree (tenant_id, do_not_contact) WHERE (do_not_contact = true)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "contacts",
+      "indexname": "idx_contacts_industry_type",
+      "indexdef": "CREATE INDEX idx_contacts_industry_type ON public.contacts USING btree (tenant_id, industry_type) WHERE (industry_type IS NOT NULL)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "contacts",
+      "indexname": "idx_contacts_interest_score",
+      "indexdef": "CREATE INDEX idx_contacts_interest_score ON public.contacts USING btree (tenant_id, interest_score DESC) WHERE (interest_score > 0)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "contacts",
+      "indexname": "idx_contacts_outreach",
+      "indexdef": "CREATE INDEX idx_contacts_outreach ON public.contacts USING btree (tenant_id, last_outreach_at) WHERE (last_outreach_at IS NOT NULL)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "contacts",
+      "indexname": "idx_contacts_tenant_jid",
+      "indexdef": "CREATE INDEX idx_contacts_tenant_jid ON public.contacts USING btree (tenant_id, jid)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "contacts",
+      "indexname": "idx_contacts_tenant_last_msg",
+      "indexdef": "CREATE INDEX idx_contacts_tenant_last_msg ON public.contacts USING btree (tenant_id, last_message_at DESC)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "contacts",
+      "indexname": "idx_contacts_tenant_status",
+      "indexdef": "CREATE INDEX idx_contacts_tenant_status ON public.contacts USING btree (tenant_id, status)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "contacts",
+      "indexname": "idx_contacts_tenant_tag",
+      "indexdef": "CREATE INDEX idx_contacts_tenant_tag ON public.contacts USING btree (tenant_id, tag)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "conversation_logs",
+      "indexname": "conversation_logs_pkey",
+      "indexdef": "CREATE UNIQUE INDEX conversation_logs_pkey ON public.conversation_logs USING btree (id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "conversation_logs",
+      "indexname": "idx_conversation_logs_chat",
+      "indexdef": "CREATE INDEX idx_conversation_logs_chat ON public.conversation_logs USING btree (chat_jid)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "conversation_logs",
+      "indexname": "idx_conversation_logs_created_at",
+      "indexdef": "CREATE INDEX idx_conversation_logs_created_at ON public.conversation_logs USING btree (created_at DESC)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "conversation_logs",
+      "indexname": "idx_conversation_logs_event_type",
+      "indexdef": "CREATE INDEX idx_conversation_logs_event_type ON public.conversation_logs USING btree (event_type)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "conversation_logs",
+      "indexname": "idx_conversation_logs_failures",
+      "indexdef": "CREATE INDEX idx_conversation_logs_failures ON public.conversation_logs USING btree (tenant_id, success) WHERE (success = false)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "conversation_logs",
+      "indexname": "idx_conversation_logs_tenant",
+      "indexdef": "CREATE INDEX idx_conversation_logs_tenant ON public.conversation_logs USING btree (tenant_id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "conversations",
+      "indexname": "conversations_pkey",
+      "indexdef": "CREATE UNIQUE INDEX conversations_pkey ON public.conversations USING btree (id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "conversations",
+      "indexname": "idx_conversations_chat_jid",
+      "indexdef": "CREATE INDEX idx_conversations_chat_jid ON public.conversations USING btree (chat_jid)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "conversations",
+      "indexname": "idx_conversations_contact_name",
+      "indexdef": "CREATE INDEX idx_conversations_contact_name ON public.conversations USING btree (contact_name)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "conversations",
+      "indexname": "idx_conversations_customer",
+      "indexdef": "CREATE INDEX idx_conversations_customer ON public.conversations USING btree (customer_jid)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "conversations",
+      "indexname": "idx_conversations_tenant",
+      "indexdef": "CREATE INDEX idx_conversations_tenant ON public.conversations USING btree (tenant_id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "conversations",
+      "indexname": "idx_conversations_tenant_chat",
+      "indexdef": "CREATE INDEX idx_conversations_tenant_chat ON public.conversations USING btree (tenant_id, chat_jid)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "conversations",
+      "indexname": "idx_conversations_timestamp",
+      "indexdef": "CREATE INDEX idx_conversations_timestamp ON public.conversations USING btree (\"timestamp\" DESC)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "conversion_events",
+      "indexname": "conversion_events_pkey",
+      "indexdef": "CREATE UNIQUE INDEX conversion_events_pkey ON public.conversion_events USING btree (id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "conversion_events",
+      "indexname": "idx_conversion_events_date",
+      "indexdef": "CREATE INDEX idx_conversion_events_date ON public.conversion_events USING btree (converted_at)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "conversion_events",
+      "indexname": "idx_conversion_events_tenant",
+      "indexdef": "CREATE INDEX idx_conversion_events_tenant ON public.conversion_events USING btree (tenant_id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "conversion_events",
+      "indexname": "idx_conversion_events_type",
+      "indexdef": "CREATE INDEX idx_conversion_events_type ON public.conversion_events USING btree (event_type)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "customer_activity",
+      "indexname": "customer_activity_pkey",
+      "indexdef": "CREATE UNIQUE INDEX customer_activity_pkey ON public.customer_activity USING btree (id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "customer_activity",
+      "indexname": "customer_activity_tenant_id_customer_jid_key",
+      "indexdef": "CREATE UNIQUE INDEX customer_activity_tenant_id_customer_jid_key ON public.customer_activity USING btree (tenant_id, customer_jid)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "customer_activity",
+      "indexname": "idx_customer_activity_last_message",
+      "indexdef": "CREATE INDEX idx_customer_activity_last_message ON public.customer_activity USING btree (last_message_at)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "customer_activity",
+      "indexname": "idx_customer_activity_tenant",
+      "indexdef": "CREATE INDEX idx_customer_activity_tenant ON public.customer_activity USING btree (tenant_id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "customer_memory",
+      "indexname": "customer_memory_pkey",
+      "indexdef": "CREATE UNIQUE INDEX customer_memory_pkey ON public.customer_memory USING btree (id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "customer_memory",
+      "indexname": "customer_memory_tenant_id_chat_jid_key",
+      "indexdef": "CREATE UNIQUE INDEX customer_memory_tenant_id_chat_jid_key ON public.customer_memory USING btree (tenant_id, chat_jid)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "customer_memory",
+      "indexname": "idx_customer_memory_tenant_chat",
+      "indexdef": "CREATE INDEX idx_customer_memory_tenant_chat ON public.customer_memory USING btree (tenant_id, chat_jid)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "daily_digests",
+      "indexname": "daily_digests_pkey",
+      "indexdef": "CREATE UNIQUE INDEX daily_digests_pkey ON public.daily_digests USING btree (id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "daily_digests",
+      "indexname": "daily_digests_user_id_digest_date_type_key",
+      "indexdef": "CREATE UNIQUE INDEX daily_digests_user_id_digest_date_type_key ON public.daily_digests USING btree (user_id, digest_date, type)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "dashboard_views",
+      "indexname": "dashboard_views_pkey",
+      "indexdef": "CREATE UNIQUE INDEX dashboard_views_pkey ON public.dashboard_views USING btree (id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "dashboard_views",
+      "indexname": "idx_dashboard_views_created_by",
+      "indexdef": "CREATE INDEX idx_dashboard_views_created_by ON public.dashboard_views USING btree (created_by)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "dashboard_views",
+      "indexname": "idx_dashboard_views_dept_visibility",
+      "indexdef": "CREATE INDEX idx_dashboard_views_dept_visibility ON public.dashboard_views USING btree (department_id, visibility)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "dashboard_views",
+      "indexname": "idx_dashboard_views_pinned",
+      "indexdef": "CREATE INDEX idx_dashboard_views_pinned ON public.dashboard_views USING btree (pinned) WHERE (pinned = true)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "decisions",
+      "indexname": "decisions_pkey",
+      "indexdef": "CREATE UNIQUE INDEX decisions_pkey ON public.decisions USING btree (id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "departments",
+      "indexname": "departments_name_key",
+      "indexdef": "CREATE UNIQUE INDEX departments_name_key ON public.departments USING btree (name)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "departments",
+      "indexname": "departments_pkey",
+      "indexdef": "CREATE UNIQUE INDEX departments_pkey ON public.departments USING btree (id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "departments",
+      "indexname": "idx_departments_parent",
+      "indexdef": "CREATE INDEX idx_departments_parent ON public.departments USING btree (parent_id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "device_sessions",
+      "indexname": "device_sessions_device_id_key",
+      "indexdef": "CREATE UNIQUE INDEX device_sessions_device_id_key ON public.device_sessions USING btree (device_id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "device_sessions",
+      "indexname": "device_sessions_pkey",
+      "indexdef": "CREATE UNIQUE INDEX device_sessions_pkey ON public.device_sessions USING btree (id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "device_sessions",
+      "indexname": "idx_device_sessions_device_id",
+      "indexdef": "CREATE INDEX idx_device_sessions_device_id ON public.device_sessions USING btree (device_id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "device_sessions",
+      "indexname": "idx_device_sessions_status",
+      "indexdef": "CREATE INDEX idx_device_sessions_status ON public.device_sessions USING btree (status)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "device_sessions",
+      "indexname": "idx_device_sessions_tenant_id",
+      "indexdef": "CREATE INDEX idx_device_sessions_tenant_id ON public.device_sessions USING btree (tenant_id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "drive_documents",
+      "indexname": "drive_documents_google_file_id_key",
+      "indexdef": "CREATE UNIQUE INDEX drive_documents_google_file_id_key ON public.drive_documents USING btree (google_file_id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "drive_documents",
+      "indexname": "drive_documents_pkey",
+      "indexdef": "CREATE UNIQUE INDEX drive_documents_pkey ON public.drive_documents USING btree (id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "drive_documents",
+      "indexname": "idx_drive_documents_mime_type",
+      "indexdef": "CREATE INDEX idx_drive_documents_mime_type ON public.drive_documents USING btree (mime_type)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "drive_documents",
+      "indexname": "idx_drive_documents_owner_user_id",
+      "indexdef": "CREATE INDEX idx_drive_documents_owner_user_id ON public.drive_documents USING btree (owner_user_id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "email_summaries",
+      "indexname": "email_summaries_gmail_message_id_key",
+      "indexdef": "CREATE UNIQUE INDEX email_summaries_gmail_message_id_key ON public.email_summaries USING btree (gmail_message_id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "email_summaries",
+      "indexname": "email_summaries_pkey",
+      "indexdef": "CREATE UNIQUE INDEX email_summaries_pkey ON public.email_summaries USING btree (id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "email_summaries",
+      "indexname": "idx_email_summaries_ai_urgency",
+      "indexdef": "CREATE INDEX idx_email_summaries_ai_urgency ON public.email_summaries USING btree (ai_urgency)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "email_summaries",
+      "indexname": "idx_email_summaries_thread_id",
+      "indexdef": "CREATE INDEX idx_email_summaries_thread_id ON public.email_summaries USING btree (gmail_thread_id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "email_summaries",
+      "indexname": "idx_email_summaries_user_id",
+      "indexdef": "CREATE INDEX idx_email_summaries_user_id ON public.email_summaries USING btree (user_id, received_at DESC)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "email_templates",
+      "indexname": "email_templates_pkey",
+      "indexdef": "CREATE UNIQUE INDEX email_templates_pkey ON public.email_templates USING btree (id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "email_templates",
+      "indexname": "email_templates_tenant_type_unique",
+      "indexdef": "CREATE UNIQUE INDEX email_templates_tenant_type_unique ON public.email_templates USING btree (tenant_id, template_type)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "email_templates",
+      "indexname": "idx_email_templates_tenant_type",
+      "indexdef": "CREATE INDEX idx_email_templates_tenant_type ON public.email_templates USING btree (tenant_id, template_type) WHERE (is_active = true)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "email_verification_tokens",
+      "indexname": "email_verification_tokens_pkey",
+      "indexdef": "CREATE UNIQUE INDEX email_verification_tokens_pkey ON public.email_verification_tokens USING btree (id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "email_verification_tokens",
+      "indexname": "email_verification_tokens_token_key",
+      "indexdef": "CREATE UNIQUE INDEX email_verification_tokens_token_key ON public.email_verification_tokens USING btree (token)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "email_verification_tokens",
+      "indexname": "idx_email_tokens_expires",
+      "indexdef": "CREATE INDEX idx_email_tokens_expires ON public.email_verification_tokens USING btree (expires_at)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "email_verification_tokens",
+      "indexname": "idx_email_tokens_tenant",
+      "indexdef": "CREATE INDEX idx_email_tokens_tenant ON public.email_verification_tokens USING btree (tenant_id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "email_verification_tokens",
+      "indexname": "idx_email_tokens_token",
+      "indexdef": "CREATE INDEX idx_email_tokens_token ON public.email_verification_tokens USING btree (token)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "escalation_actions",
+      "indexname": "escalation_actions_pkey",
+      "indexdef": "CREATE UNIQUE INDEX escalation_actions_pkey ON public.escalation_actions USING btree (id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "escalation_actions",
+      "indexname": "idx_escalation_actions_created",
+      "indexdef": "CREATE INDEX idx_escalation_actions_created ON public.escalation_actions USING btree (created_at DESC)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "escalation_actions",
+      "indexname": "idx_escalation_actions_escalation",
+      "indexdef": "CREATE INDEX idx_escalation_actions_escalation ON public.escalation_actions USING btree (escalation_id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "escalation_actions",
+      "indexname": "idx_escalation_actions_type",
+      "indexdef": "CREATE INDEX idx_escalation_actions_type ON public.escalation_actions USING btree (action_type)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "escalation_notifications",
+      "indexname": "escalation_notifications_pkey",
+      "indexdef": "CREATE UNIQUE INDEX escalation_notifications_pkey ON public.escalation_notifications USING btree (id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "escalation_notifications",
+      "indexname": "idx_escalation_notifications_created",
+      "indexdef": "CREATE INDEX idx_escalation_notifications_created ON public.escalation_notifications USING btree (created_at DESC)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "escalation_notifications",
+      "indexname": "idx_escalation_notifications_escalation",
+      "indexdef": "CREATE INDEX idx_escalation_notifications_escalation ON public.escalation_notifications USING btree (escalation_id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "escalation_notifications",
+      "indexname": "idx_escalation_notifications_status",
+      "indexdef": "CREATE INDEX idx_escalation_notifications_status ON public.escalation_notifications USING btree (status)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "escalation_notifications",
+      "indexname": "idx_escalation_notifications_tenant",
+      "indexdef": "CREATE INDEX idx_escalation_notifications_tenant ON public.escalation_notifications USING btree (tenant_id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "escalations",
+      "indexname": "escalations_pkey",
+      "indexdef": "CREATE UNIQUE INDEX escalations_pkey ON public.escalations USING btree (id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "escalations",
+      "indexname": "idx_escalations_agent_status",
+      "indexdef": "CREATE INDEX idx_escalations_agent_status ON public.escalations USING btree (assigned_agent_id, status) WHERE (assigned_agent_id IS NOT NULL)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "escalations",
+      "indexname": "idx_escalations_assigned_agent",
+      "indexdef": "CREATE INDEX idx_escalations_assigned_agent ON public.escalations USING btree (assigned_agent_id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "escalations",
+      "indexname": "idx_escalations_chat",
+      "indexdef": "CREATE INDEX idx_escalations_chat ON public.escalations USING btree (chat_jid)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "escalations",
+      "indexname": "idx_escalations_priority",
+      "indexdef": "CREATE INDEX idx_escalations_priority ON public.escalations USING btree (priority, created_at)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "escalations",
+      "indexname": "idx_escalations_reason_type",
+      "indexdef": "CREATE INDEX idx_escalations_reason_type ON public.escalations USING btree (reason_type)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "escalations",
+      "indexname": "idx_escalations_sla",
+      "indexdef": "CREATE INDEX idx_escalations_sla ON public.escalations USING btree (sla_deadline) WHERE (status = ANY (ARRAY['pending'::text, 'claimed'::text]))"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "escalations",
+      "indexname": "idx_escalations_status",
+      "indexdef": "CREATE INDEX idx_escalations_status ON public.escalations USING btree (status)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "escalations",
+      "indexname": "idx_escalations_status_sla",
+      "indexdef": "CREATE INDEX idx_escalations_status_sla ON public.escalations USING btree (status, sla_deadline) WHERE ((status = ANY (ARRAY['pending'::text, 'in_progress'::text])) AND (sla_deadline IS NOT NULL))"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "escalations",
+      "indexname": "idx_escalations_tenant",
+      "indexdef": "CREATE INDEX idx_escalations_tenant ON public.escalations USING btree (tenant_id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "escalations",
+      "indexname": "idx_escalations_tenant_chat",
+      "indexdef": "CREATE INDEX idx_escalations_tenant_chat ON public.escalations USING btree (tenant_id, chat_jid)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "escalations",
+      "indexname": "idx_escalations_tenant_status",
+      "indexdef": "CREATE INDEX idx_escalations_tenant_status ON public.escalations USING btree (tenant_id, status)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "escalations",
+      "indexname": "idx_escalations_timeout_candidates",
+      "indexdef": "CREATE INDEX idx_escalations_timeout_candidates ON public.escalations USING btree (tenant_id, status, escalation_triggered_at) WHERE (status = ANY (ARRAY['pending'::text, 'in_progress'::text]))"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "escalations",
+      "indexname": "idx_escalations_updated_at",
+      "indexdef": "CREATE INDEX idx_escalations_updated_at ON public.escalations USING btree (updated_at DESC)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "escalations",
+      "indexname": "idx_escalations_warning_candidates",
+      "indexdef": "CREATE INDEX idx_escalations_warning_candidates ON public.escalations USING btree (tenant_id, status, warning_sent, escalation_triggered_at) WHERE ((status = ANY (ARRAY['pending'::text, 'in_progress'::text])) AND (warning_sent = false))"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "extracted_items",
+      "indexname": "extracted_items_pkey",
+      "indexdef": "CREATE UNIQUE INDEX extracted_items_pkey ON public.extracted_items USING btree (id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "extracted_items",
+      "indexname": "idx_extracted_items_status",
+      "indexdef": "CREATE INDEX idx_extracted_items_status ON public.extracted_items USING btree (status)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "extracted_items",
+      "indexname": "idx_extracted_items_type",
+      "indexdef": "CREATE INDEX idx_extracted_items_type ON public.extracted_items USING btree (item_type)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "feedback",
+      "indexname": "feedback_pkey",
+      "indexdef": "CREATE UNIQUE INDEX feedback_pkey ON public.feedback USING btree (id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "feedback",
+      "indexname": "idx_feedback_created",
+      "indexdef": "CREATE INDEX idx_feedback_created ON public.feedback USING btree (created_at DESC)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "feedback",
+      "indexname": "idx_feedback_customer",
+      "indexdef": "CREATE INDEX idx_feedback_customer ON public.feedback USING btree (customer_jid)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "feedback",
+      "indexname": "idx_feedback_follow_up",
+      "indexdef": "CREATE INDEX idx_feedback_follow_up ON public.feedback USING btree (follow_up_needed) WHERE (follow_up_needed = true)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "feedback",
+      "indexname": "idx_feedback_rating",
+      "indexdef": "CREATE INDEX idx_feedback_rating ON public.feedback USING btree (rating)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "feedback",
+      "indexname": "idx_feedback_sentiment",
+      "indexdef": "CREATE INDEX idx_feedback_sentiment ON public.feedback USING btree (sentiment)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "feedback",
+      "indexname": "idx_feedback_tenant",
+      "indexdef": "CREATE INDEX idx_feedback_tenant ON public.feedback USING btree (tenant_id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "follow_ups",
+      "indexname": "follow_ups_pkey",
+      "indexdef": "CREATE UNIQUE INDEX follow_ups_pkey ON public.follow_ups USING btree (id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "follow_ups",
+      "indexname": "idx_follow_ups_chat",
+      "indexdef": "CREATE INDEX idx_follow_ups_chat ON public.follow_ups USING btree (chat_jid, status)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "follow_ups",
+      "indexname": "idx_follow_ups_pending",
+      "indexdef": "CREATE INDEX idx_follow_ups_pending ON public.follow_ups USING btree (status, scheduled_at) WHERE (status = 'pending'::text)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "follow_ups",
+      "indexname": "idx_follow_ups_scheduled",
+      "indexdef": "CREATE INDEX idx_follow_ups_scheduled ON public.follow_ups USING btree (scheduled_at) WHERE (status = 'pending'::text)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "follow_ups",
+      "indexname": "idx_follow_ups_status",
+      "indexdef": "CREATE INDEX idx_follow_ups_status ON public.follow_ups USING btree (status, scheduled_at)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "follow_ups",
+      "indexname": "idx_follow_ups_tenant",
+      "indexdef": "CREATE INDEX idx_follow_ups_tenant ON public.follow_ups USING btree (tenant_id, status)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "follow_ups",
+      "indexname": "idx_follow_ups_unique_pending",
+      "indexdef": "CREATE UNIQUE INDEX idx_follow_ups_unique_pending ON public.follow_ups USING btree (tenant_id, chat_jid) WHERE (status = 'pending'::text)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "google_sheets_sync",
+      "indexname": "google_sheets_sync_pkey",
+      "indexdef": "CREATE UNIQUE INDEX google_sheets_sync_pkey ON public.google_sheets_sync USING btree (id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "google_sheets_sync",
+      "indexname": "idx_sheets_sync_enabled",
+      "indexdef": "CREATE INDEX idx_sheets_sync_enabled ON public.google_sheets_sync USING btree (sync_enabled)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "google_sheets_sync",
+      "indexname": "idx_sheets_sync_tenant",
+      "indexdef": "CREATE INDEX idx_sheets_sync_tenant ON public.google_sheets_sync USING btree (tenant_id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "google_sheets_sync",
+      "indexname": "unique_tenant_spreadsheet",
+      "indexdef": "CREATE UNIQUE INDEX unique_tenant_spreadsheet ON public.google_sheets_sync USING btree (tenant_id, spreadsheet_id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "handover_agents",
+      "indexname": "handover_agents_pkey",
+      "indexdef": "CREATE UNIQUE INDEX handover_agents_pkey ON public.handover_agents USING btree (id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "handover_agents",
+      "indexname": "idx_handover_agents_active",
+      "indexdef": "CREATE INDEX idx_handover_agents_active ON public.handover_agents USING btree (tenant_id, is_active)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "handover_agents",
+      "indexname": "idx_handover_agents_is_active",
+      "indexdef": "CREATE INDEX idx_handover_agents_is_active ON public.handover_agents USING btree (is_active)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "handover_agents",
+      "indexname": "idx_handover_agents_priority",
+      "indexdef": "CREATE INDEX idx_handover_agents_priority ON public.handover_agents USING btree (priority_level)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "handover_agents",
+      "indexname": "idx_handover_agents_tenant_id",
+      "indexdef": "CREATE INDEX idx_handover_agents_tenant_id ON public.handover_agents USING btree (tenant_id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "help_tickets",
+      "indexname": "help_tickets_pkey",
+      "indexdef": "CREATE UNIQUE INDEX help_tickets_pkey ON public.help_tickets USING btree (id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "help_tickets",
+      "indexname": "idx_help_tickets_group_jid",
+      "indexdef": "CREATE INDEX idx_help_tickets_group_jid ON public.help_tickets USING btree (group_jid, created_at DESC)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "help_tickets",
+      "indexname": "idx_help_tickets_tenant_status",
+      "indexdef": "CREATE INDEX idx_help_tickets_tenant_status ON public.help_tickets USING btree (tenant_id, status, created_at DESC)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "help_tickets",
+      "indexname": "uq_help_ticket_number",
+      "indexdef": "CREATE UNIQUE INDEX uq_help_ticket_number ON public.help_tickets USING btree (tenant_id, ticket_number)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "holiday_exceptions",
+      "indexname": "holiday_exceptions_pkey",
+      "indexdef": "CREATE UNIQUE INDEX holiday_exceptions_pkey ON public.holiday_exceptions USING btree (id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "holiday_exceptions",
+      "indexname": "idx_holiday_exceptions_date",
+      "indexdef": "CREATE INDEX idx_holiday_exceptions_date ON public.holiday_exceptions USING btree (date)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "holiday_exceptions",
+      "indexname": "idx_holiday_exceptions_tenant_id",
+      "indexdef": "CREATE INDEX idx_holiday_exceptions_tenant_id ON public.holiday_exceptions USING btree (tenant_id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "holiday_exceptions",
+      "indexname": "unique_holiday_per_tenant",
+      "indexdef": "CREATE UNIQUE INDEX unique_holiday_per_tenant ON public.holiday_exceptions USING btree (tenant_id, date)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "industry_kb_templates",
+      "indexname": "industry_kb_templates_pkey",
+      "indexdef": "CREATE UNIQUE INDEX industry_kb_templates_pkey ON public.industry_kb_templates USING btree (id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "industry_kb_templates",
+      "indexname": "industry_kb_templates_vertical_sub_vertical_language_key",
+      "indexdef": "CREATE UNIQUE INDEX industry_kb_templates_vertical_sub_vertical_language_key ON public.industry_kb_templates USING btree (vertical, sub_vertical, language)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "jid_mappings",
+      "indexname": "idx_jid_mappings_phone_jid",
+      "indexdef": "CREATE INDEX idx_jid_mappings_phone_jid ON public.jid_mappings USING btree (tenant_id, phone_jid)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "jid_mappings",
+      "indexname": "idx_jid_mappings_tenant_lid",
+      "indexdef": "CREATE INDEX idx_jid_mappings_tenant_lid ON public.jid_mappings USING btree (tenant_id, lid_jid)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "jid_mappings",
+      "indexname": "jid_mappings_pkey",
+      "indexdef": "CREATE UNIQUE INDEX jid_mappings_pkey ON public.jid_mappings USING btree (id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "jid_mappings",
+      "indexname": "uq_jid_mappings_tenant_lid",
+      "indexdef": "CREATE UNIQUE INDEX uq_jid_mappings_tenant_lid ON public.jid_mappings USING btree (tenant_id, lid_jid)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "knowledge_base",
+      "indexname": "idx_knowledge_base_tenant_id",
+      "indexdef": "CREATE INDEX idx_knowledge_base_tenant_id ON public.knowledge_base USING btree (tenant_id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "knowledge_base",
+      "indexname": "idx_knowledge_content_fts",
+      "indexdef": "CREATE INDEX idx_knowledge_content_fts ON public.knowledge_base USING gin (to_tsvector('english'::regconfig, content))"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "knowledge_base",
+      "indexname": "idx_knowledge_created",
+      "indexdef": "CREATE INDEX idx_knowledge_created ON public.knowledge_base USING btree (created_at DESC)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "knowledge_base",
+      "indexname": "idx_knowledge_keywords",
+      "indexdef": "CREATE INDEX idx_knowledge_keywords ON public.knowledge_base USING gin (keywords)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "knowledge_base",
+      "indexname": "idx_knowledge_status",
+      "indexdef": "CREATE INDEX idx_knowledge_status ON public.knowledge_base USING btree (processing_status)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "knowledge_base",
+      "indexname": "idx_knowledge_topics",
+      "indexdef": "CREATE INDEX idx_knowledge_topics ON public.knowledge_base USING gin (topics)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "knowledge_base",
+      "indexname": "knowledge_base_pkey",
+      "indexdef": "CREATE UNIQUE INDEX knowledge_base_pkey ON public.knowledge_base USING btree (id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "knowledge_bases",
+      "indexname": "idx_knowledge_active",
+      "indexdef": "CREATE INDEX idx_knowledge_active ON public.knowledge_bases USING btree (is_active)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "knowledge_bases",
+      "indexname": "idx_knowledge_bases_tenant",
+      "indexdef": "CREATE INDEX idx_knowledge_bases_tenant ON public.knowledge_bases USING btree (tenant_id, created_at DESC)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "knowledge_bases",
+      "indexname": "idx_knowledge_category",
+      "indexdef": "CREATE INDEX idx_knowledge_category ON public.knowledge_bases USING btree (category)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "knowledge_bases",
+      "indexname": "idx_knowledge_tenant",
+      "indexdef": "CREATE INDEX idx_knowledge_tenant ON public.knowledge_bases USING btree (tenant_id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "knowledge_bases",
+      "indexname": "knowledge_bases_pkey",
+      "indexdef": "CREATE UNIQUE INDEX knowledge_bases_pkey ON public.knowledge_bases USING btree (id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "knowledge_chunks",
+      "indexname": "idx_knowledge_chunks_embedding",
+      "indexdef": "CREATE INDEX idx_knowledge_chunks_embedding ON public.knowledge_chunks USING ivfflat (embedding vector_cosine_ops) WITH (lists='100')"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "knowledge_chunks",
+      "indexname": "idx_knowledge_chunks_kb",
+      "indexdef": "CREATE INDEX idx_knowledge_chunks_kb ON public.knowledge_chunks USING btree (knowledge_base_id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "knowledge_chunks",
+      "indexname": "idx_knowledge_chunks_tenant",
+      "indexdef": "CREATE INDEX idx_knowledge_chunks_tenant ON public.knowledge_chunks USING btree (tenant_id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "knowledge_chunks",
+      "indexname": "knowledge_chunks_knowledge_base_id_chunk_index_key",
+      "indexdef": "CREATE UNIQUE INDEX knowledge_chunks_knowledge_base_id_chunk_index_key ON public.knowledge_chunks USING btree (knowledge_base_id, chunk_index)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "knowledge_chunks",
+      "indexname": "knowledge_chunks_pkey",
+      "indexdef": "CREATE UNIQUE INDEX knowledge_chunks_pkey ON public.knowledge_chunks USING btree (id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "knowledge_doc_versions",
+      "indexname": "idx_kdv_document_id",
+      "indexdef": "CREATE INDEX idx_kdv_document_id ON public.knowledge_doc_versions USING btree (document_id, version_number DESC)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "knowledge_doc_versions",
+      "indexname": "idx_kdv_tenant_id",
+      "indexdef": "CREATE INDEX idx_kdv_tenant_id ON public.knowledge_doc_versions USING btree (tenant_id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "knowledge_doc_versions",
+      "indexname": "knowledge_doc_versions_pkey",
+      "indexdef": "CREATE UNIQUE INDEX knowledge_doc_versions_pkey ON public.knowledge_doc_versions USING btree (id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "knowledge_documents",
+      "indexname": "idx_knowledge_docs_status",
+      "indexdef": "CREATE INDEX idx_knowledge_docs_status ON public.knowledge_documents USING btree (status)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "knowledge_documents",
+      "indexname": "idx_knowledge_docs_tenant_id",
+      "indexdef": "CREATE INDEX idx_knowledge_docs_tenant_id ON public.knowledge_documents USING btree (tenant_id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "knowledge_documents",
+      "indexname": "idx_knowledge_docs_uploaded_at",
+      "indexdef": "CREATE INDEX idx_knowledge_docs_uploaded_at ON public.knowledge_documents USING btree (tenant_id, uploaded_at DESC)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "knowledge_documents",
+      "indexname": "knowledge_documents_pkey",
+      "indexdef": "CREATE UNIQUE INDEX knowledge_documents_pkey ON public.knowledge_documents USING btree (id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "knowledge_sync_jobs",
+      "indexname": "idx_knowledge_sync_jobs_kb",
+      "indexdef": "CREATE INDEX idx_knowledge_sync_jobs_kb ON public.knowledge_sync_jobs USING btree (knowledge_base_id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "knowledge_sync_jobs",
+      "indexname": "idx_knowledge_sync_jobs_status",
+      "indexdef": "CREATE INDEX idx_knowledge_sync_jobs_status ON public.knowledge_sync_jobs USING btree (status)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "knowledge_sync_jobs",
+      "indexname": "idx_knowledge_sync_jobs_tenant",
+      "indexdef": "CREATE INDEX idx_knowledge_sync_jobs_tenant ON public.knowledge_sync_jobs USING btree (tenant_id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "knowledge_sync_jobs",
+      "indexname": "knowledge_sync_jobs_pkey",
+      "indexdef": "CREATE UNIQUE INDEX knowledge_sync_jobs_pkey ON public.knowledge_sync_jobs USING btree (id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "lead_followups",
+      "indexname": "idx_lead_followups_next",
+      "indexdef": "CREATE INDEX idx_lead_followups_next ON public.lead_followups USING btree (next_followup_at)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "lead_followups",
+      "indexname": "idx_lead_followups_tenant",
+      "indexdef": "CREATE INDEX idx_lead_followups_tenant ON public.lead_followups USING btree (tenant_id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "lead_followups",
+      "indexname": "lead_followups_pkey",
+      "indexdef": "CREATE UNIQUE INDEX lead_followups_pkey ON public.lead_followups USING btree (id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "leads",
+      "indexname": "idx_leads_created_at",
+      "indexdef": "CREATE INDEX idx_leads_created_at ON public.leads USING btree (created_at DESC)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "leads",
+      "indexname": "idx_leads_email",
+      "indexdef": "CREATE INDEX idx_leads_email ON public.leads USING btree (email)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "leads",
+      "indexname": "idx_leads_lead_score",
+      "indexdef": "CREATE INDEX idx_leads_lead_score ON public.leads USING btree (lead_score DESC)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "leads",
+      "indexname": "idx_leads_source",
+      "indexdef": "CREATE INDEX idx_leads_source ON public.leads USING btree (source)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "leads",
+      "indexname": "idx_leads_status",
+      "indexdef": "CREATE INDEX idx_leads_status ON public.leads USING btree (status)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "leads",
+      "indexname": "idx_leads_updated_at",
+      "indexdef": "CREATE INDEX idx_leads_updated_at ON public.leads USING btree (updated_at DESC)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "leads",
+      "indexname": "leads_pkey",
+      "indexdef": "CREATE UNIQUE INDEX leads_pkey ON public.leads USING btree (id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "link_clicks",
+      "indexname": "link_clicks_pkey",
+      "indexdef": "CREATE UNIQUE INDEX link_clicks_pkey ON public.link_clicks USING btree (id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "media_library",
+      "indexname": "idx_media_tenant",
+      "indexdef": "CREATE INDEX idx_media_tenant ON public.media_library USING btree (tenant_id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "media_library",
+      "indexname": "media_library_pkey",
+      "indexdef": "CREATE UNIQUE INDEX media_library_pkey ON public.media_library USING btree (id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "meeting_blockers",
+      "indexname": "idx_meeting_blockers_status",
+      "indexdef": "CREATE INDEX idx_meeting_blockers_status ON public.meeting_blockers USING btree (status)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "meeting_blockers",
+      "indexname": "meeting_blockers_pkey",
+      "indexdef": "CREATE UNIQUE INDEX meeting_blockers_pkey ON public.meeting_blockers USING btree (id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "meeting_decisions",
+      "indexname": "meeting_decisions_pkey",
+      "indexdef": "CREATE UNIQUE INDEX meeting_decisions_pkey ON public.meeting_decisions USING btree (id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "meeting_followups",
+      "indexname": "meeting_followups_pkey",
+      "indexdef": "CREATE UNIQUE INDEX meeting_followups_pkey ON public.meeting_followups USING btree (id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "meeting_minutes",
+      "indexname": "meeting_minutes_pkey",
+      "indexdef": "CREATE UNIQUE INDEX meeting_minutes_pkey ON public.meeting_minutes USING btree (id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "meetings",
+      "indexname": "idx_meetings_date",
+      "indexdef": "CREATE INDEX idx_meetings_date ON public.meetings USING btree (meeting_date)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "meetings",
+      "indexname": "meetings_pkey",
+      "indexdef": "CREATE UNIQUE INDEX meetings_pkey ON public.meetings USING btree (id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "message_templates",
+      "indexname": "idx_message_templates_active",
+      "indexdef": "CREATE INDEX idx_message_templates_active ON public.message_templates USING btree (is_active)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "message_templates",
+      "indexname": "idx_message_templates_tenant",
+      "indexdef": "CREATE INDEX idx_message_templates_tenant ON public.message_templates USING btree (tenant_id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "message_templates",
+      "indexname": "idx_templates_trigger_mode",
+      "indexdef": "CREATE INDEX idx_templates_trigger_mode ON public.message_templates USING btree (tenant_id, trigger_mode)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "message_templates",
+      "indexname": "message_templates_pkey",
+      "indexdef": "CREATE UNIQUE INDEX message_templates_pkey ON public.message_templates USING btree (id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "message_templates",
+      "indexname": "unique_template_per_tenant_source",
+      "indexdef": "CREATE UNIQUE INDEX unique_template_per_tenant_source ON public.message_templates USING btree (tenant_id, template_name, source)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "messages",
+      "indexname": "idx_messages_chat_jid",
+      "indexdef": "CREATE INDEX idx_messages_chat_jid ON public.messages USING btree (chat_jid)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "messages",
+      "indexname": "idx_messages_conversation_key",
+      "indexdef": "CREATE INDEX idx_messages_conversation_key ON public.messages USING btree (conversation_key) WHERE (conversation_key IS NOT NULL)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "messages",
+      "indexname": "idx_messages_customer_name",
+      "indexdef": "CREATE INDEX idx_messages_customer_name ON public.messages USING btree (customer_name)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "messages",
+      "indexname": "idx_messages_customer_phone",
+      "indexdef": "CREATE INDEX idx_messages_customer_phone ON public.messages USING btree (customer_phone)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "messages",
+      "indexname": "idx_messages_device_jid",
+      "indexdef": "CREATE INDEX idx_messages_device_jid ON public.messages USING btree (device_jid) WHERE (device_jid IS NOT NULL)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "messages",
+      "indexname": "idx_messages_system_event",
+      "indexdef": "CREATE INDEX idx_messages_system_event ON public.messages USING btree (tenant_id, is_system_event) WHERE (is_system_event = false)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "messages",
+      "indexname": "idx_messages_tenant_chat",
+      "indexdef": "CREATE INDEX idx_messages_tenant_chat ON public.messages USING btree (tenant_id, chat_jid)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "messages",
+      "indexname": "idx_messages_tenant_id",
+      "indexdef": "CREATE INDEX idx_messages_tenant_id ON public.messages USING btree (tenant_id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "messages",
+      "indexname": "idx_messages_tenant_id_created",
+      "indexdef": "CREATE INDEX idx_messages_tenant_id_created ON public.messages USING btree (tenant_id, created_at DESC)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "messages",
+      "indexname": "idx_messages_timestamp",
+      "indexdef": "CREATE INDEX idx_messages_timestamp ON public.messages USING btree (\"timestamp\" DESC)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "messages",
+      "indexname": "messages_pkey",
+      "indexdef": "CREATE UNIQUE INDEX messages_pkey ON public.messages USING btree (id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "notification_groups",
+      "indexname": "idx_notification_groups_group_type",
+      "indexdef": "CREATE INDEX idx_notification_groups_group_type ON public.notification_groups USING btree (group_type)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "notification_groups",
+      "indexname": "idx_notification_groups_tenant_id",
+      "indexdef": "CREATE INDEX idx_notification_groups_tenant_id ON public.notification_groups USING btree (tenant_id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "notification_groups",
+      "indexname": "notification_groups_pkey",
+      "indexdef": "CREATE UNIQUE INDEX notification_groups_pkey ON public.notification_groups USING btree (id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "notification_groups",
+      "indexname": "notification_groups_tenant_id_group_type_key",
+      "indexdef": "CREATE UNIQUE INDEX notification_groups_tenant_id_group_type_key ON public.notification_groups USING btree (tenant_id, group_type)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "notification_logs",
+      "indexname": "idx_notification_logs_customer_jid",
+      "indexdef": "CREATE INDEX idx_notification_logs_customer_jid ON public.notification_logs USING btree (customer_jid)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "notification_logs",
+      "indexname": "idx_notification_logs_sent_at",
+      "indexdef": "CREATE INDEX idx_notification_logs_sent_at ON public.notification_logs USING btree (sent_at DESC)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "notification_logs",
+      "indexname": "idx_notification_logs_tenant_id",
+      "indexdef": "CREATE INDEX idx_notification_logs_tenant_id ON public.notification_logs USING btree (tenant_id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "notification_logs",
+      "indexname": "notification_logs_pkey",
+      "indexdef": "CREATE UNIQUE INDEX notification_logs_pkey ON public.notification_logs USING btree (id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "notifications",
+      "indexname": "idx_notifications_user_id",
+      "indexdef": "CREATE INDEX idx_notifications_user_id ON public.notifications USING btree (user_id, read, created_at DESC)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "notifications",
+      "indexname": "notifications_pkey",
+      "indexdef": "CREATE UNIQUE INDEX notifications_pkey ON public.notifications USING btree (id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "onboarding_progress",
+      "indexname": "idx_onboarding_progress_current_step",
+      "indexdef": "CREATE INDEX idx_onboarding_progress_current_step ON public.onboarding_progress USING btree (current_step)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "onboarding_progress",
+      "indexname": "onboarding_progress_pkey",
+      "indexdef": "CREATE UNIQUE INDEX onboarding_progress_pkey ON public.onboarding_progress USING btree (tenant_id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "onboarding_sessions",
+      "indexname": "idx_onboarding_created",
+      "indexdef": "CREATE INDEX idx_onboarding_created ON public.onboarding_sessions USING btree (created_at DESC)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "onboarding_sessions",
+      "indexname": "idx_onboarding_email",
+      "indexdef": "CREATE INDEX idx_onboarding_email ON public.onboarding_sessions USING btree (email)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "onboarding_sessions",
+      "indexname": "idx_onboarding_expires",
+      "indexdef": "CREATE INDEX idx_onboarding_expires ON public.onboarding_sessions USING btree (expires_at)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "onboarding_sessions",
+      "indexname": "idx_onboarding_status",
+      "indexdef": "CREATE INDEX idx_onboarding_status ON public.onboarding_sessions USING btree (status)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "onboarding_sessions",
+      "indexname": "idx_onboarding_tenant",
+      "indexdef": "CREATE INDEX idx_onboarding_tenant ON public.onboarding_sessions USING btree (tenant_id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "onboarding_sessions",
+      "indexname": "idx_onboarding_token",
+      "indexdef": "CREATE INDEX idx_onboarding_token ON public.onboarding_sessions USING btree (token) WHERE (status <> 'completed'::text)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "onboarding_sessions",
+      "indexname": "onboarding_sessions_pkey",
+      "indexdef": "CREATE UNIQUE INDEX onboarding_sessions_pkey ON public.onboarding_sessions USING btree (token)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "outbound_queue",
+      "indexname": "idx_outbound_queue_campaign",
+      "indexdef": "CREATE INDEX idx_outbound_queue_campaign ON public.outbound_queue USING btree (campaign_id, status)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "outbound_queue",
+      "indexname": "idx_outbound_queue_contact",
+      "indexdef": "CREATE INDEX idx_outbound_queue_contact ON public.outbound_queue USING btree (contact_id, campaign_id) WHERE (replied_at IS NOT NULL)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "outbound_queue",
+      "indexname": "idx_outbound_queue_daily_check",
+      "indexdef": "CREATE INDEX idx_outbound_queue_daily_check ON public.outbound_queue USING btree (tenant_id, sent_at)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "outbound_queue",
+      "indexname": "idx_outbound_queue_pending",
+      "indexdef": "CREATE INDEX idx_outbound_queue_pending ON public.outbound_queue USING btree (tenant_id, status, scheduled_at) WHERE (status = ANY (ARRAY['pending'::text, 'scheduled'::text]))"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "outbound_queue",
+      "indexname": "outbound_queue_pkey",
+      "indexdef": "CREATE UNIQUE INDEX outbound_queue_pkey ON public.outbound_queue USING btree (id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "outreach_campaign_configs",
+      "indexname": "idx_occ_active",
+      "indexdef": "CREATE INDEX idx_occ_active ON public.outreach_campaign_configs USING btree (tenant_id, is_active) WHERE (is_active = true)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "outreach_campaign_configs",
+      "indexname": "idx_occ_industry",
+      "indexdef": "CREATE INDEX idx_occ_industry ON public.outreach_campaign_configs USING btree (industry_type)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "outreach_campaign_configs",
+      "indexname": "idx_occ_tenant",
+      "indexdef": "CREATE INDEX idx_occ_tenant ON public.outreach_campaign_configs USING btree (tenant_id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "outreach_campaign_configs",
+      "indexname": "outreach_campaign_configs_pkey",
+      "indexdef": "CREATE UNIQUE INDEX outreach_campaign_configs_pkey ON public.outreach_campaign_configs USING btree (id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "outreach_campaign_configs",
+      "indexname": "outreach_campaign_configs_tenant_id_campaign_id_key",
+      "indexdef": "CREATE UNIQUE INDEX outreach_campaign_configs_tenant_id_campaign_id_key ON public.outreach_campaign_configs USING btree (tenant_id, campaign_id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "outreach_logs",
+      "indexname": "idx_outreach_logs_tenant",
+      "indexdef": "CREATE INDEX idx_outreach_logs_tenant ON public.outreach_logs USING btree (tenant_id, log_type, created_at DESC)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "outreach_logs",
+      "indexname": "outreach_logs_pkey",
+      "indexdef": "CREATE UNIQUE INDEX outreach_logs_pkey ON public.outreach_logs USING btree (id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "owner_commands",
+      "indexname": "idx_owner_commands_created",
+      "indexdef": "CREATE INDEX idx_owner_commands_created ON public.owner_commands USING btree (created_at DESC)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "owner_commands",
+      "indexname": "idx_owner_commands_owner",
+      "indexdef": "CREATE INDEX idx_owner_commands_owner ON public.owner_commands USING btree (owner_jid)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "owner_commands",
+      "indexname": "idx_owner_commands_tenant",
+      "indexdef": "CREATE INDEX idx_owner_commands_tenant ON public.owner_commands USING btree (tenant_id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "owner_commands",
+      "indexname": "idx_owner_commands_type",
+      "indexdef": "CREATE INDEX idx_owner_commands_type ON public.owner_commands USING btree (command_type)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "owner_commands",
+      "indexname": "owner_commands_pkey",
+      "indexdef": "CREATE UNIQUE INDEX owner_commands_pkey ON public.owner_commands USING btree (id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "owner_devices",
+      "indexname": "owner_devices_device_jid_key",
+      "indexdef": "CREATE UNIQUE INDEX owner_devices_device_jid_key ON public.owner_devices USING btree (device_jid)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "owner_devices",
+      "indexname": "owner_devices_pkey",
+      "indexdef": "CREATE UNIQUE INDEX owner_devices_pkey ON public.owner_devices USING btree (id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "owner_notifications",
+      "indexname": "idx_owner_notifications_chat",
+      "indexdef": "CREATE INDEX idx_owner_notifications_chat ON public.owner_notifications USING btree (chat_jid)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "owner_notifications",
+      "indexname": "idx_owner_notifications_sent_at",
+      "indexdef": "CREATE INDEX idx_owner_notifications_sent_at ON public.owner_notifications USING btree (sent_at DESC)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "owner_notifications",
+      "indexname": "idx_owner_notifications_tenant",
+      "indexdef": "CREATE INDEX idx_owner_notifications_tenant ON public.owner_notifications USING btree (tenant_id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "owner_notifications",
+      "indexname": "owner_notifications_pkey",
+      "indexdef": "CREATE UNIQUE INDEX owner_notifications_pkey ON public.owner_notifications USING btree (id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "payment_transactions",
+      "indexname": "idx_payments_status",
+      "indexdef": "CREATE INDEX idx_payments_status ON public.payment_transactions USING btree (status)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "payment_transactions",
+      "indexname": "idx_payments_stripe_intent",
+      "indexdef": "CREATE INDEX idx_payments_stripe_intent ON public.payment_transactions USING btree (stripe_payment_intent_id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "payment_transactions",
+      "indexname": "idx_payments_tenant",
+      "indexdef": "CREATE INDEX idx_payments_tenant ON public.payment_transactions USING btree (tenant_id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "payment_transactions",
+      "indexname": "payment_transactions_pkey",
+      "indexdef": "CREATE UNIQUE INDEX payment_transactions_pkey ON public.payment_transactions USING btree (id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "personas",
+      "indexname": "idx_personas_active",
+      "indexdef": "CREATE INDEX idx_personas_active ON public.personas USING btree (is_active) WHERE (is_active = true)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "personas",
+      "indexname": "idx_personas_key",
+      "indexdef": "CREATE INDEX idx_personas_key ON public.personas USING btree (persona_key)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "personas",
+      "indexname": "idx_personas_tenant",
+      "indexdef": "CREATE INDEX idx_personas_tenant ON public.personas USING btree (tenant_id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "personas",
+      "indexname": "personas_persona_key_key",
+      "indexdef": "CREATE UNIQUE INDEX personas_persona_key_key ON public.personas USING btree (persona_key)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "personas",
+      "indexname": "personas_pkey",
+      "indexdef": "CREATE UNIQUE INDEX personas_pkey ON public.personas USING btree (id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "projects",
+      "indexname": "idx_projects_department_id",
+      "indexdef": "CREATE INDEX idx_projects_department_id ON public.projects USING btree (department_id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "projects",
+      "indexname": "idx_projects_owner_id",
+      "indexdef": "CREATE INDEX idx_projects_owner_id ON public.projects USING btree (owner_id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "projects",
+      "indexname": "idx_projects_status",
+      "indexdef": "CREATE INDEX idx_projects_status ON public.projects USING btree (status)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "projects",
+      "indexname": "projects_pkey",
+      "indexdef": "CREATE UNIQUE INDEX projects_pkey ON public.projects USING btree (id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "proposals",
+      "indexname": "idx_proposals_status",
+      "indexdef": "CREATE INDEX idx_proposals_status ON public.proposals USING btree (status)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "proposals",
+      "indexname": "proposals_pkey",
+      "indexdef": "CREATE UNIQUE INDEX proposals_pkey ON public.proposals USING btree (id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "raw_events",
+      "indexname": "idx_raw_events_processed",
+      "indexdef": "CREATE INDEX idx_raw_events_processed ON public.raw_events USING btree (processed)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "raw_events",
+      "indexname": "idx_raw_events_source",
+      "indexdef": "CREATE INDEX idx_raw_events_source ON public.raw_events USING btree (source)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "raw_events",
+      "indexname": "raw_events_pkey",
+      "indexdef": "CREATE UNIQUE INDEX raw_events_pkey ON public.raw_events USING btree (id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "scheduled_messages",
+      "indexname": "idx_scheduled_messages_active_nextrun",
+      "indexdef": "CREATE INDEX idx_scheduled_messages_active_nextrun ON public.scheduled_messages USING btree (is_active, next_run_at) WHERE (is_active = true)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "scheduled_messages",
+      "indexname": "idx_scheduled_messages_next_run",
+      "indexdef": "CREATE INDEX idx_scheduled_messages_next_run ON public.scheduled_messages USING btree (next_run_at) WHERE (is_active = true)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "scheduled_messages",
+      "indexname": "idx_scheduled_messages_status_time",
+      "indexdef": "CREATE INDEX idx_scheduled_messages_status_time ON public.scheduled_messages USING btree (status, scheduled_time) WHERE (status = 'pending'::text)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "scheduled_messages",
+      "indexname": "idx_scheduled_messages_tenant",
+      "indexdef": "CREATE INDEX idx_scheduled_messages_tenant ON public.scheduled_messages USING btree (tenant_id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "scheduled_messages",
+      "indexname": "scheduled_messages_pkey",
+      "indexdef": "CREATE UNIQUE INDEX scheduled_messages_pkey ON public.scheduled_messages USING btree (id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "shared_briefs",
+      "indexname": "idx_shared_briefs_created_at",
+      "indexdef": "CREATE INDEX idx_shared_briefs_created_at ON public.shared_briefs USING btree (created_at DESC)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "shared_briefs",
+      "indexname": "shared_briefs_pkey",
+      "indexdef": "CREATE UNIQUE INDEX shared_briefs_pkey ON public.shared_briefs USING btree (token)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "sheet_data",
+      "indexname": "idx_sheet_data_sheet_id",
+      "indexdef": "CREATE INDEX idx_sheet_data_sheet_id ON public.sheet_data USING btree (google_sheet_id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "sheet_data",
+      "indexname": "sheet_data_google_sheet_id_sheet_name_range_key",
+      "indexdef": "CREATE UNIQUE INDEX sheet_data_google_sheet_id_sheet_name_range_key ON public.sheet_data USING btree (google_sheet_id, sheet_name, range)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "sheet_data",
+      "indexname": "sheet_data_pkey",
+      "indexdef": "CREATE UNIQUE INDEX sheet_data_pkey ON public.sheet_data USING btree (id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "short_links",
+      "indexname": "short_links_pkey",
+      "indexdef": "CREATE UNIQUE INDEX short_links_pkey ON public.short_links USING btree (id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "short_links",
+      "indexname": "short_links_slug_key",
+      "indexdef": "CREATE UNIQUE INDEX short_links_slug_key ON public.short_links USING btree (slug)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "silence_rules",
+      "indexname": "silence_rules_pkey",
+      "indexdef": "CREATE UNIQUE INDEX silence_rules_pkey ON public.silence_rules USING btree (tenant_id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "subscription_plans",
+      "indexname": "subscription_plans_pkey",
+      "indexdef": "CREATE UNIQUE INDEX subscription_plans_pkey ON public.subscription_plans USING btree (id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "subscription_plans",
+      "indexname": "subscription_plans_plan_code_key",
+      "indexdef": "CREATE UNIQUE INDEX subscription_plans_plan_code_key ON public.subscription_plans USING btree (plan_code)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "tasks",
+      "indexname": "idx_tasks_assigned_to",
+      "indexdef": "CREATE INDEX idx_tasks_assigned_to ON public.tasks USING btree (assigned_to)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "tasks",
+      "indexname": "idx_tasks_project_id",
+      "indexdef": "CREATE INDEX idx_tasks_project_id ON public.tasks USING btree (project_id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "tasks",
+      "indexname": "idx_tasks_status",
+      "indexdef": "CREATE INDEX idx_tasks_status ON public.tasks USING btree (status)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "tasks",
+      "indexname": "tasks_pkey",
+      "indexdef": "CREATE UNIQUE INDEX tasks_pkey ON public.tasks USING btree (id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "team_activity",
+      "indexname": "team_activity_pkey",
+      "indexdef": "CREATE UNIQUE INDEX team_activity_pkey ON public.team_activity USING btree (id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "team_members",
+      "indexname": "team_members_email_key",
+      "indexdef": "CREATE UNIQUE INDEX team_members_email_key ON public.team_members USING btree (email)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "team_members",
+      "indexname": "team_members_pkey",
+      "indexdef": "CREATE UNIQUE INDEX team_members_pkey ON public.team_members USING btree (id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "tenant_action_policy",
+      "indexname": "tenant_action_policy_pkey",
+      "indexdef": "CREATE UNIQUE INDEX tenant_action_policy_pkey ON public.tenant_action_policy USING btree (tenant_id, tool_name)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "tenant_calendars",
+      "indexname": "idx_tenant_calendars_tenant_id",
+      "indexdef": "CREATE INDEX idx_tenant_calendars_tenant_id ON public.tenant_calendars USING btree (tenant_id) WHERE (is_active = true)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "tenant_calendars",
+      "indexname": "tenant_calendars_pkey",
+      "indexdef": "CREATE UNIQUE INDEX tenant_calendars_pkey ON public.tenant_calendars USING btree (id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "tenant_calendars",
+      "indexname": "tenant_calendars_tenant_id_provider_key",
+      "indexdef": "CREATE UNIQUE INDEX tenant_calendars_tenant_id_provider_key ON public.tenant_calendars USING btree (tenant_id, provider)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "tenant_email_config",
+      "indexname": "idx_tenant_email_config_tenant_id",
+      "indexdef": "CREATE INDEX idx_tenant_email_config_tenant_id ON public.tenant_email_config USING btree (tenant_id) WHERE (is_active = true)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "tenant_email_config",
+      "indexname": "tenant_email_config_pkey",
+      "indexdef": "CREATE UNIQUE INDEX tenant_email_config_pkey ON public.tenant_email_config USING btree (id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "tenant_email_config",
+      "indexname": "tenant_email_config_tenant_id_key",
+      "indexdef": "CREATE UNIQUE INDEX tenant_email_config_tenant_id_key ON public.tenant_email_config USING btree (tenant_id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "tenant_kb_template_instances",
+      "indexname": "idx_tenant_kb_instances_tenant",
+      "indexdef": "CREATE INDEX idx_tenant_kb_instances_tenant ON public.tenant_kb_template_instances USING btree (tenant_id, is_complete)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "tenant_kb_template_instances",
+      "indexname": "tenant_kb_template_instances_pkey",
+      "indexdef": "CREATE UNIQUE INDEX tenant_kb_template_instances_pkey ON public.tenant_kb_template_instances USING btree (id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "tenant_kb_template_instances",
+      "indexname": "tenant_kb_template_instances_tenant_id_template_id_key",
+      "indexdef": "CREATE UNIQUE INDEX tenant_kb_template_instances_tenant_id_template_id_key ON public.tenant_kb_template_instances USING btree (tenant_id, template_id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "tenant_setup_progress",
+      "indexname": "idx_setup_progress_tenant",
+      "indexdef": "CREATE INDEX idx_setup_progress_tenant ON public.tenant_setup_progress USING btree (tenant_id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "tenant_setup_progress",
+      "indexname": "tenant_setup_progress_pkey",
+      "indexdef": "CREATE UNIQUE INDEX tenant_setup_progress_pkey ON public.tenant_setup_progress USING btree (id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "tenant_setup_progress",
+      "indexname": "tenant_setup_progress_tenant_id_key",
+      "indexdef": "CREATE UNIQUE INDEX tenant_setup_progress_tenant_id_key ON public.tenant_setup_progress USING btree (tenant_id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "tenant_users",
+      "indexname": "idx_tenant_users_tenant_id",
+      "indexdef": "CREATE INDEX idx_tenant_users_tenant_id ON public.tenant_users USING btree (tenant_id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "tenant_users",
+      "indexname": "idx_tenant_users_user_id",
+      "indexdef": "CREATE INDEX idx_tenant_users_user_id ON public.tenant_users USING btree (user_id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "tenant_users",
+      "indexname": "tenant_users_pkey1",
+      "indexdef": "CREATE UNIQUE INDEX tenant_users_pkey1 ON public.tenant_users USING btree (id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "tenant_users",
+      "indexname": "tenant_users_tenant_id_user_id_key",
+      "indexdef": "CREATE UNIQUE INDEX tenant_users_tenant_id_user_id_key ON public.tenant_users USING btree (tenant_id, user_id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "tenant_users_legacy",
+      "indexname": "idx_tenant_users_email",
+      "indexdef": "CREATE INDEX idx_tenant_users_email ON public.tenant_users_legacy USING btree (email)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "tenant_users_legacy",
+      "indexname": "idx_tenant_users_main_contact",
+      "indexdef": "CREATE INDEX idx_tenant_users_main_contact ON public.tenant_users_legacy USING btree (tenant_id, is_main_contact) WHERE (is_main_contact = true)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "tenant_users_legacy",
+      "indexname": "tenant_users_pkey",
+      "indexdef": "CREATE UNIQUE INDEX tenant_users_pkey ON public.tenant_users_legacy USING btree (id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "tenant_users_legacy",
+      "indexname": "tenant_users_tenant_id_email_key",
+      "indexdef": "CREATE UNIQUE INDEX tenant_users_tenant_id_email_key ON public.tenant_users_legacy USING btree (tenant_id, email)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "tenant_verticals",
+      "indexname": "idx_tenant_verticals_tenant_id",
+      "indexdef": "CREATE INDEX idx_tenant_verticals_tenant_id ON public.tenant_verticals USING btree (tenant_id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "tenant_verticals",
+      "indexname": "tenant_verticals_pkey",
+      "indexdef": "CREATE UNIQUE INDEX tenant_verticals_pkey ON public.tenant_verticals USING btree (tenant_id, vertical_id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "tenants",
+      "indexname": "idx_tenants_auto_reply",
+      "indexdef": "CREATE INDEX idx_tenants_auto_reply ON public.tenants USING btree (auto_reply_enabled) WHERE (auto_reply_enabled = true)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "tenants",
+      "indexname": "idx_tenants_device_id",
+      "indexdef": "CREATE INDEX idx_tenants_device_id ON public.tenants USING btree (device_id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "tenants",
+      "indexname": "idx_tenants_email",
+      "indexdef": "CREATE INDEX idx_tenants_email ON public.tenants USING btree (email)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "tenants",
+      "indexname": "idx_tenants_email_token",
+      "indexdef": "CREATE INDEX idx_tenants_email_token ON public.tenants USING btree (email_verification_token)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "tenants",
+      "indexname": "idx_tenants_handover_primary",
+      "indexdef": "CREATE INDEX idx_tenants_handover_primary ON public.tenants USING btree (handover_primary) WHERE (handover_primary IS NOT NULL)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "tenants",
+      "indexname": "idx_tenants_slug",
+      "indexdef": "CREATE INDEX idx_tenants_slug ON public.tenants USING btree (slug)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "tenants",
+      "indexname": "idx_tenants_status",
+      "indexdef": "CREATE INDEX idx_tenants_status ON public.tenants USING btree (status)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "tenants",
+      "indexname": "idx_tenants_stripe_customer",
+      "indexdef": "CREATE INDEX idx_tenants_stripe_customer ON public.tenants USING btree (stripe_customer_id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "tenants",
+      "indexname": "idx_tenants_stripe_customer_id",
+      "indexdef": "CREATE INDEX idx_tenants_stripe_customer_id ON public.tenants USING btree (stripe_customer_id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "tenants",
+      "indexname": "idx_tenants_stripe_subscription",
+      "indexdef": "CREATE INDEX idx_tenants_stripe_subscription ON public.tenants USING btree (stripe_subscription_id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "tenants",
+      "indexname": "idx_tenants_telegram_username",
+      "indexdef": "CREATE INDEX idx_tenants_telegram_username ON public.tenants USING btree (telegram_username) WHERE (telegram_username IS NOT NULL)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "tenants",
+      "indexname": "idx_tenants_testing_mode",
+      "indexdef": "CREATE INDEX idx_tenants_testing_mode ON public.tenants USING btree (testing_mode) WHERE (testing_mode = true)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "tenants",
+      "indexname": "idx_tenants_tier",
+      "indexdef": "CREATE INDEX idx_tenants_tier ON public.tenants USING btree (subscription_tier)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "tenants",
+      "indexname": "idx_tenants_token",
+      "indexdef": "CREATE INDEX idx_tenants_token ON public.tenants USING btree (signup_token)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "tenants",
+      "indexname": "idx_tenants_whatsapp",
+      "indexdef": "CREATE INDEX idx_tenants_whatsapp ON public.tenants USING btree (whatsapp_jid)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "tenants",
+      "indexname": "idx_tenants_whatsapp_jid",
+      "indexdef": "CREATE INDEX idx_tenants_whatsapp_jid ON public.tenants USING btree (whatsapp_jid)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "tenants",
+      "indexname": "idx_tenants_whatsapp_number",
+      "indexdef": "CREATE INDEX idx_tenants_whatsapp_number ON public.tenants USING btree (whatsapp_number)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "tenants",
+      "indexname": "tenants_pkey",
+      "indexdef": "CREATE UNIQUE INDEX tenants_pkey ON public.tenants USING btree (id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "tenants",
+      "indexname": "tenants_signup_token_key",
+      "indexdef": "CREATE UNIQUE INDEX tenants_signup_token_key ON public.tenants USING btree (signup_token)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "tenants",
+      "indexname": "tenants_slug_key",
+      "indexdef": "CREATE UNIQUE INDEX tenants_slug_key ON public.tenants USING btree (slug)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "tenants",
+      "indexname": "tenants_telegram_username_key",
+      "indexdef": "CREATE UNIQUE INDEX tenants_telegram_username_key ON public.tenants USING btree (telegram_username)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "tenants",
+      "indexname": "tenants_whatsapp_number_unique",
+      "indexdef": "CREATE UNIQUE INDEX tenants_whatsapp_number_unique ON public.tenants USING btree (whatsapp_number)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "trial_notifications",
+      "indexname": "idx_trial_notif_tenant",
+      "indexdef": "CREATE INDEX idx_trial_notif_tenant ON public.trial_notifications USING btree (tenant_id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "trial_notifications",
+      "indexname": "idx_trial_notif_type",
+      "indexdef": "CREATE INDEX idx_trial_notif_type ON public.trial_notifications USING btree (notification_type)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "trial_notifications",
+      "indexname": "trial_notifications_pkey",
+      "indexdef": "CREATE UNIQUE INDEX trial_notifications_pkey ON public.trial_notifications USING btree (id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "trial_notifications",
+      "indexname": "unique_notification",
+      "indexdef": "CREATE UNIQUE INDEX unique_notification ON public.trial_notifications USING btree (tenant_id, notification_type)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "usage_tracking",
+      "indexname": "idx_usage_created",
+      "indexdef": "CREATE INDEX idx_usage_created ON public.usage_tracking USING btree (created_at)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "usage_tracking",
+      "indexname": "idx_usage_customer",
+      "indexdef": "CREATE INDEX idx_usage_customer ON public.usage_tracking USING btree (customer_jid)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "usage_tracking",
+      "indexname": "idx_usage_tenant_date",
+      "indexdef": "CREATE INDEX idx_usage_tenant_date ON public.usage_tracking USING btree (tenant_id, created_at DESC)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "usage_tracking",
+      "indexname": "usage_tracking_pkey",
+      "indexdef": "CREATE UNIQUE INDEX usage_tracking_pkey ON public.usage_tracking USING btree (id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "user_profiles",
+      "indexname": "idx_user_profiles_dept",
+      "indexdef": "CREATE INDEX idx_user_profiles_dept ON public.user_profiles USING btree (department_id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "user_profiles",
+      "indexname": "idx_user_profiles_email",
+      "indexdef": "CREATE INDEX idx_user_profiles_email ON public.user_profiles USING btree (email)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "user_profiles",
+      "indexname": "idx_user_profiles_manager",
+      "indexdef": "CREATE INDEX idx_user_profiles_manager ON public.user_profiles USING btree (manager_id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "user_profiles",
+      "indexname": "idx_user_profiles_role",
+      "indexdef": "CREATE INDEX idx_user_profiles_role ON public.user_profiles USING btree (role)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "user_profiles",
+      "indexname": "user_profiles_pkey",
+      "indexdef": "CREATE UNIQUE INDEX user_profiles_pkey ON public.user_profiles USING btree (id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "vertical_templates",
+      "indexname": "idx_vertical_templates_vertical_id",
+      "indexdef": "CREATE INDEX idx_vertical_templates_vertical_id ON public.vertical_templates USING btree (vertical_id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "vertical_templates",
+      "indexname": "vertical_templates_pkey",
+      "indexdef": "CREATE UNIQUE INDEX vertical_templates_pkey ON public.vertical_templates USING btree (id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "vertical_templates",
+      "indexname": "vertical_templates_vertical_id_key",
+      "indexdef": "CREATE UNIQUE INDEX vertical_templates_vertical_id_key ON public.vertical_templates USING btree (vertical_id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "wa_learning_jobs",
+      "indexname": "wa_learning_jobs_pkey",
+      "indexdef": "CREATE UNIQUE INDEX wa_learning_jobs_pkey ON public.wa_learning_jobs USING btree (id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "web_support_tickets",
+      "indexname": "idx_web_support_tickets_email",
+      "indexdef": "CREATE INDEX idx_web_support_tickets_email ON public.web_support_tickets USING btree (submitter_email, created_at DESC)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "web_support_tickets",
+      "indexname": "idx_web_support_tickets_status",
+      "indexdef": "CREATE INDEX idx_web_support_tickets_status ON public.web_support_tickets USING btree (status, created_at DESC)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "web_support_tickets",
+      "indexname": "web_support_tickets_pkey",
+      "indexdef": "CREATE UNIQUE INDEX web_support_tickets_pkey ON public.web_support_tickets USING btree (id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "whatsapp_devices",
+      "indexname": "idx_whatsapp_devices_device_id",
+      "indexdef": "CREATE INDEX idx_whatsapp_devices_device_id ON public.whatsapp_devices USING btree (device_id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "whatsapp_devices",
+      "indexname": "idx_whatsapp_devices_whatsapp_jid",
+      "indexdef": "CREATE INDEX idx_whatsapp_devices_whatsapp_jid ON public.whatsapp_devices USING btree (whatsapp_jid)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "whatsapp_devices",
+      "indexname": "whatsapp_devices_pkey",
+      "indexdef": "CREATE UNIQUE INDEX whatsapp_devices_pkey ON public.whatsapp_devices USING btree (tenant_id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "whatsmeow_app_state_mutation_macs",
+      "indexname": "whatsmeow_app_state_mutation_macs_pkey",
+      "indexdef": "CREATE UNIQUE INDEX whatsmeow_app_state_mutation_macs_pkey ON public.whatsmeow_app_state_mutation_macs USING btree (jid, name, version, index_mac)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "whatsmeow_app_state_sync_keys",
+      "indexname": "whatsmeow_app_state_sync_keys_pkey",
+      "indexdef": "CREATE UNIQUE INDEX whatsmeow_app_state_sync_keys_pkey ON public.whatsmeow_app_state_sync_keys USING btree (jid, key_id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "whatsmeow_app_state_version",
+      "indexname": "whatsmeow_app_state_version_pkey",
+      "indexdef": "CREATE UNIQUE INDEX whatsmeow_app_state_version_pkey ON public.whatsmeow_app_state_version USING btree (jid, name)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "whatsmeow_chat_settings",
+      "indexname": "whatsmeow_chat_settings_pkey",
+      "indexdef": "CREATE UNIQUE INDEX whatsmeow_chat_settings_pkey ON public.whatsmeow_chat_settings USING btree (our_jid, chat_jid)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "whatsmeow_contacts",
+      "indexname": "whatsmeow_contacts_pkey",
+      "indexdef": "CREATE UNIQUE INDEX whatsmeow_contacts_pkey ON public.whatsmeow_contacts USING btree (our_jid, their_jid)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "whatsmeow_device",
+      "indexname": "whatsmeow_device_pkey",
+      "indexdef": "CREATE UNIQUE INDEX whatsmeow_device_pkey ON public.whatsmeow_device USING btree (jid)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "whatsmeow_event_buffer",
+      "indexname": "whatsmeow_event_buffer_pkey",
+      "indexdef": "CREATE UNIQUE INDEX whatsmeow_event_buffer_pkey ON public.whatsmeow_event_buffer USING btree (our_jid, ciphertext_hash)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "whatsmeow_identity_keys",
+      "indexname": "whatsmeow_identity_keys_pkey",
+      "indexdef": "CREATE UNIQUE INDEX whatsmeow_identity_keys_pkey ON public.whatsmeow_identity_keys USING btree (our_jid, their_id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "whatsmeow_lid_map",
+      "indexname": "whatsmeow_lid_map_pkey",
+      "indexdef": "CREATE UNIQUE INDEX whatsmeow_lid_map_pkey ON public.whatsmeow_lid_map USING btree (lid)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "whatsmeow_lid_map",
+      "indexname": "whatsmeow_lid_map_pn_key",
+      "indexdef": "CREATE UNIQUE INDEX whatsmeow_lid_map_pn_key ON public.whatsmeow_lid_map USING btree (pn)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "whatsmeow_message_secrets",
+      "indexname": "whatsmeow_message_secrets_pkey",
+      "indexdef": "CREATE UNIQUE INDEX whatsmeow_message_secrets_pkey ON public.whatsmeow_message_secrets USING btree (our_jid, chat_jid, sender_jid, message_id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "whatsmeow_pre_keys",
+      "indexname": "whatsmeow_pre_keys_pkey",
+      "indexdef": "CREATE UNIQUE INDEX whatsmeow_pre_keys_pkey ON public.whatsmeow_pre_keys USING btree (jid, key_id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "whatsmeow_privacy_tokens",
+      "indexname": "whatsmeow_privacy_tokens_pkey",
+      "indexdef": "CREATE UNIQUE INDEX whatsmeow_privacy_tokens_pkey ON public.whatsmeow_privacy_tokens USING btree (our_jid, their_jid)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "whatsmeow_sender_keys",
+      "indexname": "whatsmeow_sender_keys_pkey",
+      "indexdef": "CREATE UNIQUE INDEX whatsmeow_sender_keys_pkey ON public.whatsmeow_sender_keys USING btree (our_jid, chat_id, sender_id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "whatsmeow_sessions",
+      "indexname": "whatsmeow_sessions_pkey",
+      "indexdef": "CREATE UNIQUE INDEX whatsmeow_sessions_pkey ON public.whatsmeow_sessions USING btree (our_jid, their_id)"
+    }
+  ]
+}

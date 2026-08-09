@@ -1,0 +1,1806 @@
+[
+  {
+    "schema": "public",
+    "name": "calculate_campaign_stats",
+    "args": "p_campaign_id uuid",
+    "is_security_definer": true,
+    "proconfig": null,
+    "acl": "{=X/postgres,postgres=X/postgres,anon=X/postgres,authenticated=X/postgres,service_role=X/postgres}"
+  },
+  {
+    "schema": "public",
+    "name": "calculate_lead_score",
+    "args": "lead_data leads",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": "{=X/postgres,postgres=X/postgres,anon=X/postgres,authenticated=X/postgres,service_role=X/postgres}"
+  },
+  {
+    "schema": "public",
+    "name": "call_bookings_set_scheduled_date",
+    "args": "",
+    "is_security_definer": true,
+    "proconfig": null,
+    "acl": "{=X/postgres,postgres=X/postgres,anon=X/postgres,authenticated=X/postgres,service_role=X/postgres}"
+  },
+  {
+    "schema": "public",
+    "name": "can_view_user",
+    "args": "viewer_id uuid, target_id uuid",
+    "is_security_definer": true,
+    "proconfig": [
+      "search_path=public"
+    ],
+    "acl": "{=X/postgres,postgres=X/postgres,anon=X/postgres,authenticated=X/postgres,service_role=X/postgres}"
+  },
+  {
+    "schema": "public",
+    "name": "cleanup_expired_onboarding_sessions",
+    "args": "",
+    "is_security_definer": true,
+    "proconfig": [
+      "search_path=public"
+    ],
+    "acl": "{=X/postgres,postgres=X/postgres,anon=X/postgres,authenticated=X/postgres,service_role=X/postgres}"
+  },
+  {
+    "schema": "public",
+    "name": "cleanup_expired_onboarding_sessions",
+    "args": "days_old integer",
+    "is_security_definer": true,
+    "proconfig": [
+      "search_path=public"
+    ],
+    "acl": "{=X/postgres,postgres=X/postgres,anon=X/postgres,authenticated=X/postgres,service_role=X/postgres}"
+  },
+  {
+    "schema": "public",
+    "name": "cleanup_expired_qr_sessions",
+    "args": "",
+    "is_security_definer": true,
+    "proconfig": [
+      "search_path=public"
+    ],
+    "acl": "{=X/postgres,postgres=X/postgres,anon=X/postgres,authenticated=X/postgres,service_role=X/postgres}"
+  },
+  {
+    "schema": "public",
+    "name": "count_monthly_conversations",
+    "args": "p_tenant_id uuid, p_month_start timestamp without time zone",
+    "is_security_definer": true,
+    "proconfig": null,
+    "acl": "{=X/postgres,postgres=X/postgres,anon=X/postgres,authenticated=X/postgres,service_role=X/postgres}"
+  },
+  {
+    "schema": "public",
+    "name": "create_default_templates",
+    "args": "",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": "{=X/postgres,postgres=X/postgres,anon=X/postgres,authenticated=X/postgres,service_role=X/postgres}"
+  },
+  {
+    "schema": "public",
+    "name": "current_tenant_id",
+    "args": "",
+    "is_security_definer": true,
+    "proconfig": null,
+    "acl": "{=X/postgres,postgres=X/postgres,anon=X/postgres,authenticated=X/postgres,service_role=X/postgres}"
+  },
+  {
+    "schema": "public",
+    "name": "expire_old_onboarding_sessions",
+    "args": "",
+    "is_security_definer": true,
+    "proconfig": [
+      "search_path=public"
+    ],
+    "acl": "{=X/postgres,postgres=X/postgres,anon=X/postgres,authenticated=X/postgres,service_role=X/postgres}"
+  },
+  {
+    "schema": "public",
+    "name": "get_contact_last_campaign",
+    "args": "p_contact_id uuid",
+    "is_security_definer": true,
+    "proconfig": null,
+    "acl": "{=X/postgres,postgres=X/postgres,anon=X/postgres,authenticated=X/postgres,service_role=X/postgres}"
+  },
+  {
+    "schema": "public",
+    "name": "get_conversation_threads",
+    "args": "p_tenant_id uuid, p_chat_jid text, p_limit integer, p_offset integer",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": "{=X/postgres,postgres=X/postgres,anon=X/postgres,authenticated=X/postgres,service_role=X/postgres}"
+  },
+  {
+    "schema": "public",
+    "name": "get_tenant_daily_sent_count",
+    "args": "p_tenant_id uuid",
+    "is_security_definer": true,
+    "proconfig": null,
+    "acl": "{=X/postgres,postgres=X/postgres,anon=X/postgres,authenticated=X/postgres,service_role=X/postgres}"
+  },
+  {
+    "schema": "public",
+    "name": "handle_new_user",
+    "args": "",
+    "is_security_definer": true,
+    "proconfig": [
+      "search_path=public"
+    ],
+    "acl": "{=X/postgres,postgres=X/postgres,anon=X/postgres,authenticated=X/postgres,service_role=X/postgres}"
+  },
+  {
+    "schema": "public",
+    "name": "increment_click_count",
+    "args": "row_id bigint",
+    "is_security_definer": true,
+    "proconfig": null,
+    "acl": "{postgres=X/postgres,service_role=X/postgres}"
+  },
+  {
+    "schema": "public",
+    "name": "increment_contact_message",
+    "args": "p_tenant_id text, p_jid text",
+    "is_security_definer": true,
+    "proconfig": null,
+    "acl": "{=X/postgres,postgres=X/postgres,anon=X/postgres,authenticated=X/postgres,service_role=X/postgres}"
+  },
+  {
+    "schema": "public",
+    "name": "is_service_role",
+    "args": "",
+    "is_security_definer": true,
+    "proconfig": null,
+    "acl": "{=X/postgres,postgres=X/postgres,anon=X/postgres,authenticated=X/postgres,service_role=X/postgres}"
+  },
+  {
+    "schema": "public",
+    "name": "posthog_webhook_fire",
+    "args": "",
+    "is_security_definer": true,
+    "proconfig": [
+      "search_path=public, extensions"
+    ],
+    "acl": "{=X/postgres,postgres=X/postgres,anon=X/postgres,authenticated=X/postgres,service_role=X/postgres}"
+  },
+  {
+    "schema": "public",
+    "name": "prune_agent_status",
+    "args": "",
+    "is_security_definer": true,
+    "proconfig": [
+      "search_path=public"
+    ],
+    "acl": "{=X/postgres,postgres=X/postgres,anon=X/postgres,authenticated=X/postgres,service_role=X/postgres}"
+  },
+  {
+    "schema": "public",
+    "name": "rls_auto_enable",
+    "args": "",
+    "is_security_definer": true,
+    "proconfig": [
+      "search_path=pg_catalog"
+    ],
+    "acl": "{=X/postgres,postgres=X/postgres,anon=X/postgres,authenticated=X/postgres,service_role=X/postgres}"
+  },
+  {
+    "schema": "public",
+    "name": "search_knowledge",
+    "args": "query_embedding vector, query_text text, match_threshold double precision, match_count integer, filter_department uuid",
+    "is_security_definer": true,
+    "proconfig": [
+      "search_path=public"
+    ],
+    "acl": "{=X/postgres,postgres=X/postgres,anon=X/postgres,authenticated=X/postgres,service_role=X/postgres}"
+  },
+  {
+    "schema": "public",
+    "name": "update_contacts_updated_at",
+    "args": "",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": "{=X/postgres,postgres=X/postgres,anon=X/postgres,authenticated=X/postgres,service_role=X/postgres}"
+  },
+  {
+    "schema": "public",
+    "name": "update_escalation_notifications_updated_at",
+    "args": "",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": "{=X/postgres,postgres=X/postgres,anon=X/postgres,authenticated=X/postgres,service_role=X/postgres}"
+  },
+  {
+    "schema": "public",
+    "name": "update_follow_ups_timestamp",
+    "args": "",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": "{=X/postgres,postgres=X/postgres,anon=X/postgres,authenticated=X/postgres,service_role=X/postgres}"
+  },
+  {
+    "schema": "public",
+    "name": "update_help_ticket_timestamp",
+    "args": "",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": "{=X/postgres,postgres=X/postgres,anon=X/postgres,authenticated=X/postgres,service_role=X/postgres}"
+  },
+  {
+    "schema": "public",
+    "name": "update_jid_mappings_updated_at",
+    "args": "",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": "{=X/postgres,postgres=X/postgres,anon=X/postgres,authenticated=X/postgres,service_role=X/postgres}"
+  },
+  {
+    "schema": "public",
+    "name": "update_leads_updated_at_column",
+    "args": "",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": "{=X/postgres,postgres=X/postgres,anon=X/postgres,authenticated=X/postgres,service_role=X/postgres}"
+  },
+  {
+    "schema": "public",
+    "name": "update_onboarding_current_step",
+    "args": "",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": "{=X/postgres,postgres=X/postgres,anon=X/postgres,authenticated=X/postgres,service_role=X/postgres}"
+  },
+  {
+    "schema": "public",
+    "name": "update_updated_at",
+    "args": "",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": "{=X/postgres,postgres=X/postgres,anon=X/postgres,authenticated=X/postgres,service_role=X/postgres}"
+  },
+  {
+    "schema": "public",
+    "name": "update_updated_at_column",
+    "args": "",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": "{=X/postgres,postgres=X/postgres,anon=X/postgres,authenticated=X/postgres,service_role=X/postgres}"
+  },
+  {
+    "schema": "public",
+    "name": "update_web_support_ticket_timestamp",
+    "args": "",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": "{=X/postgres,postgres=X/postgres,anon=X/postgres,authenticated=X/postgres,service_role=X/postgres}"
+  },
+  {
+    "schema": "stripe",
+    "name": "cash_dist",
+    "args": "money, money",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "check_rate_limit",
+    "args": "rate_key text, max_requests integer, window_seconds integer",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "date_dist",
+    "args": "date, date",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "float4_dist",
+    "args": "real, real",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "float8_dist",
+    "args": "double precision, double precision",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_bit_compress",
+    "args": "internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_bit_consistent",
+    "args": "internal, bit, smallint, oid, internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_bit_penalty",
+    "args": "internal, internal, internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_bit_picksplit",
+    "args": "internal, internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_bit_same",
+    "args": "stripe.gbtreekey_var, stripe.gbtreekey_var, internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_bit_union",
+    "args": "internal, internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_bool_compress",
+    "args": "internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_bool_consistent",
+    "args": "internal, boolean, smallint, oid, internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_bool_fetch",
+    "args": "internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_bool_penalty",
+    "args": "internal, internal, internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_bool_picksplit",
+    "args": "internal, internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_bool_same",
+    "args": "stripe.gbtreekey2, stripe.gbtreekey2, internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_bool_union",
+    "args": "internal, internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_bpchar_compress",
+    "args": "internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_bpchar_consistent",
+    "args": "internal, character, smallint, oid, internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_bytea_compress",
+    "args": "internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_bytea_consistent",
+    "args": "internal, bytea, smallint, oid, internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_bytea_penalty",
+    "args": "internal, internal, internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_bytea_picksplit",
+    "args": "internal, internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_bytea_same",
+    "args": "stripe.gbtreekey_var, stripe.gbtreekey_var, internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_bytea_union",
+    "args": "internal, internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_cash_compress",
+    "args": "internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_cash_consistent",
+    "args": "internal, money, smallint, oid, internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_cash_distance",
+    "args": "internal, money, smallint, oid, internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_cash_fetch",
+    "args": "internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_cash_penalty",
+    "args": "internal, internal, internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_cash_picksplit",
+    "args": "internal, internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_cash_same",
+    "args": "stripe.gbtreekey16, stripe.gbtreekey16, internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_cash_union",
+    "args": "internal, internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_date_compress",
+    "args": "internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_date_consistent",
+    "args": "internal, date, smallint, oid, internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_date_distance",
+    "args": "internal, date, smallint, oid, internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_date_fetch",
+    "args": "internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_date_penalty",
+    "args": "internal, internal, internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_date_picksplit",
+    "args": "internal, internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_date_same",
+    "args": "stripe.gbtreekey8, stripe.gbtreekey8, internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_date_union",
+    "args": "internal, internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_decompress",
+    "args": "internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_enum_compress",
+    "args": "internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_enum_consistent",
+    "args": "internal, anyenum, smallint, oid, internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_enum_fetch",
+    "args": "internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_enum_penalty",
+    "args": "internal, internal, internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_enum_picksplit",
+    "args": "internal, internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_enum_same",
+    "args": "stripe.gbtreekey8, stripe.gbtreekey8, internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_enum_union",
+    "args": "internal, internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_float4_compress",
+    "args": "internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_float4_consistent",
+    "args": "internal, real, smallint, oid, internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_float4_distance",
+    "args": "internal, real, smallint, oid, internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_float4_fetch",
+    "args": "internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_float4_penalty",
+    "args": "internal, internal, internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_float4_picksplit",
+    "args": "internal, internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_float4_same",
+    "args": "stripe.gbtreekey8, stripe.gbtreekey8, internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_float4_union",
+    "args": "internal, internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_float8_compress",
+    "args": "internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_float8_consistent",
+    "args": "internal, double precision, smallint, oid, internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_float8_distance",
+    "args": "internal, double precision, smallint, oid, internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_float8_fetch",
+    "args": "internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_float8_penalty",
+    "args": "internal, internal, internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_float8_picksplit",
+    "args": "internal, internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_float8_same",
+    "args": "stripe.gbtreekey16, stripe.gbtreekey16, internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_float8_union",
+    "args": "internal, internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_inet_compress",
+    "args": "internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_inet_consistent",
+    "args": "internal, inet, smallint, oid, internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_inet_penalty",
+    "args": "internal, internal, internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_inet_picksplit",
+    "args": "internal, internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_inet_same",
+    "args": "stripe.gbtreekey16, stripe.gbtreekey16, internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_inet_union",
+    "args": "internal, internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_int2_compress",
+    "args": "internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_int2_consistent",
+    "args": "internal, smallint, smallint, oid, internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_int2_distance",
+    "args": "internal, smallint, smallint, oid, internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_int2_fetch",
+    "args": "internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_int2_penalty",
+    "args": "internal, internal, internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_int2_picksplit",
+    "args": "internal, internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_int2_same",
+    "args": "stripe.gbtreekey4, stripe.gbtreekey4, internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_int2_union",
+    "args": "internal, internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_int4_compress",
+    "args": "internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_int4_consistent",
+    "args": "internal, integer, smallint, oid, internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_int4_distance",
+    "args": "internal, integer, smallint, oid, internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_int4_fetch",
+    "args": "internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_int4_penalty",
+    "args": "internal, internal, internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_int4_picksplit",
+    "args": "internal, internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_int4_same",
+    "args": "stripe.gbtreekey8, stripe.gbtreekey8, internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_int4_union",
+    "args": "internal, internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_int8_compress",
+    "args": "internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_int8_consistent",
+    "args": "internal, bigint, smallint, oid, internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_int8_distance",
+    "args": "internal, bigint, smallint, oid, internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_int8_fetch",
+    "args": "internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_int8_penalty",
+    "args": "internal, internal, internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_int8_picksplit",
+    "args": "internal, internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_int8_same",
+    "args": "stripe.gbtreekey16, stripe.gbtreekey16, internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_int8_union",
+    "args": "internal, internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_intv_compress",
+    "args": "internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_intv_consistent",
+    "args": "internal, interval, smallint, oid, internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_intv_decompress",
+    "args": "internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_intv_distance",
+    "args": "internal, interval, smallint, oid, internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_intv_fetch",
+    "args": "internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_intv_penalty",
+    "args": "internal, internal, internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_intv_picksplit",
+    "args": "internal, internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_intv_same",
+    "args": "stripe.gbtreekey32, stripe.gbtreekey32, internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_intv_union",
+    "args": "internal, internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_macad8_compress",
+    "args": "internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_macad8_consistent",
+    "args": "internal, macaddr8, smallint, oid, internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_macad8_fetch",
+    "args": "internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_macad8_penalty",
+    "args": "internal, internal, internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_macad8_picksplit",
+    "args": "internal, internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_macad8_same",
+    "args": "stripe.gbtreekey16, stripe.gbtreekey16, internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_macad8_union",
+    "args": "internal, internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_macad_compress",
+    "args": "internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_macad_consistent",
+    "args": "internal, macaddr, smallint, oid, internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_macad_fetch",
+    "args": "internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_macad_penalty",
+    "args": "internal, internal, internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_macad_picksplit",
+    "args": "internal, internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_macad_same",
+    "args": "stripe.gbtreekey16, stripe.gbtreekey16, internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_macad_union",
+    "args": "internal, internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_numeric_compress",
+    "args": "internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_numeric_consistent",
+    "args": "internal, numeric, smallint, oid, internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_numeric_penalty",
+    "args": "internal, internal, internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_numeric_picksplit",
+    "args": "internal, internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_numeric_same",
+    "args": "stripe.gbtreekey_var, stripe.gbtreekey_var, internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_numeric_union",
+    "args": "internal, internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_oid_compress",
+    "args": "internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_oid_consistent",
+    "args": "internal, oid, smallint, oid, internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_oid_distance",
+    "args": "internal, oid, smallint, oid, internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_oid_fetch",
+    "args": "internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_oid_penalty",
+    "args": "internal, internal, internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_oid_picksplit",
+    "args": "internal, internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_oid_same",
+    "args": "stripe.gbtreekey8, stripe.gbtreekey8, internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_oid_union",
+    "args": "internal, internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_text_compress",
+    "args": "internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_text_consistent",
+    "args": "internal, text, smallint, oid, internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_text_penalty",
+    "args": "internal, internal, internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_text_picksplit",
+    "args": "internal, internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_text_same",
+    "args": "stripe.gbtreekey_var, stripe.gbtreekey_var, internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_text_union",
+    "args": "internal, internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_time_compress",
+    "args": "internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_time_consistent",
+    "args": "internal, time without time zone, smallint, oid, internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_time_distance",
+    "args": "internal, time without time zone, smallint, oid, internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_time_fetch",
+    "args": "internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_time_penalty",
+    "args": "internal, internal, internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_time_picksplit",
+    "args": "internal, internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_time_same",
+    "args": "stripe.gbtreekey16, stripe.gbtreekey16, internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_time_union",
+    "args": "internal, internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_timetz_compress",
+    "args": "internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_timetz_consistent",
+    "args": "internal, time with time zone, smallint, oid, internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_ts_compress",
+    "args": "internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_ts_consistent",
+    "args": "internal, timestamp without time zone, smallint, oid, internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_ts_distance",
+    "args": "internal, timestamp without time zone, smallint, oid, internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_ts_fetch",
+    "args": "internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_ts_penalty",
+    "args": "internal, internal, internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_ts_picksplit",
+    "args": "internal, internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_ts_same",
+    "args": "stripe.gbtreekey16, stripe.gbtreekey16, internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_ts_union",
+    "args": "internal, internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_tstz_compress",
+    "args": "internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_tstz_consistent",
+    "args": "internal, timestamp with time zone, smallint, oid, internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_tstz_distance",
+    "args": "internal, timestamp with time zone, smallint, oid, internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_uuid_compress",
+    "args": "internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_uuid_consistent",
+    "args": "internal, uuid, smallint, oid, internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_uuid_fetch",
+    "args": "internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_uuid_penalty",
+    "args": "internal, internal, internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_uuid_picksplit",
+    "args": "internal, internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_uuid_same",
+    "args": "stripe.gbtreekey32, stripe.gbtreekey32, internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_uuid_union",
+    "args": "internal, internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_var_decompress",
+    "args": "internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbt_var_fetch",
+    "args": "internal",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbtreekey16_in",
+    "args": "cstring",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbtreekey16_out",
+    "args": "stripe.gbtreekey16",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbtreekey2_in",
+    "args": "cstring",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbtreekey2_out",
+    "args": "stripe.gbtreekey2",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbtreekey32_in",
+    "args": "cstring",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbtreekey32_out",
+    "args": "stripe.gbtreekey32",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbtreekey4_in",
+    "args": "cstring",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbtreekey4_out",
+    "args": "stripe.gbtreekey4",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbtreekey8_in",
+    "args": "cstring",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbtreekey8_out",
+    "args": "stripe.gbtreekey8",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbtreekey_var_in",
+    "args": "cstring",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "gbtreekey_var_out",
+    "args": "stripe.gbtreekey_var",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "int2_dist",
+    "args": "smallint, smallint",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "int4_dist",
+    "args": "integer, integer",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "int8_dist",
+    "args": "bigint, bigint",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "interval_dist",
+    "args": "interval, interval",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "oid_dist",
+    "args": "oid, oid",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "set_updated_at",
+    "args": "",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "set_updated_at_metadata",
+    "args": "",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "time_dist",
+    "args": "time without time zone, time without time zone",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "ts_dist",
+    "args": "timestamp without time zone, timestamp without time zone",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  },
+  {
+    "schema": "stripe",
+    "name": "tstz_dist",
+    "args": "timestamp with time zone, timestamp with time zone",
+    "is_security_definer": false,
+    "proconfig": null,
+    "acl": null
+  }
+]
