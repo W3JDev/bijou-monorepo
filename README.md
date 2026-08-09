@@ -107,3 +107,6 @@ Status (last 30 ticks): see `bijou-prod-health-state.md` in agent memory topics.
 
 <!-- CI trigger: 2026-08-09 05:33:41 MYT -->
 
+
+<!-- CI smoke test: 2026-08-09 21:09:05 -->
+
