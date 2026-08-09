@@ -1,0 +1,24 @@
+# Bijou Production Admin API Key
+
+This key gates access to /api/admin/* endpoints. Set as Fly secret ADMIN_API_KEY on the bijou-production app. Stored in operator browser localStorage as `admin_api_key` and sent as `X-Admin-Key` header on every admin request.
+
+CURRENT VALUE (rotated 2026-08-10):
+  ADMIN_API_KEY = 8tunr0gzd32v16bphiwqfsljxya79o5m
+  Fly app = bijou-production
+  Fly secret id = b42ea3efb1274190 (currently Staged, deployed with the image rebuild)
+
+USAGE
+=====
+1. In your browser DevTools console on https://app.mybijou.xyz/admin, run:
+   localStorage.setItem("admin_api_key", "8tunr0gzd32v16bphiwqfsljxya79o5m")
+2. Reload /admin — admin pages will work.
+3. The legacy /api/admin/* endpoints are now LOCKED. You will get 503 if
+   ADMIN_API_KEY is unset, 401 if the X-Admin-Key header is missing or wrong.
+
+ROTATION
+========
+To rotate: `fly secrets set ADMIN_API_KEY="<new-key>" -a bijou-production`
+then redeploy with `fly deploy --config packages/backend/fly.production.toml --remote-only`
+to push the new secret (Fly marks it "Staged" until next deploy).
+
+After rotating, update the value in this file + your localStorage.
