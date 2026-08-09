@@ -331,7 +331,11 @@
       // Business identity (captured at login) — used across the shell instead of raw Tenant-ID/UUID.
       const BUSINESS_NAME = (localStorage.getItem("business_name") || "").trim();
       const BUSINESS_INITIAL = (BUSINESS_NAME || "Bijou").trim().charAt(0).toUpperCase();
-      let TOKEN = params.get("token") || TENANT_ID;
+      // The magic-link token comes from a signup email/WhatsApp deep link.
+      // Do NOT fall back to TENANT_ID here: the tenant UUID is not a
+      // valid `signup_token`, so `useMagicLink` would send `?token=<UUID>`
+      // and the backend would 401 every call.
+      let TOKEN = params.get("token") || "";
       const ACCESS_TOKEN = localStorage.getItem("access_token");
       const REFRESH_TOKEN = localStorage.getItem("refresh_token");
 
