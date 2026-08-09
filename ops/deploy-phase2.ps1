@@ -1,8 +1,24 @@
 # ============================================================================
+# ⚠️  DEPRECATED — DO NOT RUN (2026-08-09)
+# ----------------------------------------------------------------------------
+# This script targets the Fly app `bijou-staging`, which no longer exists.
+# Bijou was consolidated onto a single Fly app (`bijou-production`).
+# Running this will fail with "Could not find app bijou-staging".
+#
+# To deploy the backend now, use:
+#   cd packages/backend
+#   fly deploy --app bijou-production --config fly.production.toml
+# Kept in the tree only for historical reference.
+# ============================================================================
+
+# ============================================================================
 # BIJOU AI - PHASE 2 DEPLOYMENT SCRIPT (Windows PowerShell)
 # ============================================================================
 # This script automates Phase 2 deployment to staging
 # ============================================================================
+
+Write-Host "⚠️  This script is DEPRECATED. See banner above. Exiting." -ForegroundColor Red
+exit 1
 
 $ErrorActionPreference = "Stop"
 

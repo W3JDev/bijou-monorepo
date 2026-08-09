@@ -1,7 +1,26 @@
+# ============================================================================
+# ⚠️  DEPRECATED — DO NOT RUN (2026-08-09)
+# ----------------------------------------------------------------------------
+# This script targets the Fly app `bijou-staging`, which no longer exists.
+# Bijou was consolidated onto a single Fly app (`bijou-production`).
+# Running this will fail with "Could not find app bijou-staging".
+#
+# To deploy the backend now, use:
+#   cd packages/backend
+#   fly deploy --app bijou-production --config fly.production.toml
+#
+# For the per-tenant bridge, see packages/bridge/fly.bridge-production.toml
+# and the CI workflow at .github/workflows/bridge.yml.
+# Kept in the tree only for historical reference; safe to delete in a
+# follow-up cleanup pass once the user confirms nothing depends on it.
+# ============================================================================
+
 # PHASE 2 DEPLOYMENT - RUN THIS NOW
 # ============================================
 
-Write-Host "🚀 Deploying Phase 2..." -ForegroundColor Cyan
+Write-Host "⚠️  This script is DEPRECATED. See banner above. Exiting." -ForegroundColor Red
+exit 1
+
 
 # Step 1: Deploy code
 Write-Host "`n1. Deploying to Fly.io..." -ForegroundColor Yellow

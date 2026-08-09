@@ -1,16 +1,23 @@
+# ============================================================================
+# ⚠️  DEPRECATED — DO NOT RUN (2026-08-09)
+# ----------------------------------------------------------------------------
+# This script targets the Fly app `bijou-staging`, which no longer exists.
+# Bijou was consolidated onto a single Fly app (`bijou-production`).
+# Running this will fail with "Could not find app bijou-staging".
+#
+# To deploy the backend now, use:
+#   cd packages/backend
+#   fly deploy --app bijou-production --config fly.production.toml
+# Kept in the tree only for historical reference.
+# ============================================================================
+
 # deploy-telegram-staging.ps1
 # Deploy Bijou AI with Telegram support to Fly.io Staging
 # ========================================================
 
-Write-Host "========================================" -ForegroundColor Cyan
-Write-Host "  BIJOU AI - TELEGRAM DEPLOYMENT" -ForegroundColor Cyan
-Write-Host "  Target: bijou-staging.fly.dev" -ForegroundColor Cyan
-Write-Host "========================================" -ForegroundColor Cyan
-Write-Host ""
+Write-Host "⚠️  This script is DEPRECATED. See banner above. Exiting." -ForegroundColor Red
+exit 1
 
-# Navigate to the correct directory
-$projectDir = Split-Path -Parent $PSScriptRoot
-$bijouDir = Join-Path $projectDir "w3j-bijou-enterprise"
 
 Write-Host "[1/5] Navigating to $bijouDir" -ForegroundColor Yellow
 Set-Location $bijouDir
