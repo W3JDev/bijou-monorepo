@@ -217,21 +217,26 @@ async def upsert_business_profile(request: BusinessProfileRequest):
             .execute()
         )
 
-        # Build profile_data WITHOUT business_type — that column doesn't exist
-        # on business_profiles yet. We prepend business_type to the notes
-        # payload so it's recoverable later (or via the dashboard).
+        # Build profile_data. The business_type column was added to
+        # business_profiles via Supabase SQL editor on 2026-08-10
+        # (ALTER TABLE business_profiles ADD COLUMN business_type text).
+        # We write it directly to the column. We still also keep a structured
+        # hint in notes for backwards compatibility (existing rows that were
+        # saved before the column existed).
         notes_payload = request.notes or ""
         if request.business_type:
             structured = f"business_type={request.business_type}"
-            if notes_payload:
-                notes_payload = f"{structured}\n{notes_payload}"
-            else:
-                notes_payload = structured
+            if structured not in notes_payload:
+                if notes_payload:
+                    notes_payload = f"{structured}\n{notes_payload}"
+                else:
+                    notes_payload = structured
 
         profile_data = {
             "tenant_id": request.tenant_id,
             "business_name": request.business_name,
             "owner_name": request.owner_name,
+            "business_type": request.business_type,  # column now exists
             "handover_contacts": handover_contacts_json,
             "business_hours": request.business_hours,
             "notes": notes_payload or None,
@@ -281,7 +286,7 @@ async def upsert_business_profile(request: BusinessProfileRequest):
                 profile={
                     "business_name": profile.get("business_name"),
                     "owner_name": profile.get("owner_name"),
-                    "business_type": request.business_type,  # echo back what was requested
+                    "business_type": profile.get("business_type") or request.business_type,
                     "handover_contacts": profile.get("handover_contacts", []),
                     "business_hours": profile.get("business_hours"),
                     "notes": profile.get("notes"),
