@@ -514,7 +514,13 @@ async def get_qr_code(token: str):
     """
     Step 3: Proxy QR code image from WhatsApp bridge
 
-    Returns PNG image that updates when tenant_id changes
+    Returns PNG image that updates when tenant_id changes.
+
+    IMPORTANT: The GOWA v8+ bridge requires `device_id` (via X-Device-Id header
+    OR device_id query param) for ALL API calls. The legacy `tenant_id` param
+    no longer works — the bridge returns 400 "device_id is required" if you
+    forget. The device_id is derived predictably as `bijou-{tenant_id}` in
+    provision_whatsapp_device() and stored in the whatsapp_devices table.
     """
     try:
         supabase = get_supabase()
@@ -529,35 +535,59 @@ async def get_qr_code(token: str):
 
         tenant_id = result.data[0]["id"]
 
-        # Get QR from bridge
+        # Look up the device_id for this tenant. Fall back to the predictable
+        # mapping `bijou-{tenant_id}` if the table lookup misses (e.g. the
+        # signup happened before the table existed, or the device was deleted).
+        device_id = f"bijou-{tenant_id}"
+        try:
+            dev_row = (
+                supabase.table("whatsapp_devices")
+                .select("device_id")
+                .eq("tenant_id", tenant_id)
+                .limit(1)
+                .execute()
+            )
+            if dev_row.data and dev_row.data[0].get("device_id"):
+                device_id = dev_row.data[0]["device_id"]
+        except Exception as lookup_err:
+            logger.warning(f"⚠️ device_id lookup failed for {tenant_id}, using predictable mapping: {lookup_err}")
+
         bridge_url = get_whatsapp_bridge_url()
         bridge_headers = get_bridge_auth_headers()
+        # GOWA bridge accepts the device_id via X-Device-Id header OR
+        # device_id query param. Use the header — it works on every endpoint.
+        bridge_headers["X-Device-Id"] = device_id
+
         async with httpx.AsyncClient(timeout=15.0) as client:
             qr_response = await client.get(
-                f"{bridge_url}/qr", params={"tenant_id": tenant_id}, headers=bridge_headers
+                f"{bridge_url}/qr", headers=bridge_headers
             )
 
-            # If QR not available (404), initialize the session first
+            # If QR not available (404), the bridge hasn't initialized the
+            # WhatsApp client for this device yet. Trigger init and retry.
             if qr_response.status_code == 404:
-                logger.info(f"🔄 QR not found for {tenant_id}, initializing session...")
+                logger.info(f"🔄 QR not found for {device_id}, initializing session...")
 
-                # Call /api/init to start WhatsApp client
+                # Call /api/init to start WhatsApp client. The bridge
+                # create-device endpoint (/devices) is preferred for fresh
+                # tenants — see provision_whatsapp_device() — but /api/init
+                # also works to wake up an existing device.
                 init_response = await client.post(
-                    f"{bridge_url}/api/init", params={"tenant_id": tenant_id}, headers=bridge_headers
+                    f"{bridge_url}/api/init", headers=bridge_headers
                 )
 
                 if init_response.status_code == 200:
-                    logger.info(f"✅ Session initialized for {tenant_id}, waiting for QR...")
+                    logger.info(f"✅ Session initialized for {device_id}, waiting for QR...")
 
                     # Wait a moment for QR to generate, then retry
                     import asyncio
                     await asyncio.sleep(2)
 
                     qr_response = await client.get(
-                        f"{bridge_url}/qr", params={"tenant_id": tenant_id}, headers=bridge_headers
+                        f"{bridge_url}/qr", headers=bridge_headers
                     )
                 else:
-                    logger.error(f"❌ Failed to initialize session: {init_response.text}")
+                    logger.error(f"❌ Failed to initialize session for {device_id}: {init_response.text}")
 
             if qr_response.status_code == 200:
                 return Response(
@@ -570,7 +600,7 @@ async def get_qr_code(token: str):
                     },
                 )
             else:
-                logger.error(f"❌ Bridge QR failed: {qr_response.text}")
+                logger.error(f"❌ Bridge QR failed for {device_id}: {qr_response.status_code} {qr_response.text[:200]}")
                 raise HTTPException(
                     status_code=qr_response.status_code,
                     detail="Failed to generate QR code. Please refresh the page.",
