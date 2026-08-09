@@ -110,11 +110,12 @@ class StatusResponse(BaseModel):
     whatsapp_jid: Optional[str] = None
     created_at: str
     # Business-info fields — used by the onboard page to decide whether to
-    # show the "Tell us about your business" form before the QR step
+    # show the "Tell us about your business" form before the QR step.
+    # phone exists on tenants (set by both email + Google signups, though
+    # Google signups set it to ""). owner_name is only on business_profiles.
     phone: Optional[str] = None
-    business_type: Optional[str] = None
     owner_name: Optional[str] = None
-    needs_business_info: bool = False  # True if business_type or phone is empty
+    needs_business_info: bool = False  # True when phone is empty (the signal we can rely on)
 
 
 # ════════════════════════════════════════════════════════════════
@@ -453,13 +454,15 @@ async def get_onboarding_status(token: str):
     try:
         supabase = get_supabase()
 
-        # Find tenant by token
+        # Find tenant by token. NOTE: do NOT select business_type or owner_name
+        # from tenants — those columns don't exist on tenants (verified 2026-08-10
+        # via Supabase PostgREST schema cache error 42703). business_type lives on
+        # business_profiles; owner_name also lives on business_profiles.
         result = (
             supabase.table("tenants")
             .select(
                 "id, business_name, email, status, whatsapp_jid, "
-                "whatsapp_connected_at, onboarding_completed, created_at, "
-                "phone, business_type, owner_name"
+                "whatsapp_connected_at, onboarding_completed, created_at, phone"
             )
             .eq("signup_token", token)
             .execute()
@@ -481,11 +484,30 @@ async def get_onboarding_status(token: str):
         else:
             onboarding_status = "pending"
 
-        # Business-info completeness flag — True if the user (likely a Google signup)
-        # never went through the manual signup form so phone/business_type are empty
+        # Business-info completeness: check tenants.phone (always present) and
+        # business_profiles.owner_name (set after the form is filled). We
+        # intentionally skip business_type because that column doesn't exist yet.
         phone_val = (tenant.get("phone") or "").strip()
-        btype_val = (tenant.get("business_type") or "").strip()
-        needs_info = (not phone_val) or (not btype_val)
+
+        # Look up owner_name from business_profiles (may not exist yet for
+        # fresh signups; that's fine)
+        owner_name_val: Optional[str] = None
+        try:
+            bp_row = (
+                supabase.table("business_profiles")
+                .select("owner_name")
+                .eq("tenant_id", tenant["id"])
+                .limit(1)
+                .execute()
+            )
+            if bp_row.data and bp_row.data[0].get("owner_name"):
+                owner_name_val = bp_row.data[0]["owner_name"].strip() or None
+        except Exception as bp_err:
+            logger.debug(f"business_profiles lookup failed (non-fatal): {bp_err}")
+
+        # The user needs the form if either the phone is empty (Google signup
+        # default) OR no business_profiles row exists yet (no owner_name set).
+        needs_info = (not phone_val) or (owner_name_val is None)
 
         return StatusResponse(
             tenant_id=tenant["id"],
@@ -497,8 +519,7 @@ async def get_onboarding_status(token: str):
             whatsapp_jid=tenant.get("whatsapp_jid"),
             created_at=tenant.get("created_at", ""),
             phone=phone_val or None,
-            business_type=btype_val or None,
-            owner_name=(tenant.get("owner_name") or "").strip() or None,
+            owner_name=owner_name_val,
             needs_business_info=needs_info,
         )
 

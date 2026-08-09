@@ -77,6 +77,10 @@ class BusinessProfileRequest(BaseModel):
     # Primary WhatsApp number for the business — also written to tenants.phone
     phone: Optional[str] = None
     # Business vertical (e.g. "restaurant", "retail", "service", "salon")
+    # NOTE: business_type column does NOT exist on business_profiles yet
+    # (verified 2026-08-10). TODO: add the column via Supabase dashboard and
+    # re-enable persistence below. For now, business_type is accepted but
+    # stored in the notes field as a structured hint.
     business_type: Optional[str] = None
     handover_contacts: Optional[List[HandoverContact]] = Field(default_factory=list)
     business_hours: Optional[str] = None
@@ -213,14 +217,24 @@ async def upsert_business_profile(request: BusinessProfileRequest):
             .execute()
         )
 
+        # Build profile_data WITHOUT business_type — that column doesn't exist
+        # on business_profiles yet. We prepend business_type to the notes
+        # payload so it's recoverable later (or via the dashboard).
+        notes_payload = request.notes or ""
+        if request.business_type:
+            structured = f"business_type={request.business_type}"
+            if notes_payload:
+                notes_payload = f"{structured}\n{notes_payload}"
+            else:
+                notes_payload = structured
+
         profile_data = {
             "tenant_id": request.tenant_id,
             "business_name": request.business_name,
             "owner_name": request.owner_name,
-            "business_type": request.business_type,
             "handover_contacts": handover_contacts_json,
             "business_hours": request.business_hours,
-            "notes": request.notes,
+            "notes": notes_payload or None,
             "updated_at": datetime.now().isoformat(),
         }
 
@@ -242,19 +256,17 @@ async def upsert_business_profile(request: BusinessProfileRequest):
                 .execute()
             )
 
-        # Also sync phone/business_type/business_name/owner_name to the tenants
-        # row so the status endpoint + downstream code (WhatsApp bridge, billing,
-        # etc.) see the same canonical values. tenants.business_name is the
-        # primary identifier used everywhere.
+        # Sync phone/business_name to the tenants row so the status endpoint
+        # and WhatsApp bridge see the same canonical values.
+        # NOTE: tenants.business_type and tenants.owner_name columns don't exist
+        # (verified 2026-08-10). tenants.owner_phone / tenants.owner_email
+        # would be the analogous columns, but we only sync phone (verified to
+        # exist) and business_name.
         tenant_patch: Dict[str, Any] = {}
         if request.phone is not None:
             tenant_patch["phone"] = request.phone
-        if request.business_type is not None:
-            tenant_patch["business_type"] = request.business_type
         if request.business_name is not None:
             tenant_patch["business_name"] = request.business_name
-        if request.owner_name is not None:
-            tenant_patch["owner_name"] = request.owner_name
         if tenant_patch:
             tenant_patch["updated_at"] = datetime.now().isoformat()
             supabase.table("tenants").update(tenant_patch).eq("id", request.tenant_id).execute()
@@ -269,7 +281,7 @@ async def upsert_business_profile(request: BusinessProfileRequest):
                 profile={
                     "business_name": profile.get("business_name"),
                     "owner_name": profile.get("owner_name"),
-                    "business_type": profile.get("business_type"),
+                    "business_type": request.business_type,  # echo back what was requested
                     "handover_contacts": profile.get("handover_contacts", []),
                     "business_hours": profile.get("business_hours"),
                     "notes": profile.get("notes"),
