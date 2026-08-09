@@ -273,10 +273,32 @@
     <script>
       let tenants = [];
 
+      // The admin API now requires the operator's shared secret in
+      // `X-Admin-Key`. We pull it from `localStorage.admin_api_key`.
+      // If the key is missing, every request 401s and the operator sees
+      // a clear message instead of a silent empty list.
+      function adminHeaders(extra) {
+        const h = Object.assign({}, extra || {});
+        const k = (localStorage.getItem("admin_api_key") || "").trim();
+        if (k) h["X-Admin-Key"] = k;
+        return h;
+      }
+
       async function loadTenants() {
         try {
-          const response = await fetch("/api/admin/tenants");
-          if (!response.ok) throw new Error("Failed to load tenants");
+          const response = await fetch("/api/admin/tenants", {
+            headers: adminHeaders(),
+          });
+          if (!response.ok) {
+            if (response.status === 401 || response.status === 503) {
+              const hint = response.status === 503
+                ? "Admin API is not configured. Set ADMIN_API_KEY on the server."
+                : "Invalid or missing X-Admin-Key. Set localStorage.admin_api_key.";
+              showError("🔒 " + hint);
+              return;
+            }
+            throw new Error("Failed to load tenants (HTTP " + response.status + ")");
+          }
 
           const data = await response.json();
           tenants = data.tenants;
@@ -298,6 +320,18 @@
         document.getElementById("pendingTenants").textContent = pending;
       }
 
+      // HTML-attribute safe escaper. Tenant business_name/email/phone are
+      // user-controlled at signup, so they must be escaped before any
+      // innerHTML or attribute interpolation.
+      function escHtml(s) {
+        return String(s == null ? "" : s)
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#39;");
+      }
+
       function renderTenants() {
         const tbody = document.getElementById("tenantsTable");
 
@@ -313,33 +347,50 @@
         }
 
         tbody.innerHTML = tenants
-          .map(
-            (tenant) => `
-          <tr>
-            <td><strong>${tenant.business_name}</strong></td>
-            <td>${tenant.email}</td>
-            <td>${tenant.phone || "-"}</td>
-            <td>
-              ${
-                tenant.whatsapp_connected_at
-                  ? '<span class="badge badge-success">✅ Connected</span>'
-                  : '<span class="badge badge-warning">⏳ Pending</span>'
-              }
-            </td>
-            <td>${new Date(tenant.created_at).toLocaleDateString()}</td>
-            <td>
-              ${
-                tenant.whatsapp_connected_at
-                  ? `<span class="badge badge-secondary">Already connected</span>`
-                  : `<button class="btn btn-primary" onclick="generateQR('${tenant.id}', '${tenant.business_name}')">
-                      Generate QR
-                    </button>`
-              }
-            </td>
-          </tr>
-        `,
-          )
+          .map((tenant) => {
+            // tenant.id is server-generated (UUID) but encode it anyway for defense
+            // in depth. tenant.business_name is user-controlled at signup — escape it.
+            const safeId = encodeURIComponent(tenant.id || "");
+            const safeName = escHtml(tenant.business_name);
+            const safeEmail = escHtml(tenant.email);
+            const safePhone = escHtml(tenant.phone || "-");
+            const safeCreated = escHtml(
+              new Date(tenant.created_at).toLocaleDateString(),
+            );
+            const actionCell = tenant.whatsapp_connected_at
+              ? `<span class="badge badge-secondary">Already connected</span>`
+              // Use a data-attribute + event delegation; never inline user input
+              // into an onclick string. data-tenant-id stays raw for the listener.
+              : `<button class="btn btn-primary" data-tenant-id="${escHtml(tenant.id || "")}" data-tenant-name="${safeName}">
+                  Generate QR
+                </button>`;
+            return `
+              <tr>
+                <td><strong>${safeName}</strong></td>
+                <td>${safeEmail}</td>
+                <td>${safePhone}</td>
+                <td>
+                  ${
+                    tenant.whatsapp_connected_at
+                      ? '<span class="badge badge-success">✅ Connected</span>'
+                      : '<span class="badge badge-warning">⏳ Pending</span>'
+                  }
+                </td>
+                <td>${safeCreated}</td>
+                <td>${actionCell}</td>
+              </tr>
+            `;
+          })
           .join("");
+
+        // Bind the Generate QR buttons via delegation (one listener, no inline JS).
+        tbody.querySelectorAll("button[data-tenant-id]").forEach((btn) => {
+          btn.addEventListener("click", () => {
+            const id = btn.getAttribute("data-tenant-id") || "";
+            const name = btn.getAttribute("data-tenant-name") || "";
+            generateQR(id, name);
+          });
+        });
       }
 
       async function generateQR(tenantId, businessName) {
@@ -350,7 +401,11 @@
 
         // Show modal with loading state
         modalTitle.textContent = `Setup WhatsApp for ${businessName}`;
-        modalSubtitle.innerHTML = `Tenant ID: <code>${tenantId}</code>`;
+        // Use textContent for the code, not innerHTML, to avoid XSS.
+        modalSubtitle.textContent = "Tenant ID:";
+        const codeEl = document.createElement("code");
+        codeEl.textContent = tenantId;
+        modalSubtitle.appendChild(codeEl);
         qrContainer.innerHTML =
           '<div class="loading" style="margin: 40px auto"></div>';
         modal.classList.add("active");
@@ -358,6 +413,7 @@
         try {
           const response = await fetch(`/api/admin/qr/${tenantId}`, {
             method: "POST",
+            headers: adminHeaders(),
           });
 
           if (!response.ok) {
@@ -377,9 +433,12 @@
           `;
         } catch (error) {
           console.error("QR generation error:", error);
+          // error.message comes from a JSON response body (server-controlled),
+          // not user input — but escape anyway in case server forwards any
+          // user-controlled text (e.g. Supabase error messages).
           qrContainer.innerHTML = `
             <div class="error">
-              ❌ ${error.message}
+              ❌ ${escHtml(error.message)}
             </div>
           `;
         }
