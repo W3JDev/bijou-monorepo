@@ -489,6 +489,18 @@
       const API_BASE = window.location.origin;
       const TEST_TENANT_ID = "1e63900e-1b83-4dc8-ba55-9d619eae0866"; // Test tenant from Phase 2
 
+      // HTML escape for strings interpolated into innerHTML. error.message
+      // can include server-returned text; escape so a malicious backend
+      // response can't render arbitrary HTML here.
+      function esc(s) {
+        return String(s == null ? "" : s)
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#39;");
+      }
+
       // Auto-run on page load
       window.addEventListener("load", () => {
         runHealthChecks();
@@ -542,7 +554,7 @@
           }
         } catch (error) {
           setStatus(statusEl, "error");
-          detailsEl.innerHTML = `❌ <strong>Offline</strong><br>${error.message}`;
+          detailsEl.innerHTML = `❌ <strong>Offline</strong><br>${esc(error.message)}`;
         }
       }
 
@@ -566,7 +578,7 @@
           }
         } catch (error) {
           setStatus(statusEl, "error");
-          detailsEl.innerHTML = `❌ <strong>Disconnected</strong><br>${error.message}`;
+          detailsEl.innerHTML = `❌ <strong>Disconnected</strong><br>${esc(error.message)}`;
         }
       }
 
@@ -591,7 +603,7 @@
           }
         } catch (error) {
           setStatus(statusEl, "error");
-          detailsEl.innerHTML = `❌ <strong>Offline</strong><br>${error.message}`;
+          detailsEl.innerHTML = `❌ <strong>Offline</strong><br>${esc(error.message)}`;
         }
       }
 
@@ -617,7 +629,7 @@
           }
         } catch (error) {
           setStatus(statusEl, "error");
-          detailsEl.innerHTML = `❌ <strong>Failed</strong><br>${error.message}`;
+          detailsEl.innerHTML = `❌ <strong>Failed</strong><br>${esc(error.message)}`;
         }
       }
 
@@ -646,7 +658,7 @@
           }
         } catch (error) {
           setStatus(statusEl, "error");
-          detailsEl.innerHTML = `❌ <strong>Failed</strong><br>${error.message}`;
+          detailsEl.innerHTML = `❌ <strong>Failed</strong><br>${esc(error.message)}`;
         }
       }
 
@@ -673,7 +685,7 @@
           }
         } catch (error) {
           setStatus(statusEl, "error");
-          detailsEl.innerHTML = `❌ <strong>Failed</strong><br>${error.message}`;
+          detailsEl.innerHTML = `❌ <strong>Failed</strong><br>${esc(error.message)}`;
         }
       }
 
