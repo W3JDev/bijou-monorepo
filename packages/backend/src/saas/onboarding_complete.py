@@ -119,8 +119,9 @@ async def signup(request: SignupRequest, background_tasks: BackgroundTasks):
         # Provision WhatsApp device on bridge (background task)
         background_tasks.add_task(provision_whatsapp_device, tenant_id, request.business_name)
 
-        # Return signup response
-        frontend_url = os.getenv('FRONTEND_URL', 'https://v0-cliste-website-navigation-sigma-ruby.vercel.app')
+        # Return signup response — use PUBLIC_URL (canonical production URL)
+        # so the QR page is served from our own backend, not the dead Vercel v0-cliste app
+        frontend_url = os.getenv('PUBLIC_URL', 'https://app.mybijou.xyz').rstrip("/")
         onboarding_url = f"{frontend_url}/onboard/{signup_token}"
 
         logger.info(f"✅ Tenant signup successful: {tenant_id} ({request.email})")
@@ -544,8 +545,8 @@ async def complete_onboarding(tenant_id: str):
             "is_active": True
         }).eq("id", tenant_id).execute()
 
-        # Generate dashboard access URL
-        dashboard_url = f"{os.getenv('DASHBOARD_URL', 'https://v0-cliste-website-navigation-sigma-ruby.vercel.app/dashboard')}?tenant={tenant_id}"
+        # Generate dashboard access URL — use PUBLIC_URL for canonical host
+        dashboard_url = f"{os.getenv('PUBLIC_URL', 'https://app.mybijou.xyz').rstrip('/')}/dashboard?tenant={tenant_id}"
 
         logger.info(f"🎉 Onboarding complete for tenant {tenant_id}")
 

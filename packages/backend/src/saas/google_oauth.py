@@ -111,13 +111,13 @@ async def google_login():
 
 
 @router.get("/callback")
-async def google_callback(code: str, state: str):
+async def google_callback(code: str, state: str, request: Request):
     """
     Step 2: Google redirects here with authorization code
     Exchange code for tokens → fetch user info → create tenant → redirect to QR onboarding
     """
     logger.info(f"📨 Received OAuth callback with code: {code[:20]}... state: {state[:20]}...")
-    
+
     config = get_google_config()
     
     try:
@@ -188,7 +188,8 @@ async def google_callback(code: str, state: str):
             if ti_data and ti_data.get("whatsapp_connected_at"):
                 # User already completed onboarding - go straight to dashboard
                 logger.info(f"✅ WhatsApp already connected for {tenant_id}, skipping onboarding")
-                dashboard_url = "https://v0-cliste-website-navigation-sigma-ruby.vercel.app/dashboard"
+                public_url = os.getenv("PUBLIC_URL", "").rstrip("/") or str(request.base_url).rstrip("/")
+                dashboard_url = f"{public_url}/dashboard"
                 return RedirectResponse(url=dashboard_url)
             
             # CRITICAL: Also update tenants.signup_token for onboarding API compatibility
@@ -199,10 +200,14 @@ async def google_callback(code: str, state: str):
             }).eq("id", tenant_id).execute()
             
             logger.info(f"🎫 Created onboarding session: {onboarding_token[:20]}... for tenant {tenant_id}")
-            
-            # Redirect to onboarding QR page (React app on Vercel)
-            onboarding_url = f"https://v0-cliste-website-navigation-sigma-ruby.vercel.app/onboard/{onboarding_token}"
-            
+
+            # Redirect to onboarding QR page (served from our own backend, not Vercel)
+            # Use PUBLIC_URL if set, else fallback to the request host
+            public_url = os.getenv("PUBLIC_URL", "").rstrip("/")
+            if not public_url:
+                public_url = str(request.base_url).rstrip("/")
+            onboarding_url = f"{public_url}/onboard/{onboarding_token}"
+
             return RedirectResponse(url=onboarding_url)
             
     except Exception as e:

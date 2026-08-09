@@ -1,0 +1,362 @@
+<!doctype html>
+<html lang="en">
+  <!-- Bijou WhatsApp QR onboarding - served from backend (replaces v0-cliste Vercel app) -->
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>🤖 Bijou AI — Connect WhatsApp</title>
+    <link rel="icon" type="image/png" href="/static/favicon.png" />
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body { height: 100%; }
+      body {
+        font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI",
+                     Tahoma, Geneva, Verdana, sans-serif;
+        background: radial-gradient(ellipse at top, #0a3d35 0%, #000000 60%);
+        color: #ffffff;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        overflow-x: hidden;
+      }
+      /* Subtle aurora glow */
+      body::before {
+        content: ""; position: fixed; top: 30%; left: 50%;
+        transform: translate(-50%, -50%);
+        width: 800px; height: 800px;
+        background: radial-gradient(circle, rgba(46, 241, 157, 0.08) 0%, transparent 60%);
+        pointer-events: none; z-index: 0;
+      }
+      .card {
+        position: relative; z-index: 1;
+        background: rgba(255, 255, 255, 0.08);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        border-radius: 24px;
+        overflow: hidden;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        max-width: 480px; width: 100%;
+      }
+      .header {
+        background: linear-gradient(135deg, #059669 0%, #047857 100%);
+        padding: 32px 24px; text-align: center;
+      }
+      .header h1 { font-size: 26px; font-weight: 700; margin-bottom: 6px; }
+      .header p { color: rgba(255, 255, 255, 0.85); font-size: 14px; }
+      .content { padding: 28px 24px; min-height: 200px; }
+
+      .spinner {
+        width: 48px; height: 48px;
+        border: 4px solid rgba(46, 241, 157, 0.2);
+        border-top-color: #2ef19d;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin: 0 auto 16px;
+      }
+      .spinner.green { border-color: rgba(16, 185, 129, 0.2); border-top-color: #10b981; }
+      @keyframes spin { to { transform: rotate(360deg); } }
+      @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+      .fade-in { animation: fadeIn 0.4s ease-out; }
+
+      .qr-wrap {
+        background: #ffffff; border-radius: 16px; padding: 20px;
+        margin: 0 auto 20px; max-width: 320px;
+      }
+      .qr-wrap img { display: block; width: 100%; height: auto; }
+
+      .help {
+        background: rgba(16, 185, 129, 0.15);
+        border: 1px solid rgba(16, 185, 129, 0.3);
+        border-radius: 12px; padding: 16px; margin-bottom: 16px;
+      }
+      .help h3 { color: #6ee7b7; font-size: 14px; font-weight: 600; margin-bottom: 8px; }
+      .help ol { font-size: 13px; color: rgba(255, 255, 255, 0.85); padding-left: 20px; }
+      .help li { margin-bottom: 4px; }
+
+      .pulse {
+        display: inline-block; width: 8px; height: 8px;
+        background: #2ef19d; border-radius: 50%; margin-right: 8px;
+        animation: pulse 2s ease-in-out infinite;
+        vertical-align: middle;
+      }
+      @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+      .icon-circle {
+        width: 80px; height: 80px; border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        margin: 0 auto 16px;
+      }
+      .icon-circle.success { background: rgba(16, 185, 129, 0.2); color: #34d399; }
+      .icon-circle.error { background: rgba(239, 68, 68, 0.2); color: #f87171; }
+      .icon-circle svg { width: 48px; height: 48px; }
+
+      .btn {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: #ffffff; border: none; padding: 12px 28px;
+        border-radius: 10px; font-size: 15px; font-weight: 600;
+        cursor: pointer; transition: transform 0.15s, box-shadow 0.15s;
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+      }
+      .btn:hover { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(16, 185, 129, 0.45); }
+      .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+      .footer {
+        background: rgba(0, 0, 0, 0.2);
+        padding: 12px 24px; text-align: center;
+        font-size: 12px; color: rgba(255, 255, 255, 0.5);
+        border-top: 1px solid rgba(255, 255, 255, 0.08);
+      }
+
+      .biz-info {
+        margin-top: 16px; padding: 14px 16px;
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 10px; text-align: center;
+      }
+      .biz-info .name { font-weight: 600; color: #ffffff; }
+      .biz-info .email { font-size: 12px; color: rgba(255, 255, 255, 0.55); margin-top: 2px; }
+
+      .form-row { margin-bottom: 14px; text-align: left; }
+      .form-row label {
+        display: block; font-size: 12px; color: rgba(255, 255, 255, 0.75);
+        margin-bottom: 6px; font-weight: 500;
+      }
+      .form-row input, .form-row select {
+        width: 100%; padding: 10px 12px;
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        border-radius: 8px; color: #ffffff; font-size: 14px;
+        font-family: inherit;
+      }
+      .form-row input:focus, .form-row select:focus {
+        outline: none; border-color: #10b981;
+        background: rgba(255, 255, 255, 0.1);
+      }
+      .form-row select option { background: #0a3d35; color: #ffffff; }
+      .form-error { color: #fca5a5; font-size: 13px; margin: 8px 0; }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <div class="header">
+        <h1>🤖 Bijou AI Setup</h1>
+        <p>Connect your WhatsApp to get started</p>
+      </div>
+
+      <div class="content" id="content">
+        <!-- Loading state on initial render -->
+        <div class="fade-in" style="text-align:center;padding:20px 0;">
+          <div class="spinner"></div>
+          <p style="color:rgba(255,255,255,0.7);">Initializing your account…</p>
+        </div>
+      </div>
+
+      <div class="footer">🔒 Secure connection • Your data is encrypted</div>
+    </div>
+
+    <script>
+      // Get token from URL path: /onboard/{token}
+      const pathParts = window.location.pathname.split('/').filter(Boolean);
+      const token = pathParts[pathParts.length - 1] || '';
+
+      // Same-origin API base
+      const API_BASE = window.location.origin;
+      const POLL_INTERVAL = 3000;       // 3s
+      const QR_REFRESH_INTERVAL = 30000; // 30s
+
+      const content = document.getElementById('content');
+      let pollTimer = null;
+      let qrTimer = null;
+      let statusData = null;
+      let qrRefreshKey = Date.now();
+      let state = 'loading';
+
+      function setHTML(html) {
+        content.innerHTML = html;
+      }
+
+      function renderLoading() {
+        setHTML(`
+          <div class="fade-in" style="text-align:center;padding:20px 0;">
+            <div class="spinner"></div>
+            <p style="color:rgba(255,255,255,0.7);">Initializing your account…</p>
+          </div>
+        `);
+      }
+
+      function renderQR() {
+        setHTML(`
+          <div class="fade-in">
+            <div style="text-align:center;margin-bottom:16px;">
+              <h2 style="font-size:20px;font-weight:600;margin-bottom:4px;">Scan QR Code</h2>
+              <p style="color:rgba(255,255,255,0.7);font-size:13px;">
+                Open WhatsApp on your phone and scan this code
+              </p>
+            </div>
+            <div class="qr-wrap">
+              <img id="qr-img" src="${API_BASE}/api/onboarding/qr/${token}?t=${qrRefreshKey}" alt="WhatsApp QR Code" />
+            </div>
+            <div class="help">
+              <h3>📱 How to scan:</h3>
+              <ol>
+                <li>Open WhatsApp on your phone</li>
+                <li>Tap Menu (⋮) → Linked Devices</li>
+                <li>Tap "Link a Device"</li>
+                <li>Point your phone at this screen</li>
+              </ol>
+            </div>
+            <div style="text-align:center;color:rgba(255,255,255,0.6);font-size:13px;">
+              <span class="pulse"></span>Waiting for scan…
+            </div>
+          </div>
+        `);
+      }
+
+      function renderConnecting() {
+        setHTML(`
+          <div class="fade-in" style="text-align:center;padding:20px 0;">
+            <div class="spinner green"></div>
+            <h2 style="font-size:20px;font-weight:600;margin:12px 0 6px;">Connecting…</h2>
+            <p style="color:rgba(255,255,255,0.7);font-size:13px;">
+              Establishing secure connection to WhatsApp
+            </p>
+          </div>
+        `);
+      }
+
+      function renderSuccess() {
+        setHTML(`
+          <div class="fade-in" style="text-align:center;padding:20px 0;">
+            <div class="icon-circle success">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+              </svg>
+            </div>
+            <h2 style="font-size:24px;font-weight:700;margin-bottom:8px;">✅ Connected!</h2>
+            <p style="color:rgba(255,255,255,0.7);margin-bottom:6px;">
+              Your WhatsApp is now connected to Bijou AI
+            </p>
+            <p style="color:rgba(255,255,255,0.5);font-size:13px;">Redirecting to dashboard…</p>
+          </div>
+        `);
+      }
+
+      function renderError(message) {
+        setHTML(`
+          <div class="fade-in" style="text-align:center;padding:16px 0;">
+            <div class="icon-circle error">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+              </svg>
+            </div>
+            <h2 style="font-size:20px;font-weight:600;margin-bottom:8px;">Connection Failed</h2>
+            <p style="color:rgba(255,255,255,0.7);margin-bottom:16px;font-size:14px;">${message || 'Network error. Please check your connection and refresh.'}</p>
+            <button class="btn" onclick="window.location.reload()">Retry</button>
+          </div>
+        `);
+      }
+
+      function renderBizInfo() {
+        if (!statusData) return '';
+        return `
+          <div class="biz-info">
+            <div class="name">${escapeHtml(statusData.business_name || 'Your business')}</div>
+            <div class="email">${escapeHtml(statusData.email || '')}</div>
+          </div>
+        `;
+      }
+
+      function escapeHtml(s) {
+        return String(s || '').replace(/[&<>"']/g, c => ({
+          '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+        }[c]));
+      }
+
+      async function checkStatus() {
+        try {
+          const res = await fetch(`${API_BASE}/api/onboarding/status/${token}`);
+          if (res.status === 404) {
+            renderError('Invalid or expired onboarding link. Please use the link from your signup.');
+            return false;
+          }
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          const data = await res.json();
+          statusData = data;
+
+          if (data.whatsapp_connected) {
+            state = 'connecting';
+            renderConnecting();
+            setTimeout(completeOnboarding, 1500);
+            return false;
+          } else if (data.status === 'qr_ready') {
+            if (state !== 'qr') {
+              state = 'qr';
+              renderQR();
+            }
+            return true;
+          } else if (data.status === 'error') {
+            renderError('Failed to initialize WhatsApp session. Please refresh the page.');
+            return false;
+          }
+          return true; // continue polling
+        } catch (e) {
+          console.error('Status check failed:', e);
+          renderError('Network error. Please check your connection and refresh.');
+          return false;
+        }
+      }
+
+      async function completeOnboarding() {
+        try {
+          await fetch(`${API_BASE}/api/onboarding/complete/${token}`, { method: 'POST' });
+        } catch (e) {
+          console.warn('Complete onboarding call failed (continuing):', e);
+        }
+        state = 'success';
+        renderSuccess();
+        setTimeout(() => { window.location.href = '/dashboard'; }, 2000);
+      }
+
+      // Boot
+      if (!token || token.length < 10) {
+        renderError('Invalid onboarding link. Please use the link from your signup.');
+      } else {
+        // Initial check
+        checkStatus();
+        // Polling loop
+        pollTimer = setInterval(async () => {
+          const ok = await checkStatus();
+          if (!ok && pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+        }, POLL_INTERVAL);
+        // QR refresh loop (only refreshes the img src, doesn't re-render)
+        qrTimer = setInterval(() => {
+          if (state === 'qr') {
+            qrRefreshKey = Date.now();
+            const img = document.getElementById('qr-img');
+            if (img) img.src = `${API_BASE}/api/onboarding/qr/${token}?t=${qrRefreshKey}`;
+          }
+        }, QR_REFRESH_INTERVAL);
+        // Also re-render business info box below the card when status arrives
+        const bizTimer = setInterval(() => {
+          if (statusData) {
+            const existing = document.getElementById('biz-info-anchor');
+            if (!existing) {
+              const div = document.createElement('div');
+              div.id = 'biz-info-anchor';
+              div.innerHTML = renderBizInfo();
+              document.querySelector('.card').insertAdjacentElement('afterend', div);
+            }
+          }
+        }, 1000);
+        // Cleanup on unload
+        window.addEventListener('beforeunload', () => {
+          if (pollTimer) clearInterval(pollTimer);
+          if (qrTimer) clearInterval(qrTimer);
+          if (bizTimer) clearInterval(bizTimer);
+        });
+      }
+    </script>
+  </body>
+</html>

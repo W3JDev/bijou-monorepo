@@ -5970,6 +5970,24 @@ async def oauth_callback_page():
     return RedirectResponse(url="/dashboard")
 
 
+@app.get("/onboard/{token}", response_class=HTMLResponse)
+async def onboard_qr_page(token: str):
+    """
+    Serve the WhatsApp QR onboarding page (replaces v0-cliste Vercel app).
+
+    Both email signup and Google OAuth redirect here after creating a tenant.
+    The page polls /api/onboarding/status/{token} every 3s and shows the QR
+    code from /api/onboarding/qr/{token}. When WhatsApp connects, the page
+    calls /api/onboarding/complete/{token} and redirects to /dashboard.
+    """
+    p = Path(__file__).parent.parent.parent / "static" / "onboard-qr.html"
+    if p.exists():
+        # Inject PUBLIC_URL so the page can use it for absolute URLs in success redirects
+        html = p.read_text(encoding="utf-8")
+        return HTMLResponse(content=html)
+    return HTMLResponse("Onboarding page not found", status_code=404)
+
+
 @app.get("/reset-password", response_class=HTMLResponse)
 async def reset_password_page():
     """Serve the Supabase password reset page (handles #access_token=... fragment)"""
