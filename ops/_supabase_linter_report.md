@@ -259,3 +259,14 @@ Smoke tests through REST API (anon + service_role keys) all returned `200`:
 ## Cannot fix via API
 
 None of the linter findings required Pro-tier features. All were fixable via the Management API.
+
+## Commits
+
+All ops scripts and the report were committed to the `main` branch of the Bijou monorepo.
+
+| Commit | Message | Files |
+|---|---|---|
+| `e21b0cb` | `chore(supabase): add linter fix scripts (A search_path, B policies, C indexes, D pubexec)` | 22 linter fix/verify scripts + JSON dumps |
+| `fa2d401` | `docs(ops): Supabase linter fix report` | `ops/_supabase_linter_report.md` |
+
+Both commits are reachable from `main` HEAD. The 25 ALTER FUNCTION, 18 REVOKE, 3 policy merge, and 21 DROP INDEX statements all ran against the live database via the Supabase Management API. No business logic was modified.
