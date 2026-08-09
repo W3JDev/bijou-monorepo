@@ -100,5 +100,4 @@ jobs:
             --app "$BIJOU_FLY_BRIDGE_APP" \
             --config fly.bridge-production.toml \
             --remote-only \
-            --strategy bluegreen \
             --wait-timeout 300
