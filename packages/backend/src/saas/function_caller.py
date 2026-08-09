@@ -304,7 +304,61 @@ class FunctionCaller:
                     },
                     "required": ["name", "phone"],
                 },
-            }
+            },
+            {
+                # Web access tool — works regardless of LLM provider.
+                # Uses httpx to GET a URL and returns the text content
+                # (HTML stripped to plain text). Useful for "what's on this
+                # page?" / "check this link" requests.
+                "name": "fetch_url",
+                "description": (
+                    "Fetch the content of a public URL and return it as plain "
+                    "text. Use this when the customer shares a link and asks "
+                    "what it is, or when you need to look up information from a "
+                    "web page. Supports http and https. Max response size is "
+                    "limited to keep payloads small. Will not follow redirects "
+                    "to private (auth-required) URLs."
+                ),
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "url": {
+                            "type": "string",
+                            "description": "The full URL to fetch (must start with http:// or https://)",
+                        },
+                        "max_chars": {
+                            "type": "integer",
+                            "description": "Maximum number of characters to return (default 8000, max 32000)",
+                        },
+                    },
+                    "required": ["url"],
+                },
+            },
+            {
+                # Web search tool — uses DuckDuckGo HTML (no API key needed).
+                # Returns the top search results as title + URL + snippet.
+                "name": "web_search",
+                "description": (
+                    "Search the public web using DuckDuckGo. Returns up to 5 "
+                    "results with title, URL, and a short snippet. Use this when "
+                    "the customer asks a question that requires current or general "
+                    "knowledge (news, prices, businesses, facts)."
+                ),
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "query": {
+                            "type": "string",
+                            "description": "The search query (e.g., 'best ramen KL 2026')",
+                        },
+                        "max_results": {
+                            "type": "integer",
+                            "description": "Maximum number of results to return (default 5, max 10)",
+                        },
+                    },
+                    "required": ["query"],
+                },
+            },
         ])
 
         # Long-tail actions served via the connector layer (Composio-backed).
@@ -327,6 +381,158 @@ class FunctionCaller:
                 })
 
         return functions
+
+    # =========================================================================
+    # WEB TOOLS (provider-agnostic, no API key required)
+    # =========================================================================
+    # The agent had no way to open URLs or search the public web — those
+    # capabilities were missing entirely. fetch_url and web_search are the
+    # minimum needed for "what's on this page?" and "look this up for me"
+    # requests. They are declared as Gemini function declarations and will
+    # be added to MiniMax tool-calling when that is implemented.
+
+    async def _web_fetch_url(self, url: str, max_chars: int = 8000) -> Dict[str, Any]:
+        """
+        Fetch a public URL and return its text content.
+
+        Strips HTML to plain text using a simple regex-based approach (no
+        external deps). Keeps payload small by capping at max_chars (default
+        8000, max 32000). Refuses non-http(s) schemes and private IPs to
+        prevent SSRF.
+        """
+        import re
+        import socket
+        from urllib.parse import urlparse
+
+        # 1. Validate URL shape
+        try:
+            parsed = urlparse(url)
+        except Exception:
+            return {"success": False, "error": f"Invalid URL: {url}"}
+        if parsed.scheme not in ("http", "https"):
+            return {"success": False, "error": f"Unsupported scheme: {parsed.scheme}"}
+        if not parsed.netloc:
+            return {"success": False, "error": "URL is missing a host"}
+
+        # 2. SSRF guard: refuse to fetch private/loopback IPs
+        try:
+            host = parsed.hostname or ""
+            # Resolve to IP and check
+            infos = socket.getaddrinfo(host, None)
+            for info in infos:
+                ip = info[4][0]
+                if (ip.startswith("127.") or ip.startswith("10.") or
+                    ip.startswith("192.168.") or ip.startswith("169.254.") or
+                    ip.startswith("0.") or ip == "::1" or
+                    ip.startswith("fc") or ip.startswith("fd")):
+                    return {"success": False, "error": "Refusing to fetch private/internal IP"}
+        except socket.gaierror:
+            return {"success": False, "error": f"Could not resolve host: {host}"}
+
+        # 3. Fetch with timeout + size cap
+        max_chars = max(500, min(int(max_chars or 8000), 32000))
+        try:
+            import httpx
+            async with httpx.AsyncClient(
+                timeout=15.0,
+                follow_redirects=True,
+                max_redirects=3,
+                headers={"User-Agent": "BijouAgent/1.0 (+https://mybijou.xyz)"},
+            ) as client:
+                r = await client.get(url)
+                ct = (r.headers.get("content-type") or "").lower()
+                if r.status_code != 200:
+                    return {"success": False, "error": f"HTTP {r.status_code}", "url": url}
+                # Cap raw bytes at 2MB to avoid huge responses
+                body = r.text[: 2 * 1024 * 1024]
+
+                # If HTML, strip to plain text
+                if "html" in ct or body.lstrip().startswith(("<!DOCTYPE", "<html", "<HTML")):
+                    # Drop script + style blocks
+                    body = re.sub(r"<script\b[^>]*>.*?</script>", " ", body, flags=re.DOTALL | re.IGNORECASE)
+                    body = re.sub(r"<style\b[^>]*>.*?</style>", " ", body, flags=re.DOTALL | re.IGNORECASE)
+                    # Strip tags
+                    body = re.sub(r"<[^>]+>", " ", body)
+                    # Decode common entities
+                    body = (body
+                        .replace("&nbsp;", " ")
+                        .replace("&amp;", "&")
+                        .replace("&lt;", "<")
+                        .replace("&gt;", ">")
+                        .replace("&quot;", '"')
+                        .replace("&#39;", "'"))
+                    # Collapse whitespace
+                    body = re.sub(r"\s+", " ", body).strip()
+                text = body[:max_chars]
+                return {
+                    "success": True,
+                    "url": url,
+                    "final_url": str(r.url),
+                    "content_type": ct,
+                    "status": r.status_code,
+                    "length": len(text),
+                    "truncated": len(body) > max_chars,
+                    "text": text,
+                }
+        except Exception as e:
+            return {"success": False, "error": str(e), "url": url}
+
+    async def _web_search(self, query: str, max_results: int = 5) -> Dict[str, Any]:
+        """
+        Search the public web via DuckDuckGo HTML (no API key required).
+
+        Returns the top max_results with title, URL, and snippet. Use this
+        when the LLM needs fresh public information (news, prices, business
+        listings, etc.). Fallback chain: DDG HTML -> empty result.
+        """
+        import re
+        import urllib.parse
+
+        max_results = max(1, min(int(max_results or 5), 10))
+        try:
+            import httpx
+            # DuckDuckGo HTML endpoint (no key required, returns HTML)
+            url = "https://html.duckduckgo.com/html/?" + urllib.parse.urlencode({"q": query})
+            async with httpx.AsyncClient(
+                timeout=15.0,
+                follow_redirects=True,
+                headers={"User-Agent": "Mozilla/5.0 BijouAgent/1.0"},
+            ) as client:
+                r = await client.get(url)
+                if r.status_code != 200:
+                    return {"success": False, "error": f"DDG HTTP {r.status_code}", "results": []}
+                html = r.text
+
+                # Parse result blocks. DDG HTML uses result__a for title+href
+                # and result__snippet for the text snippet. We extract the
+                # first max_results blocks.
+                # Find <a class="result__a" href="...">TITLE</a>
+                link_re = re.compile(
+                    r'<a[^>]+class="result__a"[^>]+href="([^"]+)"[^>]*>(.*?)</a>',
+                    re.DOTALL | re.IGNORECASE,
+                )
+                # Find <a class="result__snippet" ...>SNIPPET</a> or <td class="result__snippet">SNIPPET</td>
+                snip_re = re.compile(
+                    r'class="result__snippet"[^>]*>(.*?)</(?:a|td)>',
+                    re.DOTALL | re.IGNORECASE,
+                )
+                links = link_re.findall(html)
+                snippets = snip_re.findall(html)
+                results = []
+                for i, (href, title_html) in enumerate(links[:max_results]):
+                    title = re.sub(r"<[^>]+>", "", title_html).strip()
+                    # DDG wraps real URLs in /l/?uddg=<base64> — un-wrap
+                    if "uddg=" in href:
+                        m = re.search(r"uddg=([^&]+)", href)
+                        if m:
+                            href = urllib.parse.unquote(m.group(1))
+                    snippet = ""
+                    if i < len(snippets):
+                        snippet = re.sub(r"<[^>]+>", "", snippets[i]).strip()
+                    results.append({"title": title, "url": href, "snippet": snippet})
+                return {"success": True, "query": query, "count": len(results), "results": results}
+        except Exception as e:
+            return {"success": False, "error": str(e), "query": query, "results": []}
 
     def is_destructive_action(self, function_name: str) -> bool:
         """
@@ -644,6 +850,20 @@ class FunctionCaller:
                 name=args["name"],
                 phone=args["phone"],
                 details=args.get("details")
+            )
+
+        # Web: fetch a URL and return its text content. Provider-agnostic.
+        elif function_name == "fetch_url":
+            return await self._web_fetch_url(
+                url=args["url"],
+                max_chars=int(args.get("max_chars") or 8000),
+            )
+
+        # Web: search the public web via DuckDuckGo HTML (no API key).
+        elif function_name == "web_search":
+            return await self._web_search(
+                query=args["query"],
+                max_results=int(args.get("max_results") or 5),
             )
 
         # Reminder
