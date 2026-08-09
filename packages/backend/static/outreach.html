@@ -1422,10 +1422,13 @@
             `/api/outreach/send-test?tenant_id=${TENANT_ID}`,
             { method: "POST", body: JSON.stringify({ message: msg }) },
           );
-          resultEl.innerHTML = `<span style="color:#10b981">✅ Sent to ${resp.sent_to}</span>`;
-          showToast("Test message sent to " + resp.sent_to, "success");
+          // resp.sent_to comes from the server; escape anyway in case the
+          // server forwards any user-controlled text (e.g. a phone display name).
+          resultEl.innerHTML = `<span style="color:#10b981">✅ Sent to ${esc(resp.sent_to)}</span>`;
+          showToast("Test message sent to " + (resp.sent_to || ""), "success");
         } catch (e) {
-          resultEl.innerHTML = `<span style="color:#f87171">❌ Failed: ${e.message}</span>`;
+          // e.message can include server error text. Escape it.
+          resultEl.innerHTML = `<span style="color:#f87171">❌ Failed: ${esc(e.message)}</span>`;
           showToast("Failed: " + e.message, "error");
         }
       }
