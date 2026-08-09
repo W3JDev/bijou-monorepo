@@ -4,9 +4,10 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "node ./node_modules/vite/bin/vite.js",
-    "build": "node ./node_modules/vite/bin/vite.js build",
-    "preview": "node ./node_modules/vite/bin/vite.js preview"
+    "_comment_vite_invocation": "In npm workspaces with hoisting (root has node_modules), `./node_modules/vite/bin/vite.js` doesn't exist locally. Invoke `vite` by name so npm resolves the binary from the workspace root's node_modules/.bin. `npx vite ...` and `npm exec vite ...` also work; the explicit binary name keeps it portable for `npm run build` from inside packages/landing or from the repo root.",
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
   },
   "dependencies": {
     "@google/genai": "^1.41.0",
