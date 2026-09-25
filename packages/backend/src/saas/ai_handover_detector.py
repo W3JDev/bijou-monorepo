@@ -218,14 +218,12 @@ def detect_handover_intent(message: str, gemini_api_key: str = None) -> Tuple[bo
         Tuple of (wants_human: bool, reason: str, urgency: str)
         urgency can be: "urgent", "high", "normal", "none"
     """
-    api_key = gemini_api_key or os.getenv("GEMINI_API_KEY")
+    # gemini_api_key is ignored: the call below goes through the AI Gateway,
+    # which picks whichever provider has a key. (It used to force the keyword
+    # fallback whenever GEMINI_API_KEY was unset — i.e. always, once Gemini died.)
 
     # Pre-compute lowercased message for all pre-filter paths below
     message_lower = message.lower().strip()
-
-    if not api_key:
-        logger.warning("⚠️ GEMINI_API_KEY not set - using keyword fallback for handover detection")
-        return _keyword_fallback(message_lower)
 
     # Pre-filter: Exclude messages that are clearly NOT escalation requests
 

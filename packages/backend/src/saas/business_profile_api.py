@@ -63,6 +63,34 @@ async def verify_tenant(tenant_id: str) -> bool:
         return False
 
 
+# Maps the onboarding "business type" dropdown / free-text
+# (static/onboard-qr.html:283-295) to a vertical KEY that vertical_loader.py
+# recognises (property / dental / fnb / w3j — see its module docstring and the
+# vertical_templates table). Anything not listed here has no vertical template,
+# so the caller SKIPS the tenant_verticals upsert rather than write an invalid
+# vertical_id. Keep this in sync with the dropdown and vertical_templates.
+_BUSINESS_TYPE_TO_VERTICAL: Dict[str, str] = {
+    "restaurant": "fnb",
+    "fnb": "fnb",
+    "f&b": "fnb",
+    "realestate": "property",
+    "real estate": "property",
+    "property": "property",
+    "healthcare": "dental",
+    "dental": "dental",
+    "clinic": "dental",
+}
+
+
+def _map_business_type_to_vertical(business_type: Optional[str]) -> Optional[str]:
+    """Resolve a user-facing business_type to a known vertical key, or None
+    when there is no matching template (in which case the caller must not
+    write to tenant_verticals — an invalid vertical_id yields no prompt)."""
+    if not business_type:
+        return None
+    return _BUSINESS_TYPE_TO_VERTICAL.get(business_type.strip().lower())
+
+
 # ════════════════════════════════════════════════════════════════
 # PYDANTIC MODELS
 # ════════════════════════════════════════════════════════════════
@@ -296,6 +324,48 @@ async def upsert_business_profile(
             tenant_patch["updated_at"] = datetime.now().isoformat()
             supabase.table("tenants").update(tenant_patch).eq("id", request.tenant_id).execute()
             logger.info(f"🔄 Synced {list(tenant_patch.keys())} to tenants row {request.tenant_id}")
+
+        # D-ONB-1 fix: the business_type picked during onboarding must actually
+        # configure the agent. vertical_loader.get_tenant_vertical_prompt reads
+        # the SEPARATE tenant_verticals table — not business_profiles — so the
+        # business_type written above is invisible to it (its only other writer
+        # is auth_api.py's signup path). Mirror that insert here so the onboard
+        # dropdown wires through. This only changes AI behaviour when
+        # ENABLE_VERTICAL_TEMPLATES=true (an ops decision, left unchanged); we
+        # just wire the data so it works when that flag is enabled. Additive and
+        # non-fatal — the profile write above has already succeeded.
+        if request.business_type:
+            vertical_id = _map_business_type_to_vertical(request.business_type)
+            if vertical_id:
+                try:
+                    # One active vertical per tenant. tenant_verticals PK is
+                    # (tenant_id, vertical_id), so a plain insert would leave a
+                    # stale second enabled row if the tenant changes type.
+                    # Delete-then-insert keeps exactly one row per tenant and is
+                    # idempotent on re-submit.
+                    supabase.table("tenant_verticals").delete().eq(
+                        "tenant_id", request.tenant_id
+                    ).execute()
+                    supabase.table("tenant_verticals").insert({
+                        "tenant_id": request.tenant_id,
+                        "vertical_id": vertical_id,
+                        "enabled": True,
+                    }).execute()
+                    logger.info(
+                        "🧭 Mapped business_type=%r → vertical=%r for tenant %s",
+                        request.business_type, vertical_id, request.tenant_id,
+                    )
+                except Exception as vert_err:
+                    logger.warning(
+                        "⚠️ Could not upsert vertical for tenant %s: %s",
+                        request.tenant_id, vert_err,
+                    )
+            else:
+                logger.info(
+                    "🧭 business_type=%r has no vertical mapping; skipping "
+                    "tenant_verticals upsert for tenant %s",
+                    request.business_type, request.tenant_id,
+                )
 
         if result.data:
             profile = result.data[0]

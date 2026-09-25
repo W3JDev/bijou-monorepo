@@ -1,0 +1,91 @@
+# Root build context ignore list.
+#
+# Every root-level Dockerfile (Dockerfile.backend, Dockerfile.bridge,
+# Dockerfile.landing, ops/local/*) builds with `context: .`, so without this
+# file the ENTIRE repository is packed and shipped to the Docker daemon on
+# every build — including .git, two abandoned .git.broken* copies, a Windows
+# .venv, node_modules, and the untracked .env full of live production
+# credentials.
+#
+# The COPY statements in those Dockerfiles are selective, so .env never reached
+# a published image layer. The problem this file solves is the context transfer
+# itself: minutes of wasted build time and secrets handed to the daemon for no
+# reason.
+
+# ── Secrets. First, and never removed. ────────────────────────────────────
+.env
+.env.*
+**/.env
+**/.env.*
+# Re-include the templates AFTER the excludes — order matters here, and
+# `**/!.env.example` is not valid negation syntax.
+!.env.example
+!**/.env.example
+!**/*.env.example
+*.pem
+*.key
+*.p12
+**/secrets/
+**/ADMIN_API_KEY*
+**/admin_api_key*
+
+# ── VCS ───────────────────────────────────────────────────────────────────
+.git
+.gitignore
+.gitattributes
+.git.broken
+.git.broken2
+.github
+
+# ── Dependencies (reinstalled inside the image) ───────────────────────────
+node_modules
+**/node_modules
+.venv
+**/.venv
+venv
+**/venv
+__pycache__
+**/__pycache__
+*.py[cod]
+.ruff_cache
+.pytest_cache
+**/.pytest_cache
+
+# ── Build output ──────────────────────────────────────────────────────────
+dist
+**/dist
+build
+**/build
+*.egg-info
+
+# ── Local tooling / editor state ──────────────────────────────────────────
+.vscode
+.claude
+.agents
+.codex
+.serena
+.idea
+
+# ── Scratch, logs and operator debris ─────────────────────────────────────
+# ops/ is full of one-off probe scripts and captured stdout/stderr. None of it
+# belongs in a build context. Note the _fix_rls_*.js family MUTATES the
+# production database — keeping it out of images is deliberate.
+ops/_*
+ops/*.log
+ops/*.out
+ops/*.err
+ops/*.png
+**/logs/
+*.log
+legacy/
+
+# ── Tests and docs (not needed at runtime) ────────────────────────────────
+**/tests/
+**/test_*.py
+docs/
+*.md
+!README.md
+
+# ── OS noise ──────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db

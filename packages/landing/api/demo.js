@@ -9,6 +9,7 @@
 // See audit-report.md finding #1 (open proxy) and #21 (two-call demo flow).
 
 import { captureServer, identifyServer, distinctIdFromReq } from "../lib/posthog-server.js";
+import { normalizePhone } from "../utils/phone.js";
 
 const EMAIL_RE =
   /^[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}$/;
@@ -42,6 +43,14 @@ export default async function handler(req, res) {
         .json({ error: "Demo time required", code: "MISSING_DEMO_TIME" });
     }
 
+    const cleanedPhone = normalizePhone(phone);
+    if (String(phone ?? "").trim() && !cleanedPhone) {
+      return res.status(400).json({
+        error: "Valid phone number with country code required",
+        code: "INVALID_PHONE",
+      });
+    }
+
     // Server-to-server WhatsApp notify. Never expose this path to the client.
     const token = process.env.INTERNAL_API_TOKEN;
     if (!token) {
@@ -57,7 +66,7 @@ export default async function handler(req, res) {
       `🎯 NEW DEMO REQUEST!\n\n` +
       `Business: ${business_name || "N/A"}\n` +
       `Email: ${email}\n` +
-      `Phone: ${phone || "N/A"}\n` +
+      `Phone: ${cleanedPhone ? "+" + cleanedPhone : "N/A"}\n` +
       `Industry: ${industry || "N/A"}\n` +
       `Preferred Time: ${demo_time}\n` +
       `Lead ID: ${lead_id || "n/a"}\n` +

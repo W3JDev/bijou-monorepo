@@ -9,6 +9,8 @@ and end-to-end tests with mocking for external services.
 import pytest
 import unittest
 from unittest.mock import Mock, patch, MagicMock
+import shutil
+import tempfile
 import time
 import json
 from pathlib import Path
@@ -18,7 +20,7 @@ import sys
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 from agents.humanizer import ConversationHumanizer
-from core.cost_optimizer import CostOptimizer
+from core.cost_optimizer import CostOptimizer, ResponseTriggerType
 from core.ml_judge import MLJudge
 from core.mlops import ModelRegistry, ExperimentTracker
 
@@ -30,15 +32,25 @@ class TestHumanizer(unittest.TestCase):
         self.humanizer = ConversationHumanizer()
     
     def test_casual_tone_detection(self):
-        """Test casual language detection"""
+        """Test casual language detection and the stripping it enables"""
+        self.assertEqual(self.humanizer.detect_user_tone("thx, can u help"), "casual")
+
+        # conversation_length > 1 is what switches prefix stripping on: the
+        # robotic opener is only noise once the chat is already under way.
         result = self.humanizer.humanize_response(
-            response="I will help you",
+            response="I understand you need a quote. I will send it over.",
             emotion="neutral",
             urgency="medium",
-            conversation_length=1,
+            conversation_length=2,
             user_tone="casual"
         )
-        self.assertIn("'ll", result["humanized_text"])  # Should use contractions
+        self.assertEqual(
+            result["humanized_text"], "You need a quote. I will send it over."
+        )
+        self.assertEqual(
+            result["original_text"],
+            "I understand you need a quote. I will send it over.",
+        )
     
     def test_emoji_insertion(self):
         """Test emoji insertion based on emotion"""
@@ -88,8 +100,8 @@ class TestCostOptimizer(unittest.TestCase):
         message = "What is your return policy?"
         
         # First call
-        self.optimizer.cache_response(message, "Our return policy...", 0.9)
-        
+        self.optimizer.cache_response(message, "Our return policy...")
+
         # Second call should hit cache
         should_call, trigger, response = self.optimizer.should_call_api(
             message=message,
@@ -98,6 +110,7 @@ class TestCostOptimizer(unittest.TestCase):
             conversation_history=None
         )
         self.assertFalse(should_call)
+        self.assertEqual(trigger, ResponseTriggerType.CACHE_HIT)
         self.assertEqual(response, "Our return policy...")
     
     def test_api_trigger_on_complex_query(self):
@@ -119,15 +132,20 @@ class TestMLJudge(unittest.TestCase):
     
     def test_good_response_evaluation(self):
         """Test evaluation of a good response"""
+        # Empathy is the heaviest-weighted criterion (0.3), and it is scored by
+        # counting empathy phrases — so a reply needs several of them, not one,
+        # to clear the 3.5 needs_improvement threshold.
         eval_result = self.judge.evaluate_response(
             user_message="Where is my order?",
-            bot_response="I understand you're concerned. Let me track your order right away. Can you provide your order number?",
+            bot_response="I hear you, and I'm sorry - I understand how frustrating this is. Let me track your order right away. Can you please provide your order number?",
             emotion="anger",
             urgency="high",
             conversation_history=None
         )
         self.assertGreater(eval_result["overall_score"], 2.5)
         self.assertFalse(eval_result["needs_improvement"])
+        self.assertFalse(eval_result["mistake_detected"]["has_mistake"])
+        self.assertEqual(eval_result["quality_level"], "GOOD")
     
     def test_poor_response_detection(self):
         """Test detection of poor responses"""
@@ -143,27 +161,39 @@ class TestMLJudge(unittest.TestCase):
     
     def test_mistake_detection(self):
         """Test mistake detection"""
-        history = [
-            {"role": "user", "content": "My name is John"},
-            {"role": "assistant", "content": "Hi John!"}
-        ]
-        
+        # The bot invents an order number, a time and a price that the customer
+        # never supplied - the classic hallucination the judge exists to catch.
         eval_result = self.judge.evaluate_response(
-            user_message="What's my name?",
-            bot_response="I don't know your name.",
+            user_message="Where is my order?",
+            bot_response="Your order #12345 will arrive at 3:00 PM and costs $45.99.",
             emotion="neutral",
             urgency="low",
-            conversation_history=history
+            conversation_history=None
         )
-        self.assertGreater(len(eval_result["mistakes"]), 0)
+        # Mistakes live under the mistake_detected sub-dict, not at the top level
+        mistakes = eval_result["mistake_detected"]["mistakes"]
+        self.assertGreater(len(mistakes), 0)
+        self.assertTrue(eval_result["mistake_detected"]["has_mistake"])
+        self.assertIn("hallucination", [m["type"] for m in mistakes])
+        self.assertTrue(eval_result["mistake_detected"]["should_apologize"])
+        self.assertTrue(eval_result["needs_improvement"])
 
 
 class TestMLOps(unittest.TestCase):
     """Test MLOps infrastructure"""
-    
+
     def setUp(self):
-        self.registry = ModelRegistry(db_path=":memory:")
-    
+        # ModelRegistry opens a fresh sqlite connection per call, so ":memory:"
+        # gives every method its own empty database and the schema created in
+        # _init_database() is gone by the time register_model() runs. A throwaway
+        # file is the only db_path that exercises the real code path.
+        self._db_dir = tempfile.mkdtemp(prefix="bijou-mlops-test-")
+        self.registry = ModelRegistry(db_path=str(Path(self._db_dir) / "mlops.db"))
+
+    def tearDown(self):
+        shutil.rmtree(self._db_dir, ignore_errors=True)
+
+
     def test_model_registration(self):
         """Test model registration"""
         model_id = self.registry.register_model(
@@ -250,9 +280,16 @@ class TestExperimentTracker(unittest.TestCase):
     """Test experiment tracking"""
     
     def setUp(self):
-        self.registry = ModelRegistry(db_path=":memory:")
+        # See TestMLOps.setUp - ":memory:" cannot survive the registry's
+        # connection-per-call design.
+        self._db_dir = tempfile.mkdtemp(prefix="bijou-mlops-test-")
+        self.registry = ModelRegistry(db_path=str(Path(self._db_dir) / "mlops.db"))
         self.tracker = ExperimentTracker(self.registry)
-    
+
+    def tearDown(self):
+        shutil.rmtree(self._db_dir, ignore_errors=True)
+
+
     def test_experiment_lifecycle(self):
         """Test complete experiment lifecycle"""
         model_id = self.registry.register_model(
@@ -323,21 +360,82 @@ class TestPerformance(unittest.TestCase):
 class TestIntegration(unittest.TestCase):
     """Integration tests with mocked external services"""
     
-    @patch('google.generativeai.GenerativeModel')
-    def test_full_pipeline_with_mocks(self, mock_model):
-        """Test full TRACE pipeline with mocked AI"""
-        # Mock Gemini responses
-        mock_response = Mock()
-        mock_response.text = json.dumps({
-            "emotion": "joy",
-            "confidence": 0.9,
-            "cues": ["positive language"]
-        })
-        mock_model.return_value.generate_content.return_value = mock_response
-        
-        # This would test the full Bijou pipeline
-        # Skipped for now as it requires full setup
-        pass
+    def test_full_pipeline_with_mocks(self):
+        """Test the optimizer -> AI -> humanizer -> judge -> cache loop"""
+        optimizer = CostOptimizer(cache_ttl_minutes=60)
+        humanizer = ConversationHumanizer()
+        judge = MLJudge()
+
+        message = "My delivery is three days late and nobody has called me back"
+
+        # Stand-in for the LLM call. The real TRACE agents import
+        # google.generativeai, which requirements.txt dropped as deprecated
+        # (Dec 2025), so there is no such module left to patch - mock the call
+        # boundary the pipeline goes through instead.
+        generate_content = Mock(side_effect=[
+            json.dumps({
+                "emotion": "anger",
+                "confidence": 0.6,
+                "cues": ["three days late", "nobody has called"]
+            }),
+            "I hear you, and I'm sorry - I understand how frustrating this is. "
+            "Let me chase the courier right away. "
+            "Can you please confirm your postcode?",
+        ])
+
+        # Step 1: low confidence + no cache means the API has to be paid for
+        should_call, trigger, cached = optimizer.should_call_api(
+            message=message,
+            emotion="anger",
+            confidence=0.6,
+            conversation_history=None
+        )
+        self.assertTrue(should_call)
+        self.assertEqual(trigger, ResponseTriggerType.API_REQUIRED)
+        self.assertIsNone(cached)
+
+        # Step 2: emotion analysis, then the reply itself
+        analysis = json.loads(generate_content(f"classify: {message}"))
+        self.assertEqual(analysis["emotion"], "anger")
+        ai_reply = generate_content(f"reply: {message}")
+
+        # Step 3: humanize - high urgency splits the compound opening sentence
+        humanized = humanizer.humanize_response(
+            response=ai_reply,
+            emotion=analysis["emotion"],
+            urgency="high",
+            conversation_length=3,
+            user_tone="casual"
+        )
+        text = humanized["humanized_text"]
+        self.assertNotIn(", and ", text)
+        self.assertGreater(humanized["typing_time_seconds"], 0)
+
+        # Step 4: the judge must be happy with what we are about to send
+        evaluation = judge.evaluate_response(
+            user_message=message,
+            bot_response=text,
+            emotion=analysis["emotion"],
+            urgency="high",
+            conversation_history=None
+        )
+        self.assertFalse(evaluation["needs_improvement"])
+        self.assertFalse(evaluation["mistake_detected"]["has_mistake"])
+
+        # Step 5: cache it, so an identical message costs nothing next time
+        optimizer.cache_response(message, text)
+        should_call, trigger, cached = optimizer.should_call_api(
+            message=message,
+            emotion="anger",
+            confidence=0.6,
+            conversation_history=None
+        )
+        self.assertFalse(should_call)
+        self.assertEqual(trigger, ResponseTriggerType.CACHE_HIT)
+        self.assertEqual(cached, text)
+        self.assertEqual(generate_content.call_count, 2)  # not 4
+        self.assertEqual(optimizer.stats["api_calls"], 1)
+        self.assertEqual(optimizer.stats["cache_hits"], 1)
 
 
 # Pytest markers for categorization

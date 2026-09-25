@@ -6,22 +6,22 @@ export const StoryLunchRushClinic: React.FC = () => {
     {
       sender: "customer",
       time: "12:14 PM",
-      text: "My daughter tooth pain since morning, very bad. Can see doctor today?",
+      text: "My daughter has had bad tooth pain since this morning. Can she see a dentist today?",
     },
     {
       sender: "bijou",
       time: "12:14 PM",
-      text: "Adoi, tooth pain since morning — mesti sakit sangat. Let me check slots now. Is it the upper or lower tooth? And any swelling on the face?",
+      text: "I'm sorry to hear that — tooth pain all morning sounds really painful. Let me check today's openings. Is it an upper or lower tooth, and is there any swelling on her face?",
     },
     {
       sender: "customer",
       time: "12:15 PM",
-      text: "Lower right, no swelling. She 8 years old.",
+      text: "Lower right, no swelling. She's 8 years old.",
     },
     {
       sender: "bijou",
       time: "12:15 PM",
-      text: "OK — for kids tooth pain without swelling, Dr Lim can see her at 2:30pm today. I book now and send you the address. Please give her panadol first to help with the pain.",
+      text: "Got it — for a child with tooth pain and no swelling, Dr. Lee can see her at 2:30pm today. I'll book it now and text you the address. In the meantime, a children's pain reliever can help ease the discomfort.",
     },
     {
       sender: "customer",
@@ -34,7 +34,7 @@ export const StoryLunchRushClinic: React.FC = () => {
     <section className="py-20 relative overflow-hidden bg-dark-900/50">
       {/* Background glow */}
       <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-1/3 left-1/3 w-[500px] h-[500px] bg-blue-900/10 rounded-full blur-[140px]" />
+        <div className="absolute top-1/3 left-1/3 w-[500px] h-[500px] bg-emerald-900/10 rounded-full blur-[140px]" />
         <div className="absolute bottom-1/4 right-1/4 w-[300px] h-[300px] bg-[#D4AF37]/5 rounded-full blur-[100px]" />
       </div>
 
@@ -51,16 +51,16 @@ export const StoryLunchRushClinic: React.FC = () => {
             {/* Phone frame */}
             <div className="glass-panel-3d rounded-3xl border border-white/10 overflow-hidden max-w-sm mx-auto">
               {/* Chat header */}
-              <div className="bg-[#0d2040] px-4 py-3 flex items-center gap-3 border-b border-white/10">
-                <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-400 to-cyan-500 flex items-center justify-center text-white text-sm font-black">
+              <div className="bg-[#0d3d3d] px-4 py-3 flex items-center gap-3 border-b border-white/10">
+                <div className="w-9 h-9 rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center text-white text-sm font-black">
                   B
                 </div>
                 <div>
                   <div className="text-white text-sm font-bold">
-                    Bijou — Klinik Gigi
+                    Bijou — Dental Clinic
                   </div>
-                  <div className="text-blue-400 text-xs flex items-center gap-1">
-                    <span className="w-1.5 h-1.5 bg-blue-400 rounded-full animate-pulse" />
+                  <div className="text-emerald-400 text-xs flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse" />
                     Active now · 12:14 PM
                   </div>
                 </div>
@@ -74,7 +74,7 @@ export const StoryLunchRushClinic: React.FC = () => {
               </div>
 
               {/* Messages */}
-              <div className="bg-[#080f1f] px-3 py-4 space-y-3 min-h-[320px]">
+              <div className="bg-[#0a1a10] px-3 py-4 space-y-3 min-h-[320px]">
                 {messages.map((msg, i) => (
                   <motion.div
                     key={i}
@@ -88,12 +88,12 @@ export const StoryLunchRushClinic: React.FC = () => {
                       className={`max-w-[80%] rounded-2xl px-3 py-2 text-xs leading-relaxed ${
                         msg.sender === "customer"
                           ? "bg-white/10 text-gray-200 rounded-tl-sm"
-                          : "bg-[#0d2040] border border-blue-500/20 text-blue-100 rounded-tr-sm"
+                          : "bg-[#0d3d3d] border border-emerald-500/20 text-emerald-100 rounded-tr-sm"
                       }`}
                     >
                       <p>{msg.text}</p>
                       <p
-                        className={`text-[10px] mt-1 ${msg.sender === "customer" ? "text-gray-500" : "text-blue-500/60"}`}
+                        className={`text-[10px] mt-1 ${msg.sender === "customer" ? "text-gray-500" : "text-emerald-500/60"}`}
                       >
                         {msg.time}
                       </p>
@@ -103,8 +103,8 @@ export const StoryLunchRushClinic: React.FC = () => {
               </div>
 
               {/* Footer */}
-              <div className="bg-blue-900/30 px-3 py-2 text-center">
-                <p className="text-blue-400 text-xs font-bold">
+              <div className="bg-emerald-900/30 px-3 py-2 text-center">
+                <p className="text-emerald-400 text-xs font-bold">
                   2:30pm booked. Staff still on lunch break.
                 </p>
               </div>
@@ -119,13 +119,13 @@ export const StoryLunchRushClinic: React.FC = () => {
             transition={{ duration: 0.5, delay: 0.1 }}
             className="space-y-6 order-1 md:order-2"
           >
-            <div className="inline-block px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-bold uppercase tracking-wider">
+            <div className="inline-block px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-bold uppercase tracking-wider">
               Healthcare Vertical — Real Scenario
             </div>
 
             <h2 className="text-3xl md:text-4xl font-black text-white leading-tight">
               The Lunch Rush Clinic.{" "}
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-400">
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-gold-300">
                 Triaged. Booked. Done.
               </span>
             </h2>
@@ -141,20 +141,15 @@ export const StoryLunchRushClinic: React.FC = () => {
               clinics. She came to yours.
             </p>
 
-            {/* MS translation */}
-            <div className="border-l-2 border-blue-400/30 pl-4">
+            <div className="border-l-2 border-emerald-400/30 pl-4">
               <p className="text-gray-500 text-sm italic">
-                "Masa rehat tengah hari pun Bijou boleh triage dan buat
-                appointment. Pesakit tak perlu tunggu."
-              </p>
-              <p className="text-gray-600 text-xs mt-1">
-                — Even during lunch break, Bijou can triage and make
-                appointments. Patients don't need to wait.
+                "Even during our lunch break, Bijou triages the request and
+                books the appointment. Patients never have to wait."
               </p>
             </div>
 
             <div className="flex flex-wrap gap-3 pt-2">
-              <span className="px-3 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-semibold">
+              <span className="px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold">
                 Smart triage
               </span>
               <span className="px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold">

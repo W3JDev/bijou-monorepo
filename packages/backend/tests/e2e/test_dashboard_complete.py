@@ -24,45 +24,262 @@ Test Coverage:
 
 import os
 import re
+import time
+import uuid
+from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+import httpx
 import pytest
 from httpx import AsyncClient
 
 # Test configuration
-STAGING_API = os.getenv("TEST_API_URL", "https://bijou-staging.fly.dev")
-TENANT_ID = os.getenv("TEST_TENANT_ID", "607690ec-4ff7-4ef4-b98e-bfb00442fe95")
+#
+# The default used to be https://bijou-staging.fly.dev. That host no longer
+# resolves, so every test in this file died in DNS lookup without exercising a
+# single line of the product. The default is now the local stack from
+# docker-compose.local.yml — backend on :8080, the Supabase gateway (GoTrue +
+# PostgREST) on :9321, Mailpit on :8025 — which runs the real production
+# schema. Point TEST_API_URL at a deployed environment to run the same suite
+# against it.
+STAGING_API = os.getenv("TEST_API_URL", "http://localhost:8080")
+MAILPIT_API = os.getenv("TEST_MAILPIT_URL", "http://localhost:8025")
+SUPABASE_REST_URL = os.getenv("TEST_SUPABASE_URL", "http://localhost:9321")
 TIMEOUT = 30  # seconds
+
+REPO_ROOT = Path(__file__).resolve().parents[4]
+LOCAL_ENV_FILE = REPO_ROOT / "ops" / "local" / ".env.local"
+
+# Password used for the throwaway account these tests sign up with. Must satisfy
+# GoTrue's minimum length; nothing else about it matters.
+E2E_PASSWORD = "E2eDashPass!2026"
+
+
+# ==================== LIVE STACK HELPERS ====================
+
+
+def _stack_is_up(base_url: str) -> bool:
+    """True when the backend answers /health."""
+    try:
+        return httpx.get(f"{base_url}/health", timeout=5.0).status_code == 200
+    except httpx.HTTPError:
+        return False
+
+
+def _service_role_key() -> Optional[str]:
+    """Service-role key for the Supabase stack under test.
+
+    The local key is minted by ops/local/gen-local-keys.sh into
+    ops/local/.env.local and nowhere else: PostgREST validates it against the
+    local JWT secret, so a placeholder string will not do. An explicit env var
+    wins so the same suite can be pointed at another stack.
+    """
+    key = os.getenv("TEST_SUPABASE_SERVICE_KEY")
+    if key:
+        return key
+
+    if not LOCAL_ENV_FILE.exists():
+        return None
+
+    from dotenv import dotenv_values
+
+    values = dotenv_values(LOCAL_ENV_FILE)
+    return (
+        values.get("SUPABASE_SERVICE_KEY")
+        or values.get("SUPABASE_SERVICE_ROLE_KEY")
+        or values.get("SUPABASE_KEY")
+    )
+
+
+def _confirmation_link(client: httpx.Client, email: str) -> Optional[str]:
+    """Pull the GoTrue confirmation link for `email` out of Mailpit.
+
+    Taken verbatim from the message body — GoTrue builds the link from the
+    ORIGIN of API_EXTERNAL_URL and drops the path, so rewriting it by hand is
+    how a previous fix looked green while still being broken.
+    """
+    for _ in range(30):
+        listing = client.get(f"{MAILPIT_API}/api/v1/messages?limit=50")
+        for summary in listing.json().get("messages", []):
+            recipients = [t.get("Address", "") for t in (summary.get("To") or [])]
+            if email not in recipients:
+                continue
+            body = client.get(f"{MAILPIT_API}/api/v1/message/{summary['ID']}").json()
+            text = (body.get("Text") or "") + (body.get("HTML") or "")
+            match = re.search(r'https?://[^\s"\'<>]*verify[^\s"\'<>]*', text)
+            if match:
+                return match.group(0).replace("&amp;", "&")
+        time.sleep(1)
+    return None
+
+
+def _provision_login(base_url: str) -> Dict[str, str]:
+    """Sign up, confirm the email and log in — the real browser flow.
+
+    verify_session (src/core/dashboard_api_simple.py:298) resolves the tenant
+    from a Supabase JWT via the tenant_users table, so the synthetic
+    "Bearer test-token-<uuid>" this file used to send was never authenticated:
+    every request came back 400/401 and every body assertion was skipped. Only
+    a session minted by the running stack is real.
+    """
+    email = f"e2e-dashboard-{uuid.uuid4().hex[:10]}@bijou-e2e.example.com"
+
+    with httpx.Client(timeout=60.0, follow_redirects=False) as client:
+        signup = client.post(
+            f"{base_url}/api/auth/signup",
+            json={
+                "email": email,
+                "password": E2E_PASSWORD,
+                "business_name": "E2E Dashboard Suite",
+                "phone": "+60123456789",
+            },
+        )
+        if signup.status_code != 200:
+            pytest.skip(f"Could not provision E2E account: {signup.status_code} {signup.text}")
+
+        link = _confirmation_link(client, email)
+        if not link:
+            pytest.skip("No confirmation email arrived in Mailpit")
+        client.get(link)
+
+        login = client.post(
+            f"{base_url}/api/auth/login",
+            json={"email": email, "password": E2E_PASSWORD},
+        )
+        if login.status_code != 200:
+            pytest.skip(f"Could not log in as E2E account: {login.status_code} {login.text}")
+
+        payload = login.json()
+        return {
+            "email": email,
+            "access_token": payload["access_token"],
+            "tenant_id": payload["tenant_id"],
+            "user_id": payload["user"]["id"],
+        }
 
 
 # ==================== FIXTURES ====================
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def api_base_url() -> str:
-    """Base URL for API tests"""
+    """Base URL for API tests. Skips the suite when nothing is listening."""
+    if not _stack_is_up(STAGING_API):
+        pytest.skip(f"No API reachable at {STAGING_API} (set TEST_API_URL)")
     return STAGING_API
 
 
-@pytest.fixture
-def test_tenant_id() -> str:
-    """Test tenant ID"""
-    return TENANT_ID
+@pytest.fixture(scope="session")
+def service_supabase(api_base_url: str):
+    """Service-role Supabase client for seeding and cleaning test rows.
+
+    RLS drops every permissive policy in this schema (ops/_fix_rls_v6.js), so
+    the service role is the only role that can write here.
+    """
+    key = _service_role_key()
+    if not key:
+        pytest.skip(f"No Supabase service-role key (looked in {LOCAL_ENV_FILE})")
+
+    from supabase import create_client
+
+    return create_client(SUPABASE_REST_URL, key)
+
+
+@pytest.fixture(scope="session")
+def live_dashboard_login(api_base_url: str, service_supabase) -> Dict[str, str]:
+    """A real, confirmed account + tenant for the whole module.
+
+    Torn down afterwards so repeated runs do not accumulate tenants in the
+    shared local stack.
+    """
+    session = _provision_login(api_base_url)
+    yield session
+
+    tenant_id = session["tenant_id"]
+    for table in ("messages", "conversations", "escalations", "tenant_users"):
+        try:
+            service_supabase.table(table).delete().eq("tenant_id", tenant_id).execute()
+        except Exception as cleanup_err:  # cleanup must never fail a green run
+            print(f"WARN: could not clean {table} for {tenant_id}: {cleanup_err}")
+    try:
+        service_supabase.table("tenants").delete().eq("id", tenant_id).execute()
+        service_supabase.auth.admin.delete_user(session["user_id"])
+    except Exception as cleanup_err:
+        print(f"WARN: could not remove E2E tenant {tenant_id}: {cleanup_err}")
+
+
+@pytest.fixture(scope="session")
+def test_tenant_id(live_dashboard_login: Dict[str, str]) -> str:
+    """Tenant the E2E account owns. Overrides the conftest placeholder."""
+    return live_dashboard_login["tenant_id"]
 
 
 @pytest.fixture
-def auth_headers(test_tenant_id: str) -> Dict[str, str]:
-    """
-    Authorization headers for dashboard API.
-    
-    Note: In production, this would be a real JWT token from Supabase Auth.
-    For E2E tests, we use service role key or test token.
-    """
-    # For staging, we'll test both auth failure and success
+def auth_headers(live_dashboard_login: Dict[str, str]) -> Dict[str, str]:
+    """Authorization headers for dashboard API — a genuine Supabase session."""
     return {
-        "Authorization": f"Bearer test-token-{test_tenant_id}",
-        "X-Tenant-ID": test_tenant_id,
+        "Authorization": f"Bearer {live_dashboard_login['access_token']}",
+        "X-Tenant-ID": live_dashboard_login["tenant_id"],
     }
+
+
+@pytest.fixture(scope="session", autouse=True)
+def seeded_dashboard_data(live_dashboard_login: Dict[str, str], service_supabase):
+    """Give the E2E tenant enough data that the body assertions actually run.
+
+    A brand-new tenant returns [] everywhere, which makes every "if
+    conversations:" block in this file a no-op — the tests would pass without
+    checking anything. Seeded here rather than per test because the assertions
+    are all read-only.
+    """
+    tenant_id = live_dashboard_login["tenant_id"]
+    chat_jid = "60123456789@s.whatsapp.net"
+
+    conversations = service_supabase.table("conversations").insert([
+        {
+            "tenant_id": tenant_id,
+            "chat_jid": chat_jid,
+            "message_content": "Hi, do you deliver to Penang?",
+            "ai_response": "Yes boss, we deliver to Penang!",
+            "contact_name": "+60 12 345 6789",
+        },
+    ]).execute()
+
+    messages = service_supabase.table("messages").insert([
+        {"tenant_id": tenant_id, "chat_jid": chat_jid, "role": "user",
+         "content": "Hi, do you deliver to Penang?"},
+        {"tenant_id": tenant_id, "chat_jid": chat_jid, "role": "assistant",
+         "content": "Yes boss, we deliver to Penang!"},
+    ]).execute()
+
+    # One escalation per status, so "all statuses visible" and the status
+    # filter are both tested against data that could actually break them.
+    escalations = service_supabase.table("escalations").insert([
+        {"tenant_id": tenant_id, "chat_jid": chat_jid,
+         "reason": "Customer asked for a human", "priority": "urgent", "status": "pending"},
+        {"tenant_id": tenant_id, "chat_jid": chat_jid,
+         "reason": "Agent working on it", "priority": "high", "status": "in_progress"},
+        {"tenant_id": tenant_id, "chat_jid": chat_jid,
+         "reason": "Already handled", "priority": "normal", "status": "resolved"},
+    ]).execute()
+
+    yield {
+        "chat_jid": chat_jid,
+        "conversation_ids": [row["id"] for row in conversations.data],
+        "message_ids": [row["id"] for row in messages.data],
+        "escalation_ids": [row["id"] for row in escalations.data],
+    }
+
+    for table, rows in (
+        ("conversations", conversations.data),
+        ("messages", messages.data),
+        ("escalations", escalations.data),
+    ):
+        for row in rows:
+            try:
+                service_supabase.table(table).delete().eq("id", row["id"]).execute()
+            except Exception as cleanup_err:
+                print(f"WARN: could not delete {table} row {row['id']}: {cleanup_err}")
 
 
 @pytest.fixture
@@ -122,7 +339,7 @@ async def test_conversations_show_real_phone_numbers(
                     assert phone_part.startswith("+") or phone_part.isdigit(), \
                         f"❌ Invalid phone format in chat_jid: {chat_jid}"
                 
-                print(f"✅ Valid phone number: {chat_jid}")
+                print(f"OK: Valid phone number: {chat_jid}")
 
 
 @pytest.mark.e2e
@@ -164,7 +381,7 @@ async def test_phone_numbers_in_correct_format(
                 assert phone_pattern.match(display_phone), \
                     f"❌ Invalid phone format: {display_phone}"
                 
-                print(f"✅ Correctly formatted: {display_phone}")
+                print(f"OK: Correctly formatted: {display_phone}")
 
 
 @pytest.mark.e2e
@@ -204,15 +421,22 @@ async def test_no_device_ids_in_messages(
             
             if messages_response.status_code == 200:
                 messages_data = messages_response.json()
-                messages = messages_data.get("messages", [])
-                
+                # /api/dashboard/messages/{chat_jid} returns a bare JSON array
+                # (dashboard_api_simple.py:2568). The old .get("messages") call
+                # raised AttributeError on that list.
+                messages = (
+                    messages_data
+                    if isinstance(messages_data, list)
+                    else messages_data.get("messages", [])
+                )
+
                 # Verify NO @lid in any message field
                 for msg in messages:
                     msg_str = str(msg)
                     assert "@lid:" not in msg_str, \
                         f"❌ Device ID leaked in message: {msg}"
                 
-                print(f"✅ Checked {len(messages)} messages - no device IDs found")
+                print(f"OK: Checked {len(messages)} messages - no device IDs found")
 
 
 # ==================== ANALYTICS TESTS ====================
@@ -265,7 +489,7 @@ async def test_stats_endpoint_returns_valid_metrics(
             assert value >= 0, f"❌ {field} cannot be negative"
             assert value < 1_000_000, f"❌ {field} unreasonably large"
             
-            print(f"✅ {field}: {value}")
+            print(f"OK: {field}: {value}")
 
 
 @pytest.mark.e2e
@@ -295,7 +519,7 @@ async def test_analytics_data_consistency(
         
         # Consistency checks
         if active_conv > 0:
-            print(f"✅ Has {active_conv} active conversations")
+            print(f"OK: Has {active_conv} active conversations")
         
         # Total handled should not wildly exceed active conversations
         total_handled = ai_handled + human_handled
@@ -304,7 +528,7 @@ async def test_analytics_data_consistency(
                 f"❌ Inconsistent: {total_handled} handled but only {active_conv} active conversations"
             )
         
-        print("✅ Analytics data is internally consistent")
+        print("OK: Analytics data is internally consistent")
 
 
 # ==================== ESCALATIONS TESTS ====================
@@ -343,7 +567,7 @@ async def test_escalations_returns_all_statuses(
             # Collect all unique statuses
             statuses = set(esc.get("status") for esc in escalations)
             
-            print(f"✅ Found escalations with statuses: {statuses}")
+            print(f"OK: Found escalations with statuses: {statuses}")
             
             # Should have at least one status
             assert len(statuses) > 0, "❌ No escalation statuses found"
@@ -354,7 +578,7 @@ async def test_escalations_returns_all_statuses(
                 assert status in valid_statuses, \
                     f"❌ Invalid escalation status: {status}"
         else:
-            print("⚠️  No escalations found (may be expected for test tenant)")
+            print("WARN:  No escalations found (may be expected for test tenant)")
 
 
 @pytest.mark.e2e
@@ -385,7 +609,7 @@ async def test_escalations_status_filter_works(
                 assert esc.get("status") == status, \
                     f"❌ Filter failed: expected {status}, got {esc.get('status')}"
             
-            print(f"✅ Status filter '{status}' works ({len(escalations)} results)")
+            print(f"OK: Status filter '{status}' works ({len(escalations)} results)")
 
 
 @pytest.mark.e2e
@@ -438,7 +662,7 @@ async def test_escalations_data_structure(
             assert "@lid:" not in chat_jid, \
                 f"❌ Device ID in escalation chat_jid: {chat_jid}"
             
-            print(f"✅ Escalation data structure valid")
+            print(f"OK: Escalation data structure valid")
 
 
 # ==================== WHATSAPP TESTS ====================
@@ -479,9 +703,9 @@ async def test_whatsapp_qr_endpoint_accessible(
             "❌ Response should contain qr_code or status"
         
         if has_qr:
-            print(f"✅ QR code available (length: {len(data['qr_code'])})")
+            print(f"OK: QR code available (length: {len(data['qr_code'])})")
         else:
-            print(f"✅ WhatsApp status: {data.get('status')}")
+            print(f"OK: WhatsApp status: {data.get('status')}")
 
 
 @pytest.mark.e2e
@@ -508,14 +732,24 @@ async def test_whatsapp_connection_status(
         
         # Should have status field
         assert "status" in data, "❌ Missing 'status' field"
-        
+
         status = data.get("status")
-        valid_statuses = ["connected", "disconnected", "connecting", "qr_needed"]
-        
+        # The endpoint's real vocabulary, read off every return in
+        # get_whatsapp_status (dashboard_api_simple.py:2009-2156). The old list
+        # here ("connecting", "qr_needed") named two states the endpoint never
+        # returns and omitted the two it returns most: "not_configured" for a
+        # tenant with no device, "error" when the bridge is unreachable.
+        valid_statuses = ["connected", "disconnected", "not_configured", "error"]
+
         assert status in valid_statuses, \
             f"❌ Invalid status: {status} (expected one of {valid_statuses})"
-        
-        print(f"✅ WhatsApp status: {status}")
+
+        # `connected` and `status` are two views of one fact and must agree,
+        # or the dashboard shows a connected badge over a dead session.
+        assert data.get("connected") is (status == "connected"), \
+            f"❌ connected={data.get('connected')} contradicts status={status}"
+
+        print(f"OK: WhatsApp status: {status}")
 
 
 # ==================== INTEGRATION TESTS ====================
@@ -572,8 +806,13 @@ async def test_full_flow_conversations_to_messages(
     
     if messages_response.status_code == 200:
         messages_data = messages_response.json()
-        messages = messages_data.get("messages", [])
-        
+        # Bare JSON array, same as above — see dashboard_api_simple.py:2568.
+        messages = (
+            messages_data
+            if isinstance(messages_data, list)
+            else messages_data.get("messages", [])
+        )
+
         # Step 3: Verify data consistency
         assert isinstance(messages, list), "❌ Messages should be a list"
         
@@ -584,7 +823,7 @@ async def test_full_flow_conversations_to_messages(
                 assert "@lid:" not in msg_str, \
                     f"❌ Device ID leaked in message: {msg}"
             
-            print(f"✅ Full flow test passed: {len(conversations)} conversations, {len(messages)} messages")
+            print(f"OK: Full flow test passed: {len(conversations)} conversations, {len(messages)} messages")
 
 
 @pytest.mark.e2e
@@ -625,7 +864,7 @@ async def test_tenant_isolation_still_works(
             assert tenant_id != test_tenant_id, \
                 f"❌ SECURITY BREACH: Got data from tenant {test_tenant_id} with fake auth!"
         
-        print(f"✅ Tenant isolation enforced ({len(conversations)} results for fake tenant)")
+        print(f"OK: Tenant isolation enforced ({len(conversations)} results for fake tenant)")
 
 
 # ==================== REGRESSION TESTS ====================
@@ -634,45 +873,64 @@ async def test_tenant_isolation_still_works(
 @pytest.mark.e2e
 @pytest.mark.regression
 @pytest.mark.asyncio
-@pytest.mark.skip(reason="KNOWN ISSUE: Dashboard API currently has NO AUTH - needs fixing")
 async def test_security_fixes_still_active(
     http_client: AsyncClient,
+    test_tenant_id: str,
 ):
     """
-    REGRESSION TEST: Verify security fixes from previous versions.
-    
-    🚨 CRITICAL SECURITY ISSUE DETECTED:
-    - Dashboard endpoints are currently PUBLIC (no auth required)
-    - This is a MAJOR security vulnerability
-    - Any user can access any tenant's data
-    
-    This test is SKIPPED until authentication is implemented.
+    REGRESSION TEST: dashboard endpoints must never be publicly readable.
+
+    The skip this test carried ("Dashboard API currently has NO AUTH") is out
+    of date. verify_session fails closed under the default DASHBOARD_MODE
+    ("strict"), and both shapes of an unauthenticated request are refused:
+
+      - no credentials, no tenant  -> 400, no tenant is even resolved
+        (dashboard_api_simple.py:369)
+      - no credentials, real tenant id -> 401
+        (dashboard_api_simple.py:417)
+
+    400 is the weaker of the two codes for "not authenticated", but it is
+    still a refusal — nothing crosses the boundary. Both responses are checked
+    for a leaked conversation list as well as for the status code, so this
+    cannot pass just because the code changed.
     """
     # Test 1: CORS headers
     response = await http_client.options(
         "/api/dashboard/conversations",
         headers={"Origin": "https://example.com"},
     )
-    
+
     # Should have CORS headers or OPTIONS support
-    print(f"✅ OPTIONS request handled (status: {response.status_code})")
-    
-    # Test 2: Auth required (CURRENTLY FAILING - endpoint is public!)
+    print(f"OK: OPTIONS request handled (status: {response.status_code})")
+
+    # Test 2: a stranger with no credentials at all
     response_no_auth = await http_client.get("/api/dashboard/conversations")
-    
-    # EXPECTED: 401/403 (auth required)
-    # ACTUAL: 200 (public access) - SECURITY BREACH!
+
     if response_no_auth.status_code == 200:
         pytest.fail(
             "🚨 CRITICAL SECURITY ISSUE: Dashboard endpoint is PUBLIC! "
-            "Expected 401/403 for unauthorized access, got 200. "
+            "Expected 400/401/403 for unauthorized access, got 200. "
             "This allows ANYONE to access tenant data."
         )
-    
-    assert response_no_auth.status_code in [401, 403], \
+
+    assert response_no_auth.status_code in [400, 401, 403], \
         f"❌ SECURITY: Endpoint accessible without auth (got {response_no_auth.status_code})"
-    
-    print("✅ Auth requirement enforced")
+    assert not isinstance(response_no_auth.json(), list), \
+        "❌ SECURITY: unauthenticated request returned a conversation list"
+
+    # Test 3: a stranger who knows a real tenant id — the case that matters,
+    # because tenant ids travel in dashboard URLs.
+    response_guessed_tenant = await http_client.get(
+        "/api/dashboard/conversations",
+        headers={"X-Tenant-ID": test_tenant_id},
+    )
+
+    assert response_guessed_tenant.status_code in [401, 403], \
+        f"❌ SECURITY: a known tenant id was enough (got {response_guessed_tenant.status_code})"
+    assert not isinstance(response_guessed_tenant.json(), list), \
+        "❌ SECURITY: unauthenticated request returned a conversation list"
+
+    print("OK: Auth requirement enforced")
 
 
 @pytest.mark.e2e
@@ -710,7 +968,7 @@ async def test_no_data_leakage_between_tenants(
                     assert tenant_id == test_tenant, \
                         f"❌ DATA LEAK: Got conversation from tenant {tenant_id} instead of {test_tenant}"
             
-            print(f"✅ No data leakage detected in {len(conversations)} conversations")
+            print(f"OK: No data leakage detected in {len(conversations)} conversations")
 
 
 # ==================== SMOKE TEST SUITE ====================
@@ -746,10 +1004,10 @@ async def test_health_check_all_endpoints(
             is_alive = status < 500
             results.append((endpoint, is_alive, status))
             
-            print(f"{'✅' if is_alive else '❌'} {endpoint}: {status}")
+            print(f"{'OK:' if is_alive else 'FAIL:'} {endpoint}: {status}")
         except Exception as e:
             results.append((endpoint, False, str(e)))
-            print(f"❌ {endpoint}: {e}")
+            print(f"FAIL: {endpoint}: {e}")
     
     # All endpoints should be responsive
     failed = [r for r in results if not r[1]]
@@ -757,7 +1015,7 @@ async def test_health_check_all_endpoints(
     assert len(failed) == 0, \
         f"❌ {len(failed)} endpoints failed: {failed}"
     
-    print(f"\n✅ All {len(endpoints)} endpoints responsive")
+    print(f"\nOK: All {len(endpoints)} endpoints responsive")
 
 
 # ==================== PERFORMANCE TESTS ====================
@@ -796,10 +1054,10 @@ async def test_response_times_acceptable(
         
         # Skip if auth failed
         if response.status_code in [401, 403]:
-            print(f"⚠️  {endpoint}: Skipped (auth required)")
+            print(f"WARN:  {endpoint}: Skipped (auth required)")
             continue
         
         assert duration_ms < max_ms, \
             f"❌ {endpoint} too slow: {duration_ms:.0f}ms (max {max_ms}ms)"
         
-        print(f"✅ {endpoint}: {duration_ms:.0f}ms (< {max_ms}ms)")
+        print(f"OK: {endpoint}: {duration_ms:.0f}ms (< {max_ms}ms)")

@@ -110,7 +110,7 @@ export const PWAInstallPrompt: React.FC<PWAInstallPromptProps> = ({
                 </h4>
                 <p className="text-white/80 text-sm mb-4">
                   {isIOS
-                    ? "Add to Home Screen for easy access to your Manglish digital employee!"
+                    ? "Add to Home Screen for easy access to your AI digital employee!"
                     : "Install as an app for faster access and offline features!"}
                 </p>
 

@@ -2,6 +2,19 @@
 Vector Search Service - Semantic Knowledge Retrieval
 =====================================================
 
+STATUS (2026-09-26): NOT LIVE, and still Gemini-only. The only importers
+(knowledge_api_enhanced.py, knowledge_sync.py) are mounted nowhere, nothing
+populates knowledge_chunks, and the reply path uses full-text KB context +
+ILIKE (function_caller "search_knowledge") instead. Gemini keys are dead, so
+create_embedding() would fail if anyone wired this up.
+
+Migration impact before reviving it on another provider: knowledge_chunks.
+embedding is vector(768), the text-embedding-004 dimension, with an ivfflat
+index. A different embedding model (e.g. OpenAI text-embedding-3-small = 1536,
+MiniMax embo-01 = 1536) needs an ALTER of the column + index rebuild and a
+full re-embed; vectors from two models must never be mixed in one column.
+knowledge_base.content_embedding is already vector(1536).
+
 Handles vector similarity search using pgvector for knowledge base queries.
 Supports hybrid search (vector + keyword) and filtering.
 

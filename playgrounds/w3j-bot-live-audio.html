@@ -1,0 +1,1394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>W3J-Bot — Live Audio Control Room (Portfolio Brand)</title>
+<style>
+  /* === W3J PORTFOLIO BRAND TOKENS — locked to live site values === */
+  :root {
+    --bg: oklch(0.145 0 0);              /* matches portfolio body bg */
+    --surface: oklch(0.18 0 0);          /* panel surface */
+    --surface-2: oklch(0.22 0 0);        /* raised surface */
+    --border: oklch(0.30 0 0);           /* hairline */
+    --border-strong: oklch(0.45 0 0);
+    --text: oklch(0.985 0 0);            /* primary text */
+    --muted: oklch(0.65 0 0);            /* secondary text */
+    --dim: oklch(0.45 0 0);              /* tertiary text */
+    --signal: #34d399;                   /* mint green (Tailwind emerald-400) */
+    --signal-soft: rgba(52, 211, 153, 0.12);
+    --signal-glow: rgba(52, 211, 153, 0.35);
+    --warn: #fbbf24;
+    --bad: #f87171;
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, "Roboto Mono", monospace;
+    --display: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; height: 100%; }
+  body {
+    font-family: var(--display);
+    font-size: 13px;
+    color: var(--text);
+    background: var(--bg);
+    overflow: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* === GRID OVERLAY (mission control feel) === */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background-image:
+      linear-gradient(to right, rgba(255,255,255,0.015) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(255,255,255,0.015) 1px, transparent 1px);
+    background-size: 80px 80px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .app {
+    position: relative; z-index: 1;
+    display: grid;
+    grid-template-rows: 36px 1fr 132px;
+    height: 100vh;
+  }
+
+  /* === TOP STATUS BAR (matches the portfolio's status bar verbatim) === */
+  .topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 16px;
+    background: oklch(0.10 0 0);
+    border-bottom: 1px solid var(--border);
+    font-family: var(--mono);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: var(--muted);
+  }
+  .topbar-left, .topbar-right { display: flex; gap: 10px; align-items: center; }
+  .topbar .pulse {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--signal); box-shadow: 0 0 8px var(--signal-glow);
+    margin-right: 4px;
+  }
+  .topbar .sep { color: var(--dim); }
+
+  /* === MAIN === */
+  main {
+    display: grid;
+    grid-template-columns: 320px 1fr;
+    min-height: 0;
+  }
+
+  /* === CONTROLS PANEL === */
+  .controls {
+    background: oklch(0.10 0 0);
+    border-right: 1px solid var(--border);
+    overflow-y: auto;
+    padding: 14px 12px;
+  }
+  .controls::-webkit-scrollbar { width: 6px; }
+  .controls::-webkit-scrollbar-thumb { background: var(--border); }
+
+  .section { margin-bottom: 18px; }
+  .section-label {
+    font-family: var(--mono);
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.25em;
+    color: var(--dim);
+    margin-bottom: 8px;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .section-label::before {
+    content: ''; width: 2px; height: 10px;
+    background: var(--signal);
+  }
+  .control-group {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4px;
+  }
+  .control-group.three { grid-template-columns: 1fr 1fr 1fr; }
+  .seg {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    border-radius: 2px;
+    padding: 6px 8px;
+    font-size: 10px;
+    font-family: var(--mono);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.15s;
+  }
+  .seg:hover { color: var(--text); border-color: var(--border-strong); }
+  .seg.active {
+    background: var(--signal-soft);
+    color: var(--signal);
+    border-color: var(--signal);
+  }
+  .control-label {
+    font-family: var(--mono);
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    color: var(--dim);
+    margin-bottom: 4px;
+    display: block;
+  }
+
+  .presets { display: flex; flex-direction: column; gap: 4px; }
+  .preset-btn {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 2px;
+    padding: 8px 10px;
+    font-size: 10px;
+    font-family: var(--mono);
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    cursor: pointer;
+    text-align: left;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .preset-btn::before {
+    content: ''; width: 4px; height: 4px;
+    background: var(--signal);
+    box-shadow: 0 0 4px var(--signal);
+  }
+  .preset-btn:hover { border-color: var(--signal); }
+  .reset-btn {
+    background: transparent;
+    color: var(--muted);
+    border: 1px solid var(--border);
+    border-radius: 2px; padding: 6px 10px;
+    font-size: 10px; cursor: pointer; font-family: var(--mono);
+    text-transform: uppercase; letter-spacing: 0.15em;
+    margin-top: 4px;
+  }
+  .reset-btn:hover { color: var(--text); border-color: var(--border-strong); }
+
+  /* === PREVIEW === */
+  .preview {
+    background: var(--bg);
+    overflow: auto;
+    position: relative;
+    display: flex;
+    align-items: stretch;
+    justify-content: center;
+  }
+  .preview-inner {
+    width: 100%;
+    max-width: 920px;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* === CHAT SHELL — the W3J-Bot itself === */
+  .chat-shell {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+    position: relative;
+    min-height: 0;
+  }
+  .chat-shell[data-mode="talk"] {
+    background: oklch(0.08 0 0);
+  }
+
+  /* Corner brackets — W3J signature */
+  .corner-brackets {
+    position: absolute; inset: 0;
+    pointer-events: none;
+    z-index: 5;
+  }
+  .corner-brackets::before,
+  .corner-brackets::after,
+  .corner-brackets > span::before,
+  .corner-brackets > span::after {
+    content: '';
+    position: absolute;
+    width: 14px; height: 14px;
+    border-color: var(--signal);
+    border-style: solid;
+    border-width: 0;
+  }
+  .corner-brackets::before { top: 6px; left: 6px; border-top-width: 1px; border-left-width: 1px; }
+  .corner-brackets::after { top: 6px; right: 6px; border-top-width: 1px; border-right-width: 1px; }
+  .corner-brackets > span::before { bottom: 6px; left: 6px; border-bottom-width: 1px; border-left-width: 1px; }
+  .corner-brackets > span::after { bottom: 6px; right: 6px; border-bottom-width: 1px; border-right-width: 1px; }
+
+  /* === STATUS BAR (inside chat, mirrors the portfolio's) === */
+  .status-bar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 8px 14px;
+    background: oklch(0.10 0 0);
+    border-bottom: 1px solid var(--border);
+    font-family: var(--mono);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    color: var(--muted);
+  }
+  .status-bar-left { display: flex; gap: 12px; align-items: center; }
+  .status-bar-right { display: flex; gap: 8px; align-items: center; }
+  .status-pulse {
+    width: 5px; height: 5px; border-radius: 50%;
+    background: var(--signal); box-shadow: 0 0 6px var(--signal-glow);
+    animation: pulse 1.5s ease-in-out infinite;
+  }
+  .chat-shell[data-agent="idle"] .status-pulse { background: var(--muted); box-shadow: none; animation: none; }
+  .chat-shell[data-agent="thinking"] .status-pulse { background: var(--warn); box-shadow: 0 0 6px rgba(251,191,36,0.4); }
+  .chat-shell[data-agent="speaking"] .status-pulse { animation: pulse 0.6s ease-in-out infinite; }
+  @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(0.85); } }
+
+  /* === FLIPBOARD TIMER === */
+  .flipboard {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    font-family: var(--mono);
+    font-size: 18px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    color: var(--text);
+    background: oklch(0.06 0 0);
+    border: 1px solid var(--border);
+    padding: 4px 8px;
+  }
+  .flipboard .digit {
+    display: inline-block;
+    min-width: 14px;
+    text-align: center;
+    position: relative;
+  }
+  .flipboard .colon {
+    color: var(--signal);
+    animation: blink 1s steps(2) infinite;
+  }
+  @keyframes blink { 50% { opacity: 0; } }
+  .chat-shell[data-agent="speaking"] .flipboard .digit {
+    color: var(--signal);
+    text-shadow: 0 0 8px var(--signal-glow);
+  }
+
+  /* === SECTION HEADERS (01 · TRANSCRIPT style) === */
+  .panel-header {
+    display: flex; align-items: center; gap: 8px;
+    padding: 10px 14px;
+    font-family: var(--mono);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.25em;
+    color: var(--muted);
+    background: oklch(0.10 0 0);
+    border-bottom: 1px solid var(--border);
+  }
+  .panel-header .num { color: var(--signal); }
+  .panel-header .label { color: var(--text); }
+  .panel-header .meta { margin-left: auto; color: var(--dim); }
+
+  /* === TRANSCRIPT === */
+  .transcript {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    min-height: 0;
+  }
+  .transcript::-webkit-scrollbar { width: 6px; }
+  .transcript::-webkit-scrollbar-thumb { background: var(--border); }
+
+  .msg {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    max-width: 90%;
+  }
+  .msg[data-role="user"] { align-self: flex-end; }
+  .msg[data-role="agent"] { align-self: flex-start; max-width: 95%; }
+  .msg-meta {
+    display: flex; gap: 10px; align-items: center;
+    font-family: var(--mono);
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: var(--dim);
+  }
+  .msg-meta .role { color: var(--signal); }
+  .msg[data-role="user"] .msg-meta .role { color: var(--text); }
+  .msg-bubble {
+    font-family: var(--display);
+    font-size: 13px;
+    line-height: 1.55;
+    color: var(--text);
+    padding: 0;
+  }
+  .msg[data-role="user"] .msg-bubble {
+    background: var(--signal-soft);
+    border-left: 2px solid var(--signal);
+    padding: 8px 12px;
+  }
+
+  /* Streaming waveform inline */
+  .stream-wave {
+    display: inline-flex; align-items: center; gap: 2px;
+    height: 14px; vertical-align: -2px;
+    margin-right: 6px;
+  }
+  .stream-wave span {
+    width: 2px; background: var(--signal);
+    border-radius: 1px;
+    animation: streamBar 0.7s ease-in-out infinite;
+  }
+  .stream-wave span:nth-child(1) { animation-delay: 0s; }
+  .stream-wave span:nth-child(2) { animation-delay: 0.1s; }
+  .stream-wave span:nth-child(3) { animation-delay: 0.2s; }
+  .stream-wave span:nth-child(4) { animation-delay: 0.3s; }
+  .stream-wave span:nth-child(5) { animation-delay: 0.4s; }
+  .stream-wave span:nth-child(6) { animation-delay: 0.15s; }
+  @keyframes streamBar { 0%, 100% { height: 4px; } 50% { height: 12px; } }
+
+  .stream-cursor {
+    display: inline-block;
+    width: 7px; height: 14px;
+    background: var(--signal);
+    margin-left: 2px;
+    vertical-align: -2px;
+    animation: cursorBlink 0.8s steps(2) infinite;
+  }
+  @keyframes cursorBlink { 50% { opacity: 0; } }
+
+  /* Tool call */
+  .tool-row {
+    align-self: flex-start;
+    font-family: var(--mono);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: var(--muted);
+    padding: 6px 10px;
+    background: transparent;
+    border: 1px dashed var(--border);
+    border-left: 2px solid var(--signal);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    max-width: 95%;
+  }
+  .tool-row .name { color: var(--signal); }
+  .tool-row .arrow { color: var(--dim); }
+  .tool-row .result { color: var(--text); }
+  .tool-row .ms { color: var(--dim); }
+
+  /* Sidebar tool log */
+  .tool-log {
+    align-self: stretch;
+    background: oklch(0.08 0 0);
+    border: 1px solid var(--border);
+    padding: 10px 12px;
+    font-family: var(--mono);
+    font-size: 10px;
+  }
+  .tool-log-row {
+    display: flex; gap: 8px; align-items: center;
+    padding: 4px 0;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+  .tool-log-row .name { color: var(--signal); }
+  .tool-log-row .ms { margin-left: auto; color: var(--dim); }
+  .tool-log-row .ok { color: var(--signal); }
+  .tool-log-row .run { color: var(--warn); }
+
+  /* Timeline rail */
+  .timeline-rail {
+    display: flex; flex-direction: column;
+    gap: 0;
+    padding: 8px 0 8px 16px;
+    border-left: 1px solid var(--signal);
+    margin-left: 14px;
+    align-self: stretch;
+  }
+  .timeline-step {
+    display: flex; gap: 8px; align-items: center;
+    font-family: var(--mono);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: var(--muted);
+    padding: 4px 0 4px 8px;
+    position: relative;
+  }
+  .timeline-step::before {
+    content: ''; position: absolute; left: -21px;
+    width: 8px; height: 8px;
+    background: var(--bg);
+    border: 1px solid var(--signal);
+    border-radius: 50%;
+  }
+  .timeline-step.done::before { background: var(--signal); }
+  .timeline-step .num { color: var(--signal); }
+  .timeline-step .ms { margin-left: auto; color: var(--dim); }
+
+  /* Step indicator pill */
+  .step-pill {
+    align-self: flex-start;
+    display: inline-flex; align-items: center; gap: 6px;
+    font-family: var(--mono);
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    color: var(--signal);
+    padding: 4px 8px;
+    background: var(--signal-soft);
+    border: 1px solid var(--signal);
+  }
+  .step-pill .bar {
+    width: 60px; height: 2px;
+    background: var(--border);
+    position: relative; overflow: hidden;
+  }
+  .step-pill .bar-fill {
+    position: absolute; left: 0; top: 0; bottom: 0;
+    background: var(--signal);
+    width: 60%;
+  }
+
+  /* Thinking state */
+  .thinking {
+    align-self: flex-start;
+    display: inline-flex; align-items: center; gap: 8px;
+    font-family: var(--mono);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: var(--muted);
+    padding: 6px 10px;
+    background: oklch(0.10 0 0);
+    border: 1px solid var(--border);
+  }
+  .thinking-dots { display: inline-flex; gap: 3px; }
+  .thinking-dots span {
+    width: 4px; height: 4px; background: var(--signal); border-radius: 50%;
+    animation: dotPulse 1.2s ease-in-out infinite;
+  }
+  .thinking-dots span:nth-child(2) { animation-delay: 0.15s; }
+  .thinking-dots span:nth-child(3) { animation-delay: 0.3s; }
+  @keyframes dotPulse { 0%, 60%, 100% { opacity: 0.3; } 30% { opacity: 1; } }
+
+  /* === MAIN VISUALIZER (the audio centerpiece) === */
+  .visualizer-panel {
+    border-top: 1px solid var(--border);
+    background: oklch(0.06 0 0);
+    padding: 16px 20px;
+  }
+  .visualizer-svg {
+    width: 100%;
+    height: 64px;
+    display: block;
+  }
+  .chat-shell[data-mode="talk"] .visualizer-svg { height: 140px; }
+
+  /* === INPUT === */
+  .input-panel {
+    border-top: 1px solid var(--border);
+    background: oklch(0.10 0 0);
+    padding: 12px 14px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .input-attachment {
+    width: 32px; height: 32px;
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--mono);
+    font-size: 14px;
+  }
+  .input-attachment:hover { border-color: var(--signal); color: var(--signal); }
+  .input-box {
+    flex: 1;
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: var(--display);
+    font-size: 13px;
+    padding: 8px 12px;
+    resize: none;
+  }
+  .input-box:focus { outline: none; border-color: var(--signal); }
+  .input-box::placeholder { color: var(--dim); font-style: italic; }
+  .send-btn, .mic-btn {
+    width: 32px; height: 32px;
+    background: var(--signal);
+    color: oklch(0.06 0 0);
+    border: none;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--mono);
+    font-size: 14px;
+    font-weight: 700;
+  }
+  .mic-btn { background: transparent; color: var(--muted); border: 1px solid var(--border); }
+  .mic-btn:hover { border-color: var(--signal); color: var(--signal); }
+  .mic-btn.listening { background: var(--signal); color: oklch(0.06 0 0); border-color: var(--signal); animation: micPulse 1.2s ease-in-out infinite; }
+  @keyframes micPulse { 0%, 100% { box-shadow: 0 0 0 0 var(--signal-glow); } 50% { box-shadow: 0 0 0 6px transparent; } }
+
+  .mode-toggle {
+    display: flex;
+    background: oklch(0.06 0 0);
+    border: 1px solid var(--border);
+  }
+  .mode-toggle button {
+    background: transparent;
+    border: none;
+    color: var(--muted);
+    padding: 6px 12px;
+    font-family: var(--mono);
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    cursor: pointer;
+  }
+  .mode-toggle button.active {
+    background: var(--signal-soft);
+    color: var(--signal);
+  }
+
+  /* === TALK MODE OVERLAY === */
+  .talk-mode-shell {
+    display: none;
+    flex-direction: column;
+    height: 100%;
+    background: oklch(0.05 0 0);
+  }
+  .chat-shell[data-mode="talk"] .type-mode-shell { display: none; }
+  .chat-shell[data-mode="talk"] .talk-mode-shell { display: flex; }
+
+  .talk-orb-wrap {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    position: relative;
+    overflow: hidden;
+  }
+  .talk-orb {
+    width: 140px; height: 140px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 30% 30%, var(--signal), oklch(0.10 0 0));
+    box-shadow: 0 0 60px var(--signal-glow), inset 0 0 20px rgba(0,0,0,0.5);
+    position: relative;
+  }
+  .chat-shell[data-agent="thinking"] .talk-orb {
+    background: radial-gradient(circle at 30% 30%, var(--warn), oklch(0.10 0 0));
+    box-shadow: 0 0 60px rgba(251,191,36,0.35), inset 0 0 20px rgba(0,0,0,0.5);
+    animation: orbSpin 3s linear infinite;
+  }
+  .chat-shell[data-agent="speaking"] .talk-orb {
+    animation: orbSpeak 0.6s ease-in-out infinite alternate;
+  }
+  .chat-shell[data-agent="listening"] .talk-orb {
+    animation: orbListen 1.5s ease-in-out infinite;
+  }
+  @keyframes orbSpeak { from { transform: scale(1); } to { transform: scale(1.06); } }
+  @keyframes orbListen { 0%, 100% { box-shadow: 0 0 60px var(--signal-glow); } 50% { box-shadow: 0 0 90px var(--signal); } }
+  @keyframes orbSpin { to { transform: rotate(360deg); } }
+  .talk-orb::before, .talk-orb::after {
+    content: ''; position: absolute; inset: -20px;
+    border: 1px solid var(--signal);
+    border-radius: 50%;
+    opacity: 0.3;
+  }
+  .talk-orb::after { inset: -40px; opacity: 0.15; }
+
+  .talk-meta {
+    font-family: var(--mono);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.3em;
+    color: var(--muted);
+    text-align: center;
+  }
+  .talk-meta .state { color: var(--signal); font-size: 14px; margin-bottom: 6px; }
+
+  .talk-orb-svg {
+    position: absolute; inset: 0;
+    pointer-events: none;
+  }
+
+  .talk-end-btn {
+    position: absolute;
+    bottom: 24px;
+    background: transparent;
+    border: 1px solid var(--bad);
+    color: var(--bad);
+    padding: 10px 24px;
+    font-family: var(--mono);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.25em;
+    cursor: pointer;
+  }
+  .talk-end-btn:hover { background: var(--bad); color: oklch(0.05 0 0); }
+
+  /* === PRESETS at the top of the preview === */
+  .try-one {
+    display: flex; flex-direction: column;
+    gap: 6px;
+    padding: 12px 16px;
+    background: oklch(0.08 0 0);
+    border-top: 1px solid var(--border);
+  }
+  .try-one-label {
+    font-family: var(--mono);
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.3em;
+    color: var(--dim);
+    margin-bottom: 2px;
+  }
+  .try-one-btn {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 6px 10px;
+    font-family: var(--display);
+    font-size: 12px;
+    cursor: pointer;
+    text-align: left;
+  }
+  .try-one-btn::before { content: '→ '; color: var(--signal); }
+  .try-one-btn:hover { border-color: var(--signal); }
+
+  /* === PROMPT BAR === */
+  .prompt-bar {
+    background: oklch(0.08 0 0);
+    border-top: 1px solid var(--border);
+    padding: 10px 16px;
+    display: flex; flex-direction: column;
+    gap: 6px;
+  }
+  .prompt-label {
+    font-family: var(--mono);
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.25em;
+    color: var(--dim);
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .prompt-text {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    padding: 10px 12px;
+    color: var(--text);
+    font-size: 11px;
+    line-height: 1.5;
+    font-family: var(--mono);
+    flex: 1;
+    overflow-y: auto;
+    white-space: pre-wrap;
+  }
+  .copy-btn {
+    background: var(--signal);
+    color: oklch(0.06 0 0);
+    border: none;
+    border-radius: 2px;
+    padding: 4px 10px;
+    font-size: 9px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: var(--mono);
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+  }
+  .copy-btn.copied { background: var(--signal); opacity: 0.6; }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="topbar">
+    <div class="topbar-left">
+      <span><span class="pulse"></span>AVAILABLE</span>
+      <span class="sep">·</span>
+      <span>W3J-BOT CONTROL ROOM</span>
+      <span class="sep">·</span>
+      <span>PORTFOLIO BRAND</span>
+    </div>
+    <div class="topbar-right">
+      <span>BRAND-LOCKED PLAYGROUND</span>
+      <span class="sep">·</span>
+      <span>v1.0</span>
+    </div>
+  </div>
+
+  <main>
+    <aside class="controls">
+      <div class="section">
+        <div class="section-label">PRESETS</div>
+        <div class="presets" id="presets"></div>
+        <button class="reset-btn" id="reset">RESET · DEFAULTS</button>
+      </div>
+
+      <div class="section">
+        <div class="section-label">CONVERSATION MODE</div>
+        <span class="control-label">PRIMARY MODE</span>
+        <div class="control-group" id="modeGroup"></div>
+        <div style="height:8px"></div>
+        <span class="control-label">VOICE ANSWERS</span>
+        <div class="control-group" id="voiceGroup"></div>
+      </div>
+
+      <div class="section">
+        <div class="section-label">STREAM</div>
+        <span class="control-label">MODE</span>
+        <div class="control-group" id="streamGroup"></div>
+        <div style="height:8px"></div>
+        <span class="control-label">REVEAL</span>
+        <div class="control-group" id="revealGroup"></div>
+        <div style="height:8px"></div>
+        <span class="control-label">SPEED</span>
+        <div class="control-group" id="speedGroup"></div>
+      </div>
+
+      <div class="section">
+        <div class="section-label">VISUALIZER</div>
+        <span class="control-label">STYLE</span>
+        <div class="control-group three" id="waveGroup"></div>
+        <div style="height:8px"></div>
+        <span class="control-label">DENSITY</span>
+        <div class="control-group three" id="waveDensityGroup"></div>
+      </div>
+
+      <div class="section">
+        <div class="section-label">OPERATOR HUD</div>
+        <span class="control-label">AVATAR</span>
+        <div class="control-group" id="avatarGroup"></div>
+        <div style="height:8px"></div>
+        <span class="control-label">STATE</span>
+        <div class="control-group three" id="agentStateGroup"></div>
+      </div>
+
+      <div class="section">
+        <div class="section-label">AGENTIC TELEMETRY</div>
+        <span class="control-label">TOOL DISPLAY</span>
+        <div class="control-group" id="toolsGroup"></div>
+        <div style="height:8px"></div>
+        <span class="control-label">THINKING</span>
+        <div class="control-group" id="thinkingGroup"></div>
+        <div style="height:8px"></div>
+        <span class="control-label">STEP TRACKER</span>
+        <div class="control-group" id="stepGroup"></div>
+        <div style="height:8px"></div>
+        <span class="control-label">RESULT FORMAT</span>
+        <div class="control-group" id="resultGroup"></div>
+      </div>
+
+      <div class="section">
+        <div class="section-label">LAYOUT</div>
+        <span class="control-label">WIDTH</span>
+        <div class="control-group three" id="widthGroup"></div>
+        <div style="height:8px"></div>
+        <span class="control-label">DENSITY</span>
+        <div class="control-group three" id="densityGroup"></div>
+      </div>
+
+      <div class="section">
+        <div class="section-label">INPUT</div>
+        <span class="control-label">MIC</span>
+        <div class="control-group three" id="micGroup"></div>
+        <div style="height:8px"></div>
+        <span class="control-label">ATTACH</span>
+        <div class="control-group" id="attachGroup"></div>
+      </div>
+    </aside>
+
+    <section class="preview">
+      <div class="preview-inner">
+        <div class="chat-shell" id="chatShell"
+             data-mode="type" data-agent="speaking"
+             data-voice="off"
+             data-stream="textwave" data-reveal="word" data-speed="normal"
+             data-wave="oscilloscope" data-wave-density="normal"
+             data-avatar="orb"
+             data-tools="inline" data-thinking="visible" data-step="counter" data-result="card"
+             data-width="comfortable" data-density="comfortable"
+             data-mic="always" data-attach="always">
+
+          <div class="corner-brackets"><span></span></div>
+
+          <!-- Type mode -->
+          <div class="type-mode-shell" style="display:flex; flex-direction:column; flex:1; min-height:0;">
+
+            <!-- Status bar (inside chat) -->
+            <div class="status-bar">
+              <div class="status-bar-left">
+                <span class="status-pulse"></span>
+                <span>W3J-BOT</span>
+                <span style="color: var(--dim);">·</span>
+                <span data-status-text>BIJOU OPERATIONAL · 121MS</span>
+              </div>
+              <div class="status-bar-right">
+                <span style="color: var(--dim);">SESSION</span>
+                <div class="flipboard">
+                  <span class="digit">0</span><span class="digit">0</span>
+                  <span class="colon">:</span>
+                  <span class="digit">4</span><span class="digit">2</span>
+                </div>
+                <div class="mode-toggle">
+                  <button data-set-mode="type" class="active">TYPE</button>
+                  <button data-set-mode="talk">TALK</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- 01 · TRANSCRIPT -->
+            <div class="panel-header">
+              <span class="num">01</span>
+              <span class="label">· TRANSCRIPT</span>
+              <span class="meta" data-step-pill>STEP 03 / 05</span>
+            </div>
+
+            <div class="transcript" id="transcript">
+              <!-- Rendered by JS -->
+            </div>
+
+            <!-- 02 · VISUALIZER -->
+            <div class="panel-header">
+              <span class="num">02</span>
+              <span class="label">· STREAM</span>
+              <span class="meta" data-stream-meta>OSCILLOSCOPE · 5.7kHz</span>
+            </div>
+            <div class="visualizer-panel">
+              <svg class="visualizer-svg" id="visualizer" viewBox="0 0 800 80" preserveAspectRatio="none"></svg>
+            </div>
+
+            <!-- 03 · INPUT -->
+            <div class="panel-header">
+              <span class="num">03</span>
+              <span class="label">· INPUT</span>
+              <span class="meta" data-input-meta>TYPE MODE · MIC ON</span>
+            </div>
+            <div class="input-panel">
+              <button class="input-attachment" title="Attach">＋</button>
+              <input class="input-box" placeholder="Ask about the work, products, or how to engage…" />
+              <button class="mic-btn" title="Toggle mic">◉</button>
+              <button class="send-btn" title="Send">→</button>
+            </div>
+
+            <!-- TRY ONE -->
+            <div class="try-one">
+              <div class="try-one-label">TRY ONE →</div>
+              <button class="try-one-btn" data-try>What does Bijou AI do?</button>
+              <button class="try-one-btn" data-try>Cut my AI bill to a fixed monthly cost</button>
+              <button class="try-one-btn" data-try>How fast can a small SME get Bijou live?</button>
+            </div>
+          </div>
+
+          <!-- Talk mode -->
+          <div class="talk-mode-shell">
+            <div class="status-bar">
+              <div class="status-bar-left">
+                <span class="status-pulse"></span>
+                <span>W3J-BOT</span>
+                <span style="color: var(--dim);">·</span>
+                <span data-status-text>TALK MODE · 00:42</span>
+              </div>
+              <div class="status-bar-right">
+                <div class="flipboard">
+                  <span class="digit">0</span><span class="digit">0</span>
+                  <span class="colon">:</span>
+                  <span class="digit">4</span><span class="digit">2</span>
+                </div>
+                <div class="mode-toggle">
+                  <button data-set-mode="type">TYPE</button>
+                  <button data-set-mode="talk" class="active">TALK</button>
+                </div>
+              </div>
+            </div>
+            <div class="talk-orb-wrap">
+              <div class="talk-orb"></div>
+              <div class="talk-meta">
+                <div class="state" data-talk-state>LISTENING</div>
+                <div data-talk-transcript>Transcription appears here as you speak</div>
+              </div>
+              <button class="talk-end-btn">END CALL</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="prompt-bar">
+    <div class="prompt-label">
+      <span>BUILD PROMPT — PASTE TO MAVIS</span>
+      <button class="copy-btn" id="copy">COPY</button>
+    </div>
+    <div class="prompt-text" id="prompt"></div>
+  </footer>
+</div>
+
+<script>
+const DEFAULTS = {
+  mode: 'type',
+  voice: 'off',
+  stream: 'textwave',
+  reveal: 'word',
+  speed: 'normal',
+  wave: 'oscilloscope',
+  waveDensity: 'normal',
+  avatar: 'orb',
+  agentState: 'speaking',
+  tools: 'inline',
+  thinking: 'visible',
+  step: 'counter',
+  result: 'card',
+  width: 'comfortable',
+  density: 'comfortable',
+  mic: 'always',
+  attach: 'always',
+};
+
+const state = { ...DEFAULTS };
+
+const PRESETS = {
+  control_room: {
+    label: 'CONTROL ROOM',
+    desc: 'Type mode, full telemetry',
+    values: {
+      mode: 'type', voice: 'off', stream: 'textwave', reveal: 'word', speed: 'normal',
+      wave: 'oscilloscope', waveDensity: 'normal', avatar: 'orb', agentState: 'speaking',
+      tools: 'inline', thinking: 'visible', step: 'counter', result: 'card',
+      width: 'comfortable', density: 'comfortable', mic: 'always', attach: 'always',
+    }
+  },
+  talk: {
+    label: 'TALK MODE',
+    desc: 'Full voice conversation',
+    values: {
+      mode: 'talk', voice: 'on', stream: 'audio', reveal: 'chunk', speed: 'fast',
+      wave: 'circular', waveDensity: 'max', avatar: 'orb', agentState: 'speaking',
+      tools: 'hidden', thinking: 'banner', step: 'minimal', result: 'inline',
+      width: 'spacious', density: 'spacious', mic: 'always', attach: 'hidden',
+    }
+  },
+  agentic: {
+    label: 'AGENTIC DEEP',
+    desc: 'Timeline + tool log',
+    values: {
+      mode: 'type', voice: 'off', stream: 'agentic', reveal: 'word', speed: 'normal',
+      wave: 'bars', waveDensity: 'compact', avatar: 'geometric', agentState: 'thinking',
+      tools: 'timeline', thinking: 'visible', step: 'progress', result: 'card',
+      width: 'comfortable', density: 'comfortable', mic: 'always', attach: 'always',
+    }
+  },
+  minimal: {
+    label: 'MINIMAL',
+    desc: 'Text only, no chrome',
+    values: {
+      mode: 'type', voice: 'off', stream: 'text', reveal: 'chunk', speed: 'instant',
+      wave: 'hidden', waveDensity: 'compact', avatar: 'none', agentState: 'idle',
+      tools: 'hidden', thinking: 'hidden', step: 'minimal', result: 'inline',
+      width: 'compact', density: 'compact', mic: 'hidden', attach: 'hidden',
+    }
+  },
+};
+
+const CONTROL_DEFS = [
+  { id: 'modeGroup', name: 'mode', options: [['type','TYPE'],['talk','TALK']] },
+  { id: 'voiceGroup', name: 'voice', options: [['off','OFF'],['on','ON']] },
+  { id: 'streamGroup', name: 'stream', options: [['text','TEXT'],['textwave','TEXT+WAVE'],['audio','AUDIO'],['agentic','AGENTIC']] },
+  { id: 'revealGroup', name: 'reveal', options: [['char','CHAR'],['word','WORD'],['chunk','CHUNK'],['fade','FADE']] },
+  { id: 'speedGroup', name: 'speed', options: [['slow','SLOW'],['normal','NORMAL'],['fast','FAST'],['instant','INSTANT']] },
+  { id: 'waveGroup', name: 'wave', options: [['oscilloscope','OSCOPE'],['bars','BARS'],['circular','CIRC'],['equalizer','EQ'],['hidden','HIDE']] },
+  { id: 'waveDensityGroup', name: 'waveDensity', options: [['compact','LOW'],['normal','MID'],['max','HIGH']] },
+  { id: 'avatarGroup', name: 'avatar', options: [['orb','ORB'],['mono','MONO'],['none','NONE']] },
+  { id: 'agentStateGroup', name: 'agentState', options: [['idle','IDLE'],['thinking','THINK'],['speaking','SPEAK'],['listening','LISTEN']] },
+  { id: 'toolsGroup', name: 'tools', options: [['inline','INLINE'],['log','LOG'],['timeline','TIMELINE'],['hidden','HIDE']] },
+  { id: 'thinkingGroup', name: 'thinking', options: [['visible','DOTS'],['banner','BANNER'],['hidden','HIDE']] },
+  { id: 'stepGroup', name: 'step', options: [['counter','PILL'],['progress','BAR'],['minimal','MIN'],['hidden','HIDE']] },
+  { id: 'resultGroup', name: 'result', options: [['card','CARD'],['inline','LINE'],['code','CODE'],['compact','COMPACT']] },
+  { id: 'widthGroup', name: 'width', options: [['compact','NARROW'],['comfortable','MID'],['spacious','WIDE']] },
+  { id: 'densityGroup', name: 'density', options: [['compact','TIGHT'],['comfortable','MID'],['spacious','LOOSE']] },
+  { id: 'micGroup', name: 'mic', options: [['always','ON'],['hover','HOVER'],['hidden','HIDE']] },
+  { id: 'attachGroup', name: 'attach', options: [['always','ON'],['hidden','HIDE']] },
+];
+
+// Build controls
+CONTROL_DEFS.forEach(cd => {
+  const root = document.getElementById(cd.id);
+  if (!root) return;
+  cd.options.forEach(([val, lbl]) => {
+    const b = document.createElement('button');
+    b.className = 'seg';
+    b.dataset.name = cd.name;
+    b.dataset.value = val;
+    b.textContent = lbl;
+    b.addEventListener('click', () => {
+      state[cd.name] = val;
+      updateAll();
+    });
+    root.appendChild(b);
+  });
+});
+
+// Presets
+const presetsRoot = document.getElementById('presets');
+Object.entries(PRESETS).forEach(([key, p]) => {
+  const b = document.createElement('button');
+  b.className = 'preset-btn';
+  b.innerHTML = `<span>${p.label}</span>`;
+  b.addEventListener('click', () => {
+    Object.assign(state, p.values);
+    updateAll();
+  });
+  presetsRoot.appendChild(b);
+});
+
+// Reset
+document.getElementById('reset').addEventListener('click', () => {
+  Object.assign(state, DEFAULTS);
+  updateAll();
+});
+
+// Copy
+document.getElementById('copy').addEventListener('click', () => {
+  const txt = document.getElementById('prompt').textContent;
+  navigator.clipboard.writeText(txt).then(() => {
+    const btn = document.getElementById('copy');
+    btn.textContent = 'COPIED';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'COPY'; btn.classList.remove('copied'); }, 1500);
+  });
+});
+
+// Mode toggle in status bar
+document.querySelectorAll('[data-set-mode]').forEach(b => {
+  b.addEventListener('click', () => {
+    state.mode = b.dataset.setMode;
+    updateAll();
+  });
+});
+
+// === RENDERING ===
+
+function renderTranscript() {
+  const root = document.getElementById('transcript');
+  root.innerHTML = '';
+
+  // Step pill
+  if (state.step === 'counter' || state.step === 'progress') {
+    const p = document.createElement('div');
+    p.className = 'step-pill';
+    if (state.step === 'counter') {
+      p.innerHTML = `<span>STEP 03/05</span><span>·</span><span style="color: var(--muted);">SEARCH_PORTFOLIO</span>`;
+    } else {
+      p.innerHTML = `<span>3/5 STEPS</span><div class="bar"><div class="bar-fill"></div></div>`;
+    }
+    root.appendChild(p);
+  }
+
+  // User message
+  const userMsg = document.createElement('div');
+  userMsg.className = 'msg';
+  userMsg.dataset.role = 'user';
+  userMsg.innerHTML = `
+    <div class="msg-meta">
+      <span class="role">YOU</span>
+      <span>21:48:32</span>
+    </div>
+    <div class="msg-bubble">What can you tell me about your recent agent work?</div>
+  `;
+  root.appendChild(userMsg);
+
+  // Thinking
+  if (state.thinking === 'visible' || state.thinking === 'banner') {
+    const t = document.createElement('div');
+    t.className = 'thinking';
+    if (state.thinking === 'banner') {
+      t.style.borderColor = 'var(--warn)';
+      t.style.color = 'var(--warn)';
+      t.innerHTML = `<div class="thinking-dots" style="--signal: var(--warn);"><span></span><span></span><span></span></div><span>SEARCHING 12 ENTRIES · 124MS</span>`;
+    } else {
+      t.innerHTML = `<div class="thinking-dots"><span></span><span></span><span></span></div><span>SEARCHING 12 ENTRIES</span>`;
+    }
+    root.appendChild(t);
+  }
+
+  // Tool display
+  if (state.tools === 'inline') {
+    const t = document.createElement('div');
+    t.className = 'tool-row';
+    let inner = '';
+    const name = '⚡ search_portfolio';
+    if (state.result === 'card') {
+      inner = `<span class="name">${name}</span><span class="arrow">→</span><span class="result">3 MATCHES</span><span class="ms">· 124MS</span>`;
+    } else if (state.result === 'code') {
+      inner = `<span class="name">search_portfolio("agent")</span><span class="arrow">→</span><span class="result">{hits: 3}</span>`;
+    } else if (state.result === 'inline') {
+      inner = `<span class="name">search_portfolio</span> <span class="result">3 hits</span>`;
+    } else {
+      inner = `<span class="name">${name}</span><span class="arrow">→</span><span class="result">DONE</span>`;
+    }
+    t.innerHTML = inner;
+    root.appendChild(t);
+  }
+
+  if (state.tools === 'log') {
+    const log = document.createElement('div');
+    log.className = 'tool-log';
+    log.innerHTML = `
+      <div class="panel-header" style="padding:0 0 6px 0; background:transparent; border:none;">
+        <span class="num">↳</span><span class="label" style="color: var(--muted);">AGENT ACTIVITY</span>
+      </div>
+      <div class="tool-log-row"><span class="name">search_portfolio</span><span class="ms">124MS</span><span class="ok">OK</span></div>
+      <div class="tool-log-row"><span class="name">fetch_w3j_bot_detail</span><span class="ms">·</span><span class="run">RUN</span></div>
+      <div class="tool-log-row" style="opacity:0.4;"><span class="name">synthesize_answer</span><span class="ms">QUEUED</span></div>
+    `;
+    root.appendChild(log);
+  }
+
+  if (state.tools === 'timeline') {
+    const rail = document.createElement('div');
+    rail.className = 'timeline-rail';
+    rail.innerHTML = `
+      <div class="timeline-step done"><span class="num">01</span><span>PARSE QUESTION</span><span class="ms">12MS</span></div>
+      <div class="timeline-step done"><span class="num">02</span><span>search_portfolio</span><span class="ms">124MS</span></div>
+      <div class="timeline-step"><span class="num">03</span><span>fetch_detail</span><span class="ms">…</span></div>
+      <div class="timeline-step" style="opacity:0.4;"><span class="num">04</span><span>synthesize</span><span class="ms">—</span></div>
+    `;
+    root.appendChild(rail);
+  }
+
+  // Agent streaming message
+  const agentMsg = document.createElement('div');
+  agentMsg.className = 'msg';
+  agentMsg.dataset.role = 'agent';
+  const fullText = "Your agent work shows three threads. Bijou AI — a WhatsApp concierge for Malaysian SMEs shipping in 15 min. The W3J-Bot portfolio assistant. And the brand-evolution deploy system that takes a URL and rebuilds a brand for any surface.";
+  let bubble = '<div class="msg-bubble">';
+  if (state.stream === 'textwave' || state.stream === 'audio') {
+    bubble += '<span class="stream-wave"><span></span><span></span><span></span><span></span><span></span><span></span></span>';
+  }
+  bubble += fullText;
+  if (state.reveal !== 'fade') {
+    bubble += '<span class="stream-cursor"></span>';
+  }
+  bubble += '</div>';
+  agentMsg.innerHTML = `
+    <div class="msg-meta">
+      <span class="role">W3J-BOT</span>
+      <span>21:48:34</span>
+      <span>·</span>
+      <span style="color: var(--dim);">STREAMING</span>
+    </div>
+    ${bubble}
+  `;
+  root.appendChild(agentMsg);
+
+  // Update meta pill
+  const stepPill = document.querySelector('[data-step-pill]');
+  if (stepPill) {
+    if (state.step === 'hidden') stepPill.style.display = 'none';
+    else if (state.step === 'counter') stepPill.textContent = 'STEP 03 / 05';
+    else if (state.step === 'progress') stepPill.textContent = '3/5 COMPLETE';
+    else if (state.step === 'minimal') stepPill.textContent = '—';
+    else stepPill.style.display = '';
+  }
+}
+
+function renderVisualizer() {
+  const svg = document.getElementById('visualizer');
+  if (state.wave === 'hidden') {
+    svg.style.display = 'none';
+    return;
+  }
+  svg.style.display = 'block';
+  const w = 800, h = 80;
+  let inner = '';
+
+  if (state.wave === 'oscilloscope') {
+    const N = 60;
+    const step = w / N;
+    const amp = state.waveDensity === 'max' ? 32 : state.waveDensity === 'normal' ? 22 : 12;
+    let path = '';
+    for (let i = 0; i <= N; i++) {
+      const x = i * step;
+      const phase = i / N;
+      const y = h/2 + Math.sin(phase * Math.PI * 6) * amp * (0.6 + 0.4 * Math.sin(phase * Math.PI * 2));
+      path += (i === 0 ? 'M' : 'L') + x.toFixed(1) + ',' + y.toFixed(1);
+    }
+    inner = `<path d="${path}" stroke="var(--signal)" stroke-width="1.5" fill="none" opacity="0.9"/>`;
+  } else if (state.wave === 'bars') {
+    const N = state.waveDensity === 'max' ? 64 : state.waveDensity === 'normal' ? 40 : 24;
+    const gap = w / N;
+    for (let i = 0; i < N; i++) {
+      const x = i * gap + 1;
+      const h2 = (Math.abs(Math.sin(i * 0.7) * 0.6 + Math.sin(i * 0.3) * 0.4)) * (h - 8) + 2;
+      const y = (h - h2) / 2;
+      inner += `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${(gap - 2).toFixed(1)}" height="${h2.toFixed(1)}" fill="var(--signal)" opacity="0.85" rx="0.5"/>`;
+    }
+  } else if (state.wave === 'circular') {
+    // Circular ring of bars around a center
+    const N = state.waveDensity === 'max' ? 48 : 24;
+    const cx = w/2, cy = h/2;
+    const r = 28;
+    for (let i = 0; i < N; i++) {
+      const a = (i / N) * Math.PI * 2;
+      const len = 6 + (Math.abs(Math.sin(i * 0.8) * 0.6 + Math.cos(i * 0.4) * 0.4)) * (state.waveDensity === 'max' ? 12 : 6);
+      const x1 = cx + Math.cos(a) * r;
+      const y1 = cy + Math.sin(a) * r;
+      const x2 = cx + Math.cos(a) * (r + len);
+      const y2 = cy + Math.sin(a) * (r + len);
+      inner += `<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="var(--signal)" stroke-width="1.5"/>`;
+    }
+  } else if (state.wave === 'equalizer') {
+    // Multi-band equalizer
+    const bands = 5;
+    const N = 32;
+    for (let b = 0; b < bands; b++) {
+      const ox = (b + 0.5) * (w / bands);
+      for (let i = 0; i < N; i++) {
+        const x = ox + (i - N/2) * 1.5;
+        const v = Math.abs(Math.sin(i * 0.4 + b * 1.3) * 0.5 + Math.sin(b * 0.7) * 0.3);
+        const h2 = v * (h - 8) + 1;
+        const y = (h - h2) / 2;
+        inner += `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="1" height="${h2.toFixed(1)}" fill="var(--signal)" opacity="${0.5 + b * 0.1}"/>`;
+      }
+    }
+  }
+  svg.innerHTML = inner;
+}
+
+function renderMode() {
+  const shell = document.getElementById('chatShell');
+  // Update status text
+  const statusText = document.querySelector('[data-status-text]');
+  if (statusText) {
+    if (state.mode === 'talk') {
+      const s = state.agentState;
+      statusText.textContent = s === 'idle' ? 'STANDBY' : s === 'thinking' ? 'PROCESSING' : s === 'speaking' ? 'SPEAKING' : 'LISTENING';
+    } else {
+      const s = state.agentState;
+      statusText.textContent = s === 'idle' ? 'IDLE' : s === 'thinking' ? 'THINKING' : s === 'speaking' ? 'LIVE · STREAMING' : 'READY';
+    }
+  }
+  // Update talk mode state
+  const talkState = document.querySelector('[data-talk-state]');
+  if (talkState) {
+    const s = state.agentState;
+    talkState.textContent = s === 'idle' ? 'STANDBY' : s === 'thinking' ? 'PROCESSING' : s === 'speaking' ? 'SPEAKING' : 'LISTENING';
+  }
+  // Update stream meta
+  const streamMeta = document.querySelector('[data-stream-meta]');
+  if (streamMeta) {
+    const waveMap = { oscilloscope: 'OSCILLOSCOPE', bars: 'BARS', circular: 'CIRCULAR', equalizer: 'EQUALIZER', hidden: 'OFF' };
+    streamMeta.textContent = `${waveMap[state.wave]} · ${state.waveDensity.toUpperCase()} DENSITY`;
+  }
+  // Update input meta
+  const inputMeta = document.querySelector('[data-input-meta]');
+  if (inputMeta) {
+    inputMeta.textContent = `${state.mode === 'talk' ? 'TALK' : 'TYPE'} MODE · MIC ${state.mic === 'hidden' ? 'OFF' : 'ON'} · ATTACH ${state.attach === 'hidden' ? 'OFF' : 'ON'}`;
+  }
+  // Mode toggle active
+  document.querySelectorAll('[data-set-mode]').forEach(b => {
+    b.classList.toggle('active', b.dataset.setMode === state.mode);
+  });
+}
+
+function applyState() {
+  const shell = document.getElementById('chatShell');
+  Object.entries(state).forEach(([k, v]) => {
+    shell.dataset[k] = v;
+  });
+  document.querySelectorAll('.seg').forEach(btn => {
+    if (state[btn.dataset.name] === btn.dataset.value) {
+      btn.classList.add('active');
+    } else {
+      btn.classList.remove('active');
+    }
+  });
+  renderMode();
+  renderTranscript();
+  renderVisualizer();
+}
+
+function updatePrompt() {
+  const parts = [];
+  const d = (k) => state[k] !== DEFAULTS[k];
+
+  if (state.mode === 'talk') {
+    parts.push('Talk Mode as the primary experience — full-bleed voice conversation with the W3J-Bot orb as the visual anchor');
+  } else {
+    parts.push('Type Mode as the primary experience');
+  }
+  if (d('voice')) parts.push(`voice answers ${state.voice === 'on' ? 'on' : 'off'}`);
+  if (d('stream')) {
+    const m = state.stream;
+    if (m === 'text') parts.push('text-only streaming');
+    else if (m === 'textwave') parts.push('streaming text with inline audio waveform');
+    else if (m === 'audio') parts.push('audio-first streaming, text as secondary');
+    else if (m === 'agentic') parts.push('agentic streaming with visible tool steps');
+  }
+  if (d('reveal')) parts.push(`${state.reveal} reveal animation`);
+  if (d('speed')) parts.push(`${state.speed} type speed`);
+  if (d('wave')) {
+    if (state.wave === 'hidden') parts.push('audio visualizer hidden');
+    else parts.push(`${state.wave} visualizer`);
+  }
+  if (d('waveDensity')) parts.push(`${state.waveDensity} visualizer density`);
+  if (d('avatar')) parts.push(`${state.avatar} avatar`);
+  if (d('agentState')) parts.push(`default agent state: ${state.agentState}`);
+  if (d('tools')) {
+    const t = state.tools;
+    if (t === 'inline') parts.push('tool calls shown inline as dashed chips with name → result');
+    else if (t === 'log') parts.push('tool activity shown as a separate activity log');
+    else if (t === 'timeline') parts.push('tool steps on a vertical timeline rail with step numbers and timings');
+    else if (t === 'hidden') parts.push('tool calls hidden');
+  }
+  if (d('thinking')) {
+    const t = state.thinking;
+    if (t === 'visible') parts.push('animated thinking dots');
+    else if (t === 'banner') parts.push('thinking shown as a warning-coloured banner');
+    else if (t === 'hidden') parts.push('thinking hidden');
+  }
+  if (d('step')) parts.push(`${state.step} step indicator`);
+  if (d('result')) parts.push(`${state.result} tool result format`);
+  if (d('width')) parts.push(`${state.width} chat width`);
+  if (d('density')) parts.push(`${state.density} message density`);
+  if (d('mic')) parts.push(`mic ${state.mic === 'hidden' ? 'hidden' : state.mic}`);
+  if (d('attach')) parts.push(`attach ${state.attach}`);
+
+  const prompt = `Build the W3J-Bot chat component for portfolio.w3jdev.com to match the rest of the site's mission-control aesthetic. ${parts.join('; ')}. Lock the visual language to the live site: background oklch(0.145 0 0), signal color #34d399, off-white text oklch(0.985 0 0), monospace labels in uppercase with letter-spacing 0.2em, corner brackets ⌐ at the four corners of the chat shell, a top status bar reading "● W3J-BOT · BIJOU OPERATIONAL · {ms}MS" with a flipboard-style elapsed-time counter, and a "01 · TRANSCRIPT" / "02 · STREAM" / "03 · INPUT" panel structure with the brand's number-dot-LABEL header style. Use system sans for message text, mono for all metadata and labels, and keep the streaming cursor a solid signal-green block. Frame the audio visualizer as a real-time SVG oscillator between transcript and input.`;
+  document.getElementById('prompt').textContent = prompt;
+}
+
+function updateAll() {
+  applyState();
+  updatePrompt();
+}
+
+updateAll();
+</script>
+</body>
+</html>

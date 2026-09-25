@@ -157,7 +157,7 @@ export const LeadCaptureForm: React.FC<LeadCaptureFormProps> = ({
         );
       } else {
         setErrorMessage(
-          error.message || "Aiyo, something went wrong boss. Please try again.",
+          error.message || "Something went wrong on our end. Please try again.",
         );
       }
     }
@@ -184,7 +184,7 @@ export const LeadCaptureForm: React.FC<LeadCaptureFormProps> = ({
             <CheckCircle className="w-6 h-6 text-emerald-400 flex-shrink-0" />
             <div>
               <p className="text-emerald-400 font-semibold">
-                Swee! Got your details, boss!
+                Got it — you're all set!
               </p>
               <p className="text-emerald-300 text-sm">
                 Check your email — we've sent a confirmation with your
@@ -204,7 +204,7 @@ export const LeadCaptureForm: React.FC<LeadCaptureFormProps> = ({
             <AlertCircle className="w-6 h-6 text-red-400 flex-shrink-0" />
             <div>
               <p className="text-red-400 font-semibold">
-                Aiyo, something went wrong
+                Something went wrong
               </p>
               <p className="text-red-300 text-sm">{errorMessage}</p>
             </div>
@@ -294,8 +294,8 @@ export const LeadCaptureForm: React.FC<LeadCaptureFormProps> = ({
           htmlFor="marketing-consent"
           className="text-sm text-gray-300 leading-relaxed"
         >
-          I want to receive updates about Bijou AI, exclusive tips for Malaysian
-          SMEs, and special offers. You can unsubscribe anytime with one click.
+          I want to receive updates about Bijou AI, exclusive tips for growing
+          businesses, and special offers. You can unsubscribe anytime with one click.
         </label>
       </div>
 
@@ -331,7 +331,7 @@ export const LeadCaptureForm: React.FC<LeadCaptureFormProps> = ({
         >
           Privacy Policy
         </a>{" "}
-        and consent to being contacted by our team. PDPA compliant.
+        and consent to being contacted by our team. GDPR & CCPA compliant.
       </p>
     </form>
   );

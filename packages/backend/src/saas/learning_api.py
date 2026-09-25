@@ -149,27 +149,22 @@ async def process_wa_history(
             )
             return
 
-        # Step 2 — Gemini analysis
-        gemini_api_key = os.getenv("GEMINI_API_KEY", "").strip('"')
+        # Step 2 — AI analysis (AI Gateway, ai://extract — provider-agnostic)
         qa_pairs: List[Dict[str, str]] = []
         tone_detected = "professional"
         suggested_prompt = ""
         suggested_templates: List[Dict[str, Any]] = []
 
-        if gemini_api_key:
-            try:
-                import google.generativeai as genai  # type: ignore
+        try:
+            from src.core.llm_gateway_v2 import llm
 
-                genai.configure(api_key=gemini_api_key)
-                model = genai.GenerativeModel("gemini-2.0-flash")
+            # Build a condensed conversation sample (max 200 messages to stay in context)
+            sample = messages[:200]
+            conversation_text = "\n".join(
+                f"[{m['sender']}]: {m['message']}" for m in sample
+            )
 
-                # Build a condensed conversation sample (max 200 messages to stay in context)
-                sample = messages[:200]
-                conversation_text = "\n".join(
-                    f"[{m['sender']}]: {m['message']}" for m in sample
-                )
-
-                analysis_prompt = f"""You are an AI business analyst. Analyse this WhatsApp business chat history.
+            analysis_prompt = f"""You are an AI business analyst. Analyse this WhatsApp business chat history.
 
 CONVERSATION SAMPLE ({len(sample)} of {raw_count} messages):
 ---
@@ -198,38 +193,38 @@ Rules:
 - Respond ONLY with valid JSON, no markdown
 """
 
-                response = model.generate_content(analysis_prompt)
-                raw_json = response.text.strip()
+            response = await llm.complete(
+                "ai://extract",
+                [{"role": "user", "content": analysis_prompt}],
+                # ai://extract defaults to 256 tokens — far too few for this JSON.
+                max_output_tokens=4096,
+                tenant_id=tenant_id,
+            )
+            raw_json = (response.text or "").strip()
 
-                # Strip markdown code fences if present
-                if raw_json.startswith("```"):
-                    raw_json = re.sub(r"^```[a-z]*\n?", "", raw_json)
-                    raw_json = re.sub(r"\n?```$", "", raw_json)
+            # Strip markdown code fences if present
+            if raw_json.startswith("```"):
+                raw_json = re.sub(r"^```[a-z]*\n?", "", raw_json)
+                raw_json = re.sub(r"\n?```$", "", raw_json)
 
-                import json
+            import json
 
-                parsed = json.loads(raw_json)
-                qa_pairs = parsed.get("qa_pairs", [])
-                tone_detected = parsed.get("tone_detected", "professional")
-                suggested_prompt = parsed.get("suggested_system_prompt", "")
-                suggested_templates = parsed.get("suggested_templates", [])
+            parsed = json.loads(raw_json)
+            qa_pairs = parsed.get("qa_pairs", [])
+            tone_detected = parsed.get("tone_detected", "professional")
+            suggested_prompt = parsed.get("suggested_system_prompt", "")
+            suggested_templates = parsed.get("suggested_templates", [])
 
-                logger.info(
-                    f"✅ Gemini analysis complete: {len(qa_pairs)} Q&A pairs, "
-                    f"tone={tone_detected}"
-                )
-
-            except Exception as gemini_exc:
-                logger.warning(
-                    f"⚠️ Gemini analysis failed (non-fatal): {gemini_exc}"
-                )
-                # Continue with partial results rather than failing the whole job
-        else:
-            logger.warning(
-                "⚠️ GEMINI_API_KEY not set — skipping AI analysis, "
-                "saving parse results only"
+            logger.info(
+                f"✅ Gemini analysis complete: {len(qa_pairs)} Q&A pairs, "
+                f"tone={tone_detected}"
             )
 
+        except Exception as gemini_exc:
+            logger.warning(
+                f"⚠️ Gemini analysis failed (non-fatal): {gemini_exc}"
+            )
+            # Continue with partial results rather than failing the whole job
         # Step 3 — Persist results
         await service.update_job_status(
             tenant_id=tenant_id,

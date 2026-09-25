@@ -17,7 +17,6 @@ import os
 import re
 from typing import List, Dict, Optional
 
-import httpx
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
@@ -192,8 +191,8 @@ async def chat_message(req: MessageRequest):
     messages.append({"role": "user", "content": message})
 
     try:
-        # Routes via the alias policy: gemini-2.5-flash primary -> openrouter
-        # -> openai_compatible. See llm_gateway.yaml ai://helpdesk.
+        # Routes via the alias policy (MiniMax primary, then fallbacks).
+        # See llm_gateway.yaml ai://helpdesk.
         from src.core.llm_gateway_v2 import llm
 
         result = await llm.complete("ai://helpdesk", messages)
@@ -286,32 +285,3 @@ async def create_chat_ticket(req: TicketRequest):
     except Exception as e:
         logger.error(f"❌ Chat ticket creation failed: {e}")
         raise HTTPException(status_code=500, detail="Could not create ticket. Email support@mybijou.xyz directly.")
-
-
-# ---------------------------------------------------------------------------
-# Internal: Gemini REST call
-# ---------------------------------------------------------------------------
-
-async def _call_gemini_chat(system_prompt: str, contents: list) -> str:
-    """Call Gemini 1.5 Flash via REST with system instruction + conversation history."""
-    api_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
-    if not api_key:
-        raise ValueError("GEMINI_API_KEY not configured")
-
-    payload = {
-        "system_instruction": {"parts": [{"text": system_prompt}]},
-        "contents": contents,
-        "generationConfig": {
-            "temperature": 0.4,
-            "maxOutputTokens": 512,
-        },
-    }
-
-    async with httpx.AsyncClient(timeout=20) as client:
-        res = await client.post(
-            f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={api_key}",
-            json=payload,
-        )
-        res.raise_for_status()
-        data = res.json()
-        return data["candidates"][0]["content"]["parts"][0]["text"].strip()

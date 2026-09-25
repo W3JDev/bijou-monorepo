@@ -12,7 +12,7 @@ Covers:
 - POST /api/outreach/consent/check-bulk bulk returns map
 
 Tests use unittest.mock to stub the Supabase client. The
-verify_session dependency is patched to return a known tenant_id.
+verify_session dependency is overridden to return a known tenant_id.
 """
 from __future__ import annotations
 
@@ -22,8 +22,11 @@ from typing import Any, Dict, List, Optional
 from unittest.mock import MagicMock, patch
 
 import pytest
-from fastapi import HTTPException
+from fastapi import FastAPI, HTTPException
 from fastapi.testclient import TestClient
+
+from src.core.dashboard_api_simple import verify_session
+from src.core.outreach_consent_api import router
 
 
 # ---------------------------------------------------------------------------
@@ -36,6 +39,27 @@ FAKE_CONTACT_ID = "11111111-1111-1111-1111-111111111111"
 FAKE_CONSENT_ID = "22222222-2222-2222-2222-222222222222"
 
 
+def _authed_client() -> TestClient:
+    """A client whose requests carry a session for FAKE_TENANT_ID.
+
+    verify_session is bound into the route signatures when
+    outreach_consent_api is imported, so patching the module attribute has
+    no effect — FastAPI only consults dependency_overrides. The real
+    dependency runs in strict mode and fails closed, which is why these
+    tests have to supply a session rather than rely on a patch.
+    """
+    app = FastAPI()
+    app.include_router(router)
+    app.dependency_overrides[verify_session] = lambda: FAKE_TENANT_ID
+    return TestClient(app)
+
+
+def _unauthed_client() -> TestClient:
+    app = FastAPI()
+    app.include_router(router)
+    return TestClient(app)
+
+
 def _make_supabase_mock():
     """A MagicMock that mimics the chainable Supabase client surface used
     by outreach_consent_api. Each queryable has a `.data` attribute
@@ -43,47 +67,41 @@ def _make_supabase_mock():
     repeated filters."""
     sb = MagicMock()
 
-    # .table(...).insert(...).execute() -> returns the inserted row
-    insert_chain = sb.table.return_value.insert.return_value
-    insert_chain.execute.return_value = MagicMock(
-        data=[{
-            "id": FAKE_CONSENT_ID,
-            "tenant_id": FAKE_TENANT_ID,
-            "contact_id": FAKE_CONTACT_ID,
-            "consent_type": "opt_in",
-            "consent_text": "I agree to receive updates",
-            "channel": "web_form",
-            "source": "manual",
-            "ip_address": None,
-            "user_agent": None,
-            "granted_at": "2026-08-23T10:00:00+00:00",
-            "expires_at": None,
-            "revoked_at": None,
-            "revoked_reason": None,
-            "created_at": "2026-08-23T10:00:00+00:00",
-        }]
-    )
+    stored = {
+        "id": FAKE_CONSENT_ID,
+        "tenant_id": FAKE_TENANT_ID,
+        "contact_id": FAKE_CONTACT_ID,
+        "consent_type": "opt_in",
+        "consent_text": "I agree to receive updates",
+        "channel": "web_form",
+        "source": "manual",
+        "ip_address": None,
+        "user_agent": None,
+        "granted_at": "2026-08-23T10:00:00+00:00",
+        "expires_at": None,
+        "revoked_at": None,
+        "revoked_reason": None,
+        "created_at": "2026-08-23T10:00:00+00:00",
+    }
 
-    # .table(...).update(...).eq(...).execute() -> returns the updated row
-    update_chain = sb.table.return_value.update.return_value.eq.return_value
-    update_chain.execute.return_value = MagicMock(
-        data=[{
-            "id": FAKE_CONSENT_ID,
-            "tenant_id": FAKE_TENANT_ID,
-            "contact_id": FAKE_CONTACT_ID,
-            "consent_type": "opt_in",
-            "consent_text": "I agree to receive updates",
-            "channel": "web_form",
-            "source": "manual",
-            "ip_address": None,
-            "user_agent": None,
-            "granted_at": "2026-08-23T10:00:00+00:00",
-            "expires_at": None,
-            "revoked_at": "2026-08-23T11:00:00+00:00",
-            "revoked_reason": "User request",
-            "created_at": "2026-08-23T10:00:00+00:00",
-        }]
-    )
+    # insert/update echo back the row the handler actually wrote, the way
+    # PostgREST does. A canned row would let a handler that dropped or
+    # rewrote a field still pass.
+    def _insert(payload):
+        chain = MagicMock()
+        row = {**stored, **payload, "id": FAKE_CONSENT_ID}
+        chain.execute.return_value = MagicMock(data=[row])
+        return chain
+
+    def _update(payload):
+        chain = MagicMock()
+        row = {**stored, **payload}
+        chain.eq.return_value = chain
+        chain.execute.return_value = MagicMock(data=[row])
+        return chain
+
+    sb.table.return_value.insert.side_effect = _insert
+    sb.table.return_value.update.side_effect = _update
 
     # .table(...).select(...).eq(...).is_(...).order(...).limit(...).execute()
     # -> we'll fill this in per-test
@@ -97,13 +115,8 @@ def _make_supabase_mock():
 
 def test_record_happy_path():
     sb = _make_supabase_mock()
-    with patch("src.core.outreach_consent_api._supabase", return_value=sb), \
-         patch("src.core.outreach_consent_api.verify_session", return_value=FAKE_TENANT_ID):
-        from src.core.outreach_consent_api import router
-        from fastapi import FastAPI
-        app = FastAPI()
-        app.include_router(router)
-        client = TestClient(app)
+    with patch("src.core.outreach_consent_api._supabase", return_value=sb):
+        client = _authed_client()
 
         r = client.post(
             "/api/outreach/consent/record",
@@ -126,13 +139,8 @@ def test_record_happy_path():
 
 def test_record_rejects_invalid_consent_type():
     sb = _make_supabase_mock()
-    with patch("src.core.outreach_consent_api._supabase", return_value=sb), \
-         patch("src.core.outreach_consent_api.verify_session", return_value=FAKE_TENANT_ID):
-        from src.core.outreach_consent_api import router
-        from fastapi import FastAPI
-        app = FastAPI()
-        app.include_router(router)
-        client = TestClient(app)
+    with patch("src.core.outreach_consent_api._supabase", return_value=sb):
+        client = _authed_client()
 
         r = client.post(
             "/api/outreach/consent/record",
@@ -148,13 +156,8 @@ def test_record_rejects_invalid_consent_type():
 
 def test_record_rejects_invalid_channel():
     sb = _make_supabase_mock()
-    with patch("src.core.outreach_consent_api._supabase", return_value=sb), \
-         patch("src.core.outreach_consent_api.verify_session", return_value=FAKE_TENANT_ID):
-        from src.core.outreach_consent_api import router
-        from fastapi import FastAPI
-        app = FastAPI()
-        app.include_router(router)
-        client = TestClient(app)
+    with patch("src.core.outreach_consent_api._supabase", return_value=sb):
+        client = _authed_client()
 
         r = client.post(
             "/api/outreach/consent/record",
@@ -197,13 +200,8 @@ def test_status_returns_active_consent():
     select_chain.limit.return_value = select_chain
     select_chain.execute.return_value = MagicMock(data=[active_row])
 
-    with patch("src.core.outreach_consent_api._supabase", return_value=sb), \
-         patch("src.core.outreach_consent_api.verify_session", return_value=FAKE_TENANT_ID):
-        from src.core.outreach_consent_api import router
-        from fastapi import FastAPI
-        app = FastAPI()
-        app.include_router(router)
-        client = TestClient(app)
+    with patch("src.core.outreach_consent_api._supabase", return_value=sb):
+        client = _authed_client()
 
         r = client.get(
             "/api/outreach/consent/status",
@@ -225,13 +223,8 @@ def test_status_returns_no_consent_when_empty():
     select_chain.limit.return_value = select_chain
     select_chain.execute.return_value = MagicMock(data=[])  # no active consent
 
-    with patch("src.core.outreach_consent_api._supabase", return_value=sb), \
-         patch("src.core.outreach_consent_api.verify_session", return_value=FAKE_TENANT_ID):
-        from src.core.outreach_consent_api import router
-        from fastapi import FastAPI
-        app = FastAPI()
-        app.include_router(router)
-        client = TestClient(app)
+    with patch("src.core.outreach_consent_api._supabase", return_value=sb):
+        client = _authed_client()
 
         r = client.get(
             "/api/outreach/consent/status",
@@ -261,13 +254,8 @@ def test_revoke_happy_path():
         }
     )
 
-    with patch("src.core.outreach_consent_api._supabase", return_value=sb), \
-         patch("src.core.outreach_consent_api.verify_session", return_value=FAKE_TENANT_ID):
-        from src.core.outreach_consent_api import router
-        from fastapi import FastAPI
-        app = FastAPI()
-        app.include_router(router)
-        client = TestClient(app)
+    with patch("src.core.outreach_consent_api._supabase", return_value=sb):
+        client = _authed_client()
 
         r = client.post(
             f"/api/outreach/consent/{FAKE_CONSENT_ID}/revoke",
@@ -294,13 +282,8 @@ def test_revoke_refuses_cross_tenant():
         }
     )
 
-    with patch("src.core.outreach_consent_api._supabase", return_value=sb), \
-         patch("src.core.outreach_consent_api.verify_session", return_value=FAKE_TENANT_ID):
-        from src.core.outreach_consent_api import router
-        from fastapi import FastAPI
-        app = FastAPI()
-        app.include_router(router)
-        client = TestClient(app)
+    with patch("src.core.outreach_consent_api._supabase", return_value=sb):
+        client = _authed_client()
 
         r = client.post(
             f"/api/outreach/consent/{FAKE_CONSENT_ID}/revoke",
@@ -322,13 +305,8 @@ def test_revoke_refuses_double_revoke():
         }
     )
 
-    with patch("src.core.outreach_consent_api._supabase", return_value=sb), \
-         patch("src.core.outreach_consent_api.verify_session", return_value=FAKE_TENANT_ID):
-        from src.core.outreach_consent_api import router
-        from fastapi import FastAPI
-        app = FastAPI()
-        app.include_router(router)
-        client = TestClient(app)
+    with patch("src.core.outreach_consent_api._supabase", return_value=sb):
+        client = _authed_client()
 
         r = client.post(
             f"/api/outreach/consent/{FAKE_CONSENT_ID}/revoke",
@@ -373,13 +351,8 @@ def test_audit_returns_full_history():
     select_chain.order.return_value = select_chain
     select_chain.execute.return_value = MagicMock(data=rows)
 
-    with patch("src.core.outreach_consent_api._supabase", return_value=sb), \
-         patch("src.core.outreach_consent_api.verify_session", return_value=FAKE_TENANT_ID):
-        from src.core.outreach_consent_api import router
-        from fastapi import FastAPI
-        app = FastAPI()
-        app.include_router(router)
-        client = TestClient(app)
+    with patch("src.core.outreach_consent_api._supabase", return_value=sb):
+        client = _authed_client()
 
         r = client.get(
             "/api/outreach/consent/audit",
@@ -412,13 +385,8 @@ def test_check_bulk_returns_map():
         {"contact_id": cid_a, "consent_type": "opt_in", "revoked_at": None, "granted_at": "2026-08-01"},
     ])
 
-    with patch("src.core.outreach_consent_api._supabase", return_value=sb), \
-         patch("src.core.outreach_consent_api.verify_session", return_value=FAKE_TENANT_ID):
-        from src.core.outreach_consent_api import router
-        from fastapi import FastAPI
-        app = FastAPI()
-        app.include_router(router)
-        client = TestClient(app)
+    with patch("src.core.outreach_consent_api._supabase", return_value=sb):
+        client = _authed_client()
 
         r = client.post(
             "/api/outreach/consent/check-bulk",
@@ -432,3 +400,39 @@ def test_check_bulk_returns_map():
         assert body[cid_a] is True
         assert body[cid_b] is False
         assert body[cid_c] is False
+
+
+# ---------------------------------------------------------------------------
+# Auth gate
+# ---------------------------------------------------------------------------
+
+
+def test_status_requires_a_session():
+    """Consent rows are a tenant's PDPA evidence, so every route sits behind
+    verify_session, which runs in strict mode and fails closed."""
+    client = _unauthed_client()
+
+    r = client.get(
+        "/api/outreach/consent/status", params={"contact_id": FAKE_CONTACT_ID}
+    )
+    assert r.status_code == 400  # nothing to resolve a tenant from
+    assert "tenant_id" in r.json()["detail"].lower()
+
+    r = client.get(
+        "/api/outreach/consent/status",
+        params={"contact_id": FAKE_CONTACT_ID},
+        headers={"X-Tenant-ID": FAKE_TENANT_ID},
+    )
+    assert r.status_code == 401  # a tenant is named, but nothing proves it
+
+
+def test_record_checks_auth_before_body():
+    """A stranger posting a malformed body gets the auth error, not a 422
+    that would tell them what the schema looks like."""
+    client = _unauthed_client()
+    r = client.post(
+        "/api/outreach/consent/record",
+        headers={"X-Tenant-ID": FAKE_TENANT_ID},
+        json={"consent_type": "opt_in"},  # missing contact_id and channel
+    )
+    assert r.status_code == 401

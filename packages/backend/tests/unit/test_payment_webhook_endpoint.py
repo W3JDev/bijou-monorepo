@@ -238,3 +238,80 @@ def test_checkout_monthly_selects_monthly_price_id(app, monkeypatch):
         f"monthly checkout should use STRIPE_PRICE_PRO_MONTHLY ({_MONTHLY_PRICE}), "
         f"got {captured['kwargs']['line_items'][0]['price']}"
     )
+
+
+# ---------------------------------------------------------------------------
+# Real signature verification + price->plan mapping (2026-09-26, Dokploy prep)
+# ---------------------------------------------------------------------------
+
+def _stripe_sig(payload: bytes, secret: str) -> str:
+    import hashlib, hmac, time
+    ts = str(int(time.time()))
+    mac = hmac.new(secret.encode(), f"{ts}.".encode() + payload, hashlib.sha256).hexdigest()
+    return f"t={ts},v1={mac}"
+
+
+def test_verify_rejects_unsigned_body_when_secret_unset(monkeypatch):
+    # Used to trust the raw body ("dev mode") -> forged checkout.session.completed.
+    monkeypatch.delenv("STRIPE_WEBHOOK_SECRET", raising=False)
+    body = b'{"id":"evt_forged","type":"checkout.session.completed"}'
+    assert payment_api.StripeService().verify_webhook_event(body, "t=1,v1=x") is None
+
+
+def test_verify_uses_stripe_webhook_secret(monkeypatch):
+    secret = "whsec_test_regression"
+    monkeypatch.setenv("STRIPE_WEBHOOK_SECRET", secret)
+    monkeypatch.delenv("STRIPE_SECRET_KEY", raising=False)  # HMAC needs no API key
+    body = b'{"id":"evt_ok","object":"event","type":"checkout.session.completed","data":{"object":{}}}'
+    svc = payment_api.StripeService()
+    event = svc.verify_webhook_event(body, _stripe_sig(body, secret))
+    assert event is not None and event.get("id") == "evt_ok"
+    assert svc.verify_webhook_event(body, _stripe_sig(body, "whsec_wrong")) is None
+
+
+def test_real_signed_webhook_through_route_returns_200(app, monkeypatch):
+    # Uses the REAL verify path. stripe>=8 returns a StripeObject without .get,
+    # so the route 500'd on every genuinely signed event.
+    secret = "whsec_test_route"
+    monkeypatch.setenv("STRIPE_WEBHOOK_SECRET", secret)
+    processed = {}
+    monkeypatch.setattr(payment_api.StripeService, "process_webhook_event",
+                        lambda self, ev: processed.setdefault("type", ev.get("type")))
+    body = b'{"id":"evt_route","object":"event","type":"invoice.payment_failed","data":{"object":{"customer":"cus_1"}}}'
+    with TestClient(app) as client:
+        r = client.post("/api/payment/webhook", content=body,
+                        headers={"Stripe-Signature": _stripe_sig(body, secret)})
+    assert r.status_code == 200, r.text
+    assert r.json()["event_id"] == "evt_route"
+    assert processed["type"] == "invoice.payment_failed"
+
+
+def test_plan_for_price_maps_checkout_price_ids(monkeypatch):
+    # checkout sells STRIPE_PRICE_PRO_{MONTHLY,YEARLY}; subscription.updated must
+    # map them back to "pro", not silently downgrade to "starter".
+    monkeypatch.setenv("STRIPE_PRICE_PRO_MONTHLY", "price_pm")
+    monkeypatch.setenv("STRIPE_PRICE_PRO_YEARLY", "price_py")
+    assert payment_api._plan_for_price("price_pm") == "pro"
+    assert payment_api._plan_for_price("price_py") == "pro"
+    assert payment_api._plan_for_price("price_unknown") is None
+    assert payment_api._plan_for_price(None) is None
+
+
+def test_checkout_params_are_valid_checkout_session_params(app, monkeypatch):
+    # automatic_payment_methods is a PaymentIntent param; Stripe rejects it on
+    # checkout.Session.create ("Received unknown parameter"), breaking checkout.
+    from stripe.params.checkout._session_create_params import SessionCreateParams
+    from src.core.dashboard_api_simple import verify_session
+
+    monkeypatch.setenv("STRIPE_PRICE_PRO_MONTHLY", _MONTHLY_PRICE)
+    captured = {}
+    _make_fake_stripe(monkeypatch, captured)
+    app.dependency_overrides[verify_session] = lambda: "tenant_test"
+    _make_fake_supabase(monkeypatch, {"id": "tenant_test", "owner_email": "t@test.com", "stripe_customer_id": None})
+
+    with TestClient(app) as client:
+        r = client.post("/api/payment/checkout", json={"plan": "pro"})
+
+    assert r.status_code == 200, r.text
+    allowed = SessionCreateParams.__required_keys__ | SessionCreateParams.__optional_keys__
+    assert set(captured["kwargs"]) <= allowed, set(captured["kwargs"]) - allowed

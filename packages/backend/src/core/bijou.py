@@ -21,7 +21,10 @@ import json
 import logging
 import os
 import re
+import hashlib
+import hmac
 import signal
+import threading
 import sys
 import time
 import traceback
@@ -478,10 +481,14 @@ app.add_middleware(
     allow_origins=[
         "http://localhost:3000",  # Local dev
         "http://localhost:3001",
-        "https://mybijou.xyz",  # Production domain
-        "https://www.mybijou.xyz",  # Production domain (www)
-        "*",  # Allow all origins temporarily for testing
+        "https://mybijou.xyz",  # Landing (production)
+        "https://www.mybijou.xyz",  # Landing (www)
+        "https://app.mybijou.xyz",  # Dashboard/app origin — where the JWT lives
     ],
+    # NOTE: never re-add "*" here. With allow_credentials=True, "*" makes
+    # Starlette reflect ANY request origin and return
+    # Access-Control-Allow-Credentials: true — i.e. any site can make
+    # credentialed calls to this API. Add explicit origins above instead.
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -847,14 +854,52 @@ try:
 except ImportError as e:
     logger.warning(f"⚠️ Could not import proactive messaging API: {e}")
 
-# Include Google OAuth API routes
-try:
-    from src.saas.google_oauth import router as google_oauth_router
+# Google OAuth: the LIVE path is Supabase-native — the frontend calls
+# supabase.auth.signInWithOAuth(...) then POSTs the token to
+# POST /api/auth/oauth-session (auth_api.py). The custom google_oauth.py router
+# below (GET /api/auth/google/login + /callback) is an orphaned, broken second
+# implementation: its callback inserts non-existent tenant_users columns
+# (google_oauth.py:306-314 vs baseline.sql:2014-2021) → 500, and it re-opens the
+# per-call connection-pool anti-pattern (google_oauth.py:79-87). No static page
+# links to it. Leaving it mounted only lets a stray link walk a user into the
+# broken path, so it is deliberately NOT mounted. See DIAGNOSIS-AUTH.md D-AUTH-2/3/4.
+# To revive it, reconcile the schema + reuse get_auth_client() first.
 
-    app.include_router(google_oauth_router)
-    logger.info("✅ Google OAuth API routes included")
-except ImportError as e:
-    logger.warning(f"⚠️ Could not import Google OAuth API: {e}")
+# =============================================================================
+# Agent output style / tone (Job 4)
+# =============================================================================
+# Default output style applied to EVERY tenant, overridable PER-TENANT via the
+# client_configs.tone column (already loaded into client_config at prompt-assembly
+# time). This shapes HOW the agent talks; it sits below the Manglish language rule
+# and never overrides factual accuracy or safety. See DIAGNOSIS-AUTH.md §4.
+DEFAULT_AGENT_TONE = "warm, friendly, and professional"
+
+_TONE_GUIDANCE = {
+    "professional": "Keep replies polished, concise, and businesslike.",
+    "friendly": "Keep replies warm, upbeat, and approachable.",
+    "casual": "Keep replies relaxed and conversational, like texting a friend.",
+    "formal": "Keep replies formal and precise; avoid slang and contractions.",
+    "warm": "Keep replies warm, caring, and reassuring.",
+}
+
+
+def _build_tone_instruction(client_config):
+    """Return the '## Response Tone' block to append to the system prompt.
+
+    Per-tenant override comes from client_configs.tone; falls back to
+    DEFAULT_AGENT_TONE. Pure function so it is unit-testable without booting
+    the whole app. Job 4: default tone + per-tenant override.
+    """
+    tone = (client_config or {}).get("tone") or DEFAULT_AGENT_TONE
+    tone = str(tone).strip().lower() or DEFAULT_AGENT_TONE
+    guidance = _TONE_GUIDANCE.get(tone, f"Adopt a {tone} tone.")
+    return (
+        "\n\n## Response Tone\n"
+        f"Default output style for this business: **{tone}**. {guidance} "
+        "This shapes HOW you say things; it never overrides factual accuracy, "
+        "the Manglish language rule, or the safety instructions above."
+    )
+
 
 # Global Bijou instance for webhook access
 bijou_instance = None
@@ -1296,6 +1341,299 @@ MISSED_CALL_SYSTEM_CONTEXT = (
 def build_missed_call_context() -> str:
     """Return the AI system-context string to inject for missed-call messages."""
     return MISSED_CALL_SYSTEM_CONTEXT
+
+
+def _is_bridge_media_url(url: str, *bridge_bases: str) -> bool:
+    """True only if `url` is on the same origin as one of the bridge base URLs.
+
+    The inbound media download attaches BRIDGE_USER/BRIDGE_PASSWORD as Basic
+    Auth. `media_url` comes from the webhook payload, and the GOWA parser
+    passes an absolute "http..." media field through verbatim — so without
+    this check anyone who can reach /webhook/message (open whenever
+    BIJOU_WEBHOOK_SECRET is unset) could make the backend fetch an arbitrary
+    URL (SSRF) and hand the bridge credentials to it.
+    """
+    from urllib.parse import urlsplit
+
+    def _origin(u: str):
+        p = urlsplit((u or "").strip())
+        if p.scheme not in ("http", "https") or not p.hostname:
+            return None
+        # userinfo / backslash tricks parse differently across URL libraries.
+        if p.username is not None or "\\" in u:
+            return None
+        return (p.scheme, p.hostname.lower(), p.port or (443 if p.scheme == "https" else 80))
+
+    try:
+        target = _origin(url)
+        return target is not None and any(target == _origin(b) for b in bridge_bases if b)
+    except ValueError:  # malformed port
+        return False
+
+
+def _verify_webhook_secret(request, body: Optional[bytes] = None) -> bool:
+    """Authenticate a bridge -> backend webhook call.
+
+    `/webhook/message` and `/webhook/connection` had no authentication at all.
+    `/webhook/connection` reads the tenant from the request body and rewrites
+    that tenant's `whatsapp_jid` using the service-role client, so anyone on the
+    internet could repoint a victim tenant's WhatsApp binding; `/webhook/message`
+    let anyone inject inbound messages and burn a tenant's LLM budget.
+
+    Accepts the secret as `Authorization: Bearer <secret>` or
+    `X-Bijou-Webhook-Secret: <secret>`.
+
+    FAIL-OPEN WHEN UNCONFIGURED, ON PURPOSE. If BIJOU_WEBHOOK_SECRET is unset
+    this returns True and logs CRITICAL. Making it mandatory in code would take
+    inbound WhatsApp down for every already-running deployment the moment it
+    upgraded, before an operator could set the variable. Both new compose files
+    mark the variable required, so a NEW deploy cannot come up without it; the
+    open window exists only for existing ones, and the CRITICAL line is how you
+    find them. tests/unit/test_webhook_auth.py pins this as a deliberate, noisy
+    migration state so it cannot quietly become permanent.
+    """
+    expected_secret = (os.getenv("BIJOU_WEBHOOK_SECRET") or "").strip()
+
+    if not expected_secret:
+        logger.critical(
+            "🚨 UNAUTHENTICATED WEBHOOK: BIJOU_WEBHOOK_SECRET is not set, so "
+            "/webhook/* accepts calls from anyone. Set it on the backend AND on "
+            "the bridge (same value) to close this. See "
+            "docs/AUDIT-2026-09-06.md P0-4."
+        )
+        return True
+
+    headers = getattr(request, "headers", {}) or {}
+
+    # GOWA (the production bridge) does not send the secret. It signs the BODY:
+    #     X-Hub-Signature-256: sha256=<hex hmac-sha256(body, secret)>
+    # started via `--webhook <url> --webhook-secret <key>`. Confirmed against
+    # the running image and documented in
+    # docs/handoffs-and-audits/GOWA_BRIDGE_EXPERT_GUIDE.md:1128-1140.
+    # Without this branch every inbound WhatsApp message is rejected 401.
+    sig = (headers.get("x-hub-signature-256") or "").strip()
+    if sig:
+        if body is None:
+            # A signature we cannot verify is worse than none — the caller
+            # forgot to pass the raw body, and accepting it would be a hole.
+            logger.warning("🚫 X-Hub-Signature-256 present but no body supplied to verify it")
+            return False
+        if not sig.startswith("sha256="):
+            return False
+        expected = "sha256=" + hmac.new(
+            expected_secret.encode(), body, hashlib.sha256
+        ).hexdigest()
+        return hmac.compare_digest(sig, expected)
+
+    presented = (headers.get("x-bijou-webhook-secret") or "").strip()
+    if not presented:
+        auth = (headers.get("authorization") or "").strip()
+        if auth.lower().startswith("bearer "):
+            presented = auth[7:].strip()
+
+    if not presented:
+        return False
+
+    # compare_digest, not ==: a plain comparison short-circuits on the first
+    # differing byte and leaks the secret's prefix through response timing.
+    return hmac.compare_digest(presented, expected_secret)
+
+
+# ── Webhook backpressure (CVE-2026-003) ────────────────────────────────────
+#
+# `/webhook/*` had authentication but no rate limit of any kind. The only
+# middleware on this app is CORS and the no-cache header pass, and the per-chat
+# limiter in `process_message` runs INSIDE the background task — i.e. after the
+# 200 has already gone back to the caller. So an authenticated flood was
+# accepted at 100% and queued unbounded work: the memory-exhaustion vector that
+# tests/security/test_call_security.py has asserted (and failed) since Feb.
+#
+# Two buckets, because they cover different failures:
+#   global  — the secret leaked, or the bridge is looping. One device id per
+#             request defeats a purely per-device limit, which is exactly what
+#             the CVE test does (100 requests, 100 distinct device ids).
+#   device  — one runaway tenant must not consume the whole global allowance.
+#
+# Defaults: global burst 60, then 5/sec sustained (~432k messages/day) across
+# ALL tenants; per-device burst 120, then 20/sec. A WhatsApp SME tenant sees
+# single digits per minute, so this is orders of magnitude of headroom, and the
+# burst capacity absorbs a bridge reconnect replaying its queue.
+#
+# The global bucket is the safety control; the per-device one is FAIRNESS, so it
+# is set much looser — its job is stopping one tenant from eating the global
+# allowance, not bounding total work.
+#
+# Set WEBHOOK_RATE_CAPACITY=0 to disable entirely. Throughput tests that measure
+# the handler rather than the backpressure do exactly that, via the
+# `no_webhook_rate_limit` fixture — otherwise they measure this function.
+#
+# Over-limit returns 429 with Retry-After rather than dropping silently, so a
+# retrying caller redelivers instead of losing a customer's message.
+
+_WEBHOOK_RATE_LOCK = threading.Lock()
+_WEBHOOK_BUCKETS: Dict[str, list] = {}   # key -> [tokens, last_refill_monotonic]
+_WEBHOOK_BUCKET_MAX_KEYS = 10000         # the limiter must not leak either
+
+
+def _bucket_setting(name: str, default: float) -> float:
+    raw = os.getenv(name, "").strip()
+    if not raw:
+        return default
+    try:
+        return float(raw)
+    except ValueError:
+        logger.warning("Ignoring non-numeric %s=%r, using %s", name, raw, default)
+        return default
+
+
+def _webhook_take_token(key: str, capacity: float, refill_per_sec: float) -> bool:
+    """Classic token bucket. True if a token was available and consumed."""
+    if capacity <= 0:
+        return True  # explicitly disabled
+
+    now = time.monotonic()
+    with _WEBHOOK_RATE_LOCK:
+        bucket = _WEBHOOK_BUCKETS.get(key)
+        if bucket is None:
+            # Evict fully-refilled idle buckets before growing. An unbounded
+            # dict keyed by attacker-controlled device ids would recreate the
+            # very memory exhaustion this function exists to prevent.
+            if len(_WEBHOOK_BUCKETS) >= _WEBHOOK_BUCKET_MAX_KEYS:
+                cutoff = now - 300
+                for k in [k for k, v in _WEBHOOK_BUCKETS.items() if v[1] < cutoff]:
+                    del _WEBHOOK_BUCKETS[k]
+                if len(_WEBHOOK_BUCKETS) >= _WEBHOOK_BUCKET_MAX_KEYS:
+                    return False  # saturated: shed load rather than grow
+            bucket = [capacity, now]
+            _WEBHOOK_BUCKETS[key] = bucket
+
+        tokens, last = bucket
+        tokens = min(capacity, tokens + (now - last) * refill_per_sec)
+        bucket[1] = now
+
+        if tokens < 1.0:
+            bucket[0] = tokens
+            return False
+
+        bucket[0] = tokens - 1.0
+        return True
+
+
+def _group_chat_support_enabled(client_config: Optional[dict] = None) -> bool:
+    """Is the agent allowed to answer in WhatsApp GROUP chats?
+
+    Off by default: a bot replying in a customer's group chat is embarrassing
+    in a way a missed reply is not, so this fails closed.
+
+    Lifted out of BijouAI.process_message so it can be tested at all. The
+    decision used to sit ~500 lines into a method that needs a database, a
+    tenant router and a live message before it is reachable, and the only
+    tests aimed at it (tests/integration/test_group_chat_webhook.py) mocked
+    `process_message` itself — i.e. they mocked away the code they asserted on,
+    and could never have failed for the right reason.
+
+    Precedence: tenant setting, else the global env var.
+
+    The tenant override is currently INERT and that is not a bug in this
+    function. client_config is `SELECT *` from `client_configs`
+    (src/saas/tenant_router.py:794) and no `enable_group_chat` column exists in
+    that table — verified against the live database on 2026-09-06 — so the key
+    is always absent and the env var always wins.
+
+    Values are coerced rather than trusted for truthiness. If someone later
+    adds the column as `text`, the string "false" is TRUE in Python, and group
+    replies would silently switch on for every tenant that disabled them. This
+    repo has already shipped that exact bug once, on
+    `tenants.onboarding_completed`.
+    """
+    enabled = os.getenv("ENABLE_GROUP_CHAT_SUPPORT", "false").strip().lower() == "true"
+
+    if client_config and "enable_group_chat" in client_config:
+        raw = client_config.get("enable_group_chat")
+        if isinstance(raw, str):
+            enabled = raw.strip().lower() in ("true", "t", "1", "yes", "on")
+        elif raw is None:
+            pass  # explicit null means "not configured", keep the global
+        else:
+            enabled = bool(raw)
+
+    return enabled
+
+
+def _reset_webhook_rate_limits() -> None:
+    """Empty every bucket. For tests: this state is process-global by design,
+    so a flood in one test otherwise 429s the next unrelated one."""
+    with _WEBHOOK_RATE_LOCK:
+        _WEBHOOK_BUCKETS.clear()
+
+
+def _check_webhook_rate_limit(scope: str, key: Optional[str] = None) -> None:
+    """Raise HTTPException(429) if this webhook call exceeds its budget.
+
+    scope is "global" or "device". Nothing is dropped: 429 + Retry-After tells
+    a well-behaved caller to redeliver.
+    """
+    if scope == "global":
+        capacity = _bucket_setting("WEBHOOK_RATE_CAPACITY", 60.0)
+        refill = _bucket_setting("WEBHOOK_RATE_REFILL_PER_SEC", 5.0)
+        bucket_key = "::global::"
+    else:
+        capacity = _bucket_setting("WEBHOOK_DEVICE_RATE_CAPACITY", 120.0)
+        refill = _bucket_setting("WEBHOOK_DEVICE_REFILL_PER_SEC", 20.0)
+        bucket_key = f"device::{key}"
+
+    if _webhook_take_token(bucket_key, capacity, refill):
+        return
+
+    logger.warning(
+        "🚦 webhook rate limit hit (%s%s): shedding load",
+        scope,
+        f" {key}" if key else "",
+    )
+    raise HTTPException(
+        status_code=429,
+        detail="Too many webhook requests. Retry shortly.",
+        headers={"Retry-After": "1"},
+    )
+
+
+def _install_signal_handlers(instance) -> bool:
+    """Install SIGINT/SIGTERM handlers, skipping cleanly off the main thread.
+
+    Returns True if handlers were installed, False if they were skipped.
+
+    CPython only allows signal.signal() from the main thread of the main
+    interpreter. Calling it anywhere else raises
+
+        ValueError: signal only works in main thread of the main interpreter
+
+    BijouAI is constructed inside FastAPI's startup event, so this fired for
+    any host that runs the ASGI lifespan off the main thread. The concrete
+    case: fastapi.testclient.TestClient(app) used as a context manager, which
+    made every in-process integration test unrunnable.
+
+    Skipping registration off the main thread costs nothing. In that
+    configuration uvicorn owns SIGINT/SIGTERM and shuts the app down itself,
+    and this handler only sets `running = False`. Under normal `uvicorn
+    src.core.bijou:app` startup we ARE on the main thread and the handlers
+    install as before.
+
+    The AttributeError from a missing `_signal_handler` is deliberately not
+    caught — that is a bug at the call site, not an environment difference.
+    """
+    handler = instance._signal_handler  # AttributeError here is a real bug
+
+    if threading.current_thread() is not threading.main_thread():
+        logger.debug(
+            "Skipping signal handler registration: not on the main thread "
+            "(%s). The ASGI server owns process signals in this mode.",
+            threading.current_thread().name,
+        )
+        return False
+
+    signal.signal(signal.SIGINT, handler)
+    signal.signal(signal.SIGTERM, handler)
+    return True
 
 
 # ── End pure helpers ───────────────────────────────────────────────────────────
@@ -1746,9 +2084,8 @@ class BijouAI:
             f"📱 Channels: WhatsApp{'+ Telegram' if self.telegram_enabled else ' only'}"
         )
 
-        # Setup signal handlers
-        signal.signal(signal.SIGINT, self._signal_handler)
-        signal.signal(signal.SIGTERM, self._signal_handler)
+        # Setup signal handlers (no-op off the main thread — see helper)
+        _install_signal_handlers(self)
 
     # ========================================================================
     # 2026-08-24: Response Coordinator wrapper
@@ -2498,6 +2835,31 @@ class BijouAI:
             logger.warning(f"⚠️ Blacklist check failed for {chat_jid}: {e}")
             return False  # fail-open: never accidentally block
 
+    async def _is_ai_paused(self, supabase, tenant_id: str, chat_jid: str) -> bool:
+        """Return True if the owner has PAUSED AI auto-replies for THIS contact.
+
+        A soft mute (#3, 2026-09-21): distinct from blocked_numbers (which hard-
+        drops the message) and from human-takeover (which implies an agent is
+        actively handling the chat). Here the inbound is still received and saved
+        so the owner can read and reply manually from the dashboard — the AI just
+        does not auto-reply. Backed by contacts.ai_paused (see
+        migrations-py/add_contact_ai_paused.sql). Fails OPEN: a missing column or
+        row must never accidentally silence the agent.
+        """
+        try:
+            result = (
+                supabase.table("contacts")
+                .select("ai_paused")
+                .eq("tenant_id", tenant_id)
+                .eq("jid", chat_jid)
+                .limit(1)
+                .execute()
+            )
+            return bool(result.data and result.data[0].get("ai_paused"))
+        except Exception as e:
+            logger.warning(f"⚠️ ai_paused check failed for {chat_jid}: {e}")
+            return False  # fail-open: never accidentally silence the agent
+
     # ======================================================================
 
     async def process_message(self, message: Dict):
@@ -2537,6 +2899,15 @@ class BijouAI:
                         logger.warning(
                             f"   ⚠️ Cannot construct media_url - BRIDGE_URL not configured"
                         )
+
+            # Only ever fetch media (with bridge credentials) from the bridge.
+            if media_url and not _is_bridge_media_url(
+                media_url,
+                self.config.get("bridge_url", ""),
+                os.getenv("BRIDGE_URL", ""),
+            ):
+                logger.warning(f"🚫 Refusing non-bridge media_url: {media_url}")
+                media_url = None
 
             # === PHASE 2: Multi-Tenant Routing ===
             tenant_id = None
@@ -2691,6 +3062,28 @@ class BijouAI:
                             except Exception as _save_err:
                                 logger.warning(f"⚠️ [TAKEOVER] Failed to save message: {_save_err}")
                             return  # Human has the wheel — AI stays quiet
+
+                        # 3. Per-contact AI pause (soft mute, #3 2026-09-21) —
+                        #    owner turned OFF auto-reply for this specific contact.
+                        #    Unlike blacklist (hard drop) we STILL save the inbound
+                        #    so the owner reads/replies from the dashboard; the AI
+                        #    just stays silent.
+                        if await self._is_ai_paused(_supabase, tenant_id, chat_jid):
+                            logger.info(
+                                f"🔇 [AI-PAUSED] Auto-reply off for {chat_jid} (tenant={tenant_id}) — saving, not replying"
+                            )
+                            try:
+                                _device_jid = message.get("device_jid")
+                                _chat_type = "group" if chat_jid and chat_jid.endswith("@g.us") else "individual"
+                                await self._save_message(
+                                    chat_jid, tenant_id, "user", content or "",
+                                    device_jid=_device_jid, chat_type=_chat_type,
+                                    media_url=media_url, media_type=media_type,
+                                )
+                            except Exception as _save_err:
+                                logger.warning(f"⚠️ [AI-PAUSED] Failed to save message: {_save_err}")
+                            self.processed_message_ids.add(msg_id)
+                            return  # Owner muted the AI for this contact
                 except Exception as e:
                     logger.warning(f"⚠️ PHASE 2.25 guard failed (fail-open): {e}")
             # === END PHASE 2.25 ===
@@ -3164,12 +3557,10 @@ class BijouAI:
             from src.core.jid_utils import is_group_chat
 
             if is_group_chat(chat_jid):
-                # Check if group chat support is enabled (global setting)
-                enable_groups = os.getenv("ENABLE_GROUP_CHAT_SUPPORT", "false").lower() == "true"
-
-                # Check tenant-specific setting if client_config is available
-                if client_config:
-                    enable_groups = client_config.get("enable_group_chat", enable_groups)
+                # Tenant setting, else the global env var. See
+                # _group_chat_support_enabled for why the tenant half is
+                # currently inert and why the value is coerced.
+                enable_groups = _group_chat_support_enabled(client_config)
 
                 if not enable_groups:
                     logger.info(f"⏭️ Skipping group chat (support disabled): {chat_jid}")
@@ -3407,14 +3798,9 @@ Use `/quiet` to reduce my chattiness!
                         # Gemini can process images and audio natively
                         if media_type in ["image", "sticker"]:
                         # Image processing with Gemini Vision
-                            from google import genai
-                            from google.genai import types
-
-                            if not hasattr(self, "genai_client"):
-                                self.genai_client = genai.Client(
-                                    api_key=self.config["gemini_api_key"]
-                                )
-
+                            # No genai.Client here: it was never used (the call
+                            # below goes through ai://vision) and it RAISES when
+                            # GEMINI_API_KEY is unset, killing every image reply.
                             # Upload image to Gemini via the AI Gateway (ai://vision).
                             # We need raw bytes + mime for the gateway's image_url format.
                             image_bytes = media_response.content
@@ -3549,7 +3935,9 @@ Use `/quiet` to reduce my chattiness!
                         elif media_type in ["document"]:
                             # Document pipeline — Gemini-native multimodal first,
                             # text fallback for DOCX/TXT, graceful error handling.
-                            filename = msg_dict.get("filename", "document")
+                            # `message` IS the webhook's msg_dict; the old `msg_dict`
+                            # name was undefined here, so every document NameError'd.
+                            filename = message.get("filename", "document")
                             ext = filename.rsplit(".", 1)[-1].lower() if "." in filename else ""
                             content_type = media_response.headers.get("content-type", "application/octet-stream")
 
@@ -3569,11 +3957,7 @@ Use `/quiet` to reduce my chattiness!
                             # Gemini-native types: PDF + images sent as documents
                             GEMINI_NATIVE = {"application/pdf", "image/jpeg", "image/png", "image/webp", "image/gif"}
 
-                            from google import genai
-                            from google.genai import types as gtypes
-                            if not hasattr(self, "genai_client"):
-                                self.genai_client = genai.Client(api_key=self.config["gemini_api_key"])
-
+                            # (Unused genai.Client removed — raised with no Gemini key.)
                             if mime in GEMINI_NATIVE:
                                 # ✅ Send via the AI Gateway (ai://vision) so the alias
                                 # policy in llm_gateway.yaml controls which provider
@@ -3885,38 +4269,16 @@ Use `/quiet` to reduce my chattiness!
                     )
             # === END KEYWORD TEMPLATE CHECK ===
 
-            # === PHASE 5: Robust Function Calling (Structured Tool Calling) ===
-            tool_output = None
-            if (
-                hasattr(self, "function_caller")
-                and self.function_caller
-                and self.function_caller.enabled
-            ):
-                logger.info(f"🔧 Testing Intent: {enhanced_content}")
-                func_result = await self.function_caller.detect_and_execute(
-                    enhanced_content, chat_jid, user_context=client_config
-                )
-
-                if func_result:
-                    # If this is a confirmation request, send only the confirmation message
-                    if func_result.get("status") == "pending_confirmation":
-                        self._send_response_human_burst(
-                            chat_jid,
-                            func_result["message"],
-                            channel=channel,
-                            tenant_id=tenant_id,
-                        )
-                        self.processed_message_ids.add(msg_id)
-                        return
-
-                    # Tool summary for LLM context
-                    tool_output = f"\n\n[SYSTEM: You successfully executed a tool. Result: {json.dumps(func_result)}]"
-                    logger.info("✅ Function called successfully - enriching response")
-
-            # Generate AI response with client config (and tool output if any)
-            final_content = enhanced_content + (tool_output if tool_output else "")
+            # === PHASE 5: Function calling ===
+            # Tools run INSIDE _generate_response (MiniMax tool loop / gateway
+            # ai://reasoning with tools=...). A separate pre-pass used to call
+            # Gemini directly here with a hardcoded model: a synchronous call that
+            # blocked the event loop on every message and, since Gemini died, always
+            # failed and returned None. Removed (2026-09-26) rather than revived —
+            # reviving it would add an LLM round-trip per message and could run
+            # the same tool twice (here and again in the reply loop).
             response = await self._generate_response(
-                final_content, lang_context, chat_jid, client_config=client_config
+                enhanced_content, lang_context, chat_jid, client_config=client_config
             )
 
             # === MEDIA ATTACHMENT PARSER ===
@@ -3967,16 +4329,10 @@ Use `/quiet` to reduce my chattiness!
                     # later by the integration owner.
                     _raw_id = f"{chat_jid}|{tenant_id or 'default'}|{response[:200]}"
                     _msg_id = "ai-" + hashlib.sha256(_raw_id.encode()).hexdigest()[:24]
-                    # Tool call capture: we have `func_result` from any function
-                    # calling earlier in this turn. If present, surface it.
+                    # Tool calls happen inside _generate_response and are logged
+                    # to conversation_logs / trajectory there; the pre-pass that
+                    # fed this field was removed (2026-09-26).
                     _tool_calls = []
-                    if 'func_result' in dir() and func_result:
-                        _tool_calls.append({
-                            "name": getattr(self, "_last_tool_name", "tool"),
-                            "args": {},
-                            "result": (func_result if isinstance(func_result, (str, int, float, bool, dict, list))
-                                       else str(func_result)),
-                        })
                     # Model comes from the env var or the client_config.
                     _model = (client_config or {}).get("ai_model") or os.getenv("AI_MODEL", "gemini-2.5-flash")
                     # Metadata captures prompt/response length proxies and
@@ -3995,7 +4351,7 @@ Use `/quiet` to reduce my chattiness!
                             "confidence": None,
                             "alternatives": [],
                             "metadata": {
-                                "prompt_chars": len(final_content or ""),
+                                "prompt_chars": len(enhanced_content or ""),
                                 "response_chars": len(response or ""),
                                 "latency_ms": _latency_ms,
                             },
@@ -4230,12 +4586,18 @@ Use `/quiet` to reduce my chattiness!
 
                     # Escalation detection using HandoverSystem
                     if self.handover_system:
+                        # to_thread: should_escalate is sync and its AI detector calls
+                        # asyncio.run(), which raises inside this running loop and
+                        # silently degraded every check to keyword-only. tenant_id
+                        # enables its 10-minute escalation dedup.
                         should_escalate, escalation_reason, priority = (
-                            self.handover_system.should_escalate(
+                            await asyncio.to_thread(
+                                self.handover_system.should_escalate,
                                 message=enhanced_content,
                                 chat_jid=chat_jid,
                                 emotion=None,  # LanguageContext doesn't have emotion attribute
                                 conversation_history=None,
+                                tenant_id=tenant_id,
                             )
                         )
 
@@ -4636,6 +4998,13 @@ Use `/quiet` to reduce my chattiness!
             logger.debug("🇲🇾 Manglish mode injected into system prompt")
         # === END MANGLISH MODE ===
 
+        # === OUTPUT STYLE / TONE (Job 4) ===
+        # Default tone for all tenants, overridable per-tenant via
+        # client_configs.tone (already present in client_config). See
+        # _build_tone_instruction / DEFAULT_AGENT_TONE above.
+        system_instruction += _build_tone_instruction(client_config)
+        # === END OUTPUT STYLE ===
+
         # === TRACE EMPATHY PIPELINE (ASI → CAE → SRP) ===
         # Gated by TRACE_ENABLED=true. Appends strategy addendum to system_instruction.
         # Does NOT replace the existing prompt — only enhances it.
@@ -4803,8 +5172,14 @@ Use `/quiet` to reduce my chattiness!
             _gw_key = os.getenv("CUSTOM_API_KEY") or os.getenv("CUSTOME_API_KEY")
             if _gw_ep and _gw_key:
                 try:
-                    from types import SimpleNamespace
-
+                    # NOTE: SimpleNamespace is imported at module level (line 34).
+                    # A local `from types import SimpleNamespace` here previously
+                    # made the name function-LOCAL for all of _generate_response,
+                    # so the SimpleNamespace(...) uses further down (the ones that
+                    # wrap a SUCCESSFUL gateway reply) raised UnboundLocalError
+                    # whenever this ENABLE_AGENT_LOOP block was skipped — turning
+                    # every good reply into the "I'm having trouble" apology.
+                    # (2026-09-22 — do NOT re-add a local import here.)
                     from openai import OpenAI
 
                     from src.core.gateway_agent import run_gateway_agent
@@ -5633,9 +6008,16 @@ BE HELPFUL - Answer directly, then stop."""
         """
         if not response or not response.strip() or response.strip() == "HEARTBEAT_OK":
             return
-        # Split into bursts (or single chunk if burst_manager unavailable)
+        # Split into bursts (or single chunk if burst_manager unavailable).
+        # 2026-09-21: max_chunk_chars raised 200 → 1500 so we NO LONGER
+        # fragment a normal reply into 2 mid-thought bubbles by character
+        # count. A reply now goes out as ONE message unless the LLM itself
+        # emitted an explicit [BREAK] (burst_manager honours that and still
+        # caps at MAX_BURSTS=2). This is what stops the "broken bot" feel of
+        # 2-7 tiny messages — brevity is the LLM's job (system prompt), the
+        # delivery layer just delivers 1-2 human-sized bubbles.
         chunks = (
-            split_into_bursts(response, max_chunk_chars=200)
+            split_into_bursts(response, max_chunk_chars=1500)
             if split_into_bursts
             else [response.strip()]
         )
@@ -7305,18 +7687,6 @@ async def get_tenant_device_status(tenant_id: str):
         )
 
 
-@app.get("/onboard/{token}")
-async def serve_onboarding(token: str):
-    """Serve onboarding page for property agent signup"""
-    from fastapi.responses import FileResponse
-
-    onboarding_html = Path(__file__).parent.parent.parent / "static" / "onboard.html"
-    if not onboarding_html.exists():
-        raise HTTPException(status_code=404, detail="Onboarding page not found")
-
-    return FileResponse(str(onboarding_html))
-
-
 @app.get("/status")
 async def status():
     """Detailed status endpoint"""
@@ -7382,6 +7752,23 @@ async def webhook_message(request: Request, background_tasks: BackgroundTasks):
     """
     global bijou_instance
 
+    # Authenticate the caller before doing anything else. Unauthenticated, this
+    # endpoint let anyone inject inbound messages and burn a tenant's LLM
+    # budget. See _verify_webhook_secret for the fail-open migration caveat.
+    #
+    # Read the body FIRST: GOWA signs it (X-Hub-Signature-256) rather than
+    # sending the secret, so verification needs the exact bytes. Starlette
+    # caches request.body(), so the later request.json() is unaffected.
+    _raw_body = await request.body()
+    if not _verify_webhook_secret(request, _raw_body):
+        logger.warning("🚫 /webhook/message rejected: bad or missing webhook secret")
+        raise HTTPException(status_code=401, detail="Unauthorized")
+
+    # Backpressure BEFORE any parsing or queuing. Authentication alone does not
+    # bound work: a leaked secret, or a bridge stuck in a redelivery loop, could
+    # queue unbounded background tasks. See _check_webhook_rate_limit.
+    _check_webhook_rate_limit("global")
+
     # ✅ FIX #8: Validate Bijou instance before processing
     if not bijou_instance:
         logger.error("❌ Bijou instance not initialized")
@@ -7420,6 +7807,13 @@ async def webhook_message(request: Request, background_tasks: BackgroundTasks):
                 status_code=400,
                 detail="Request body cannot be empty"
             )
+
+        # Per-device budget, now that the payload names the device. The global
+        # ceiling above stops a flood outright; this stops ONE runaway tenant
+        # from spending the whole global allowance and starving the others.
+        _device_for_rate = raw_body.get("device_id")
+        if _device_for_rate:
+            _check_webhook_rate_limit("device", str(_device_for_rate))
 
         # ✅ FIX: Check event type AFTER basic validation
         # Handle connection events for onboarding completion
@@ -7763,6 +8157,17 @@ async def webhook_connection_status(request: Request):
         "timestamp": "ISO 8601"
     }
     """
+
+    # Authenticate first. This handler takes tenant_id from the request BODY and
+    # rewrites that tenant's whatsapp_jid with the service-role client, so
+    # unauthenticated it allowed anyone to repoint a victim tenant's WhatsApp
+    # binding. See _verify_webhook_secret for the fail-open migration caveat.
+    _raw_body = await request.body()
+    if not _verify_webhook_secret(request, _raw_body):
+        logger.warning("🚫 /webhook/connection rejected: bad or missing webhook secret")
+        raise HTTPException(status_code=401, detail="Unauthorized")
+
+    _check_webhook_rate_limit("global")
     global bijou_instance
 
     # ✅ FIX #9: Add comprehensive validation
@@ -8213,11 +8618,21 @@ def main():
     logger.info(f"AI Model: {os.getenv('AI_MODEL', 'gemini-1.5-flash')}")
     logger.info("=" * 60)
 
-    # Validate critical environment variables
+    # Validate critical environment variables.
+    # 2026-09-18 FIX: this gate checked bare SUPABASE_KEY only, while every
+    # other reader in this codebase (get_auth_client, get_supabase, etc.)
+    # accepts SUPABASE_SERVICE_KEY | SUPABASE_SERVICE_ROLE_KEY | SUPABASE_KEY
+    # — see CLAUDE.md's "§ Data + keys". A deploy with the credential set
+    # under the (more common, and used elsewhere) SUPABASE_SERVICE_KEY name
+    # would boot everywhere else but refuse to start here as "missing".
     required_vars = {
         "GEMINI_API_KEY": os.getenv("GEMINI_API_KEY") or os.getenv("GEMINI_API_KEYS"),
         "SUPABASE_URL": os.getenv("SUPABASE_URL"),
-        "SUPABASE_KEY": os.getenv("SUPABASE_KEY"),
+        "SUPABASE_KEY": (
+            os.getenv("SUPABASE_SERVICE_KEY")
+            or os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+            or os.getenv("SUPABASE_KEY")
+        ),
         "BRIDGE_URL": os.getenv("BRIDGE_URL"),
     }
 

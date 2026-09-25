@@ -28,7 +28,7 @@ export const Footer: React.FC = () => {
               <div className="flex items-center gap-3 mb-4">
                 <BijouLogo size={32} tone="gold" />
                 <span className="font-bold text-xl">
-                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-gold-400 to-gold-200">
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-gold-400 to-gold-300">
                     Bijou
                   </span>
                   <span className="text-white font-extrabold">AI</span>
@@ -159,7 +159,7 @@ export const Footer: React.FC = () => {
                     </a>
                   </p>
                   <p className="text-gray-600">
-                    Wyoming, USA • Operations: Kuala Lumpur, Malaysia
+                    Wyoming, USA • Serving US & EU businesses
                   </p>
                 </div>
               </div>
@@ -238,7 +238,7 @@ export const Footer: React.FC = () => {
                     Terms of Service
                   </button>
                 </li>
-                {/* 2026-08-23: PDPA/GDPR self-serve data-request page. End users
+                {/* 2026-08-23: GDPR/CCPA self-serve data-request page. End users
                     can exercise access / download / delete rights without
                     logging in. Issue #26. */}
                 <li>

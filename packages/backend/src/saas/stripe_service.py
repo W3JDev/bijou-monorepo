@@ -630,12 +630,24 @@ class StripePaymentService:
                 failure_message="Payment failed"
             )
 
-            # Notify tenant of payment failure
+            # Notify tenant of payment failure. This is an EXISTING tenant
+            # with a billing problem, not a new signup — the link used to
+            # point at static/onboarding.html (the new-tenant signup form),
+            # which would create a second, duplicate tenant instead of fixing
+            # billing, on top of onboarding.html's own broken WhatsApp-connect
+            # step (see onboarding_complete.py::require_signup_token). Send
+            # them to the Stripe Customer Portal instead, where they can
+            # actually update their payment method.
+            portal = self.create_portal_session(tenant["id"])
+            upgrade_url = (
+                portal["url"] if portal
+                else f"{self.public_url}/dashboard#billing"
+            )
             try:
                 self.email_service.send_trial_expired_email(
                     to=tenant["email"],
                     business_name=tenant["business_name"],
-                    upgrade_url=f"{self.public_url}/static/onboarding.html",
+                    upgrade_url=upgrade_url,
                 )
             except Exception as email_err:
                 logger.warning(f"⚠️ Could not send payment failure email: {email_err}")

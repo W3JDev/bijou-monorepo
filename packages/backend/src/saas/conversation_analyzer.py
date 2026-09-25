@@ -79,21 +79,13 @@ class ConversationAnalyzer:
 
         self._gemini_initialized = True
 
-        # Only now import google.genai (deferred import)
+        # AI Gateway (ai://extract) — provider-agnostic; Gemini is dead.
         try:
-            from google import genai
+            from src.core.llm_gateway_v2 import SyncTextModel
 
-            api_key = os.getenv("GEMINI_API_KEY")
-            if api_key:
-                self.client = genai.Client(api_key=api_key)
-                self.model_name = "gemini-2.5-flash"
-                logger.info("✅ ConversationAnalyzer initialized with Gemini 2.5 Flash")
-                return True
-            else:
-                self.client = None
-                self.model_name = None
-                logger.warning("⚠️ Gemini API key not found - summaries will be basic")
-                return False
+            self.client = SyncTextModel("ai://extract", max_output_tokens=1024)
+            self.model_name = "ai://extract"
+            return True
         except Exception as e:
             logger.error(f"❌ Failed to initialize Gemini client: {e}")
             self.client = None
@@ -227,9 +219,7 @@ NEXT_STEPS:
 Keep it concise and business-focused. Extract value, not just summarize."""
 
             # Generate summary using new SDK
-            response = self.client.models.generate_content(
-                model=self.model_name, contents=prompt
-            )
+            response = self.client.generate_content(prompt)
             ai_text = response.text
 
             # Parse structured response

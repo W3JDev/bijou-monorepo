@@ -93,18 +93,50 @@ async def test_stops_at_step_budget():
 # ---- real integration: drive the loop against the live gateway ----
 @pytest.mark.integration
 async def test_real_gateway_full_tool_loop():
-    land = r"C:/Users/W3jde/local-projects/Bijou-AI---Digital-Employee-main/Bijou-AI---Digital-Employee-main/.env"
+    # Credentials come from the environment, like everything else here.
+    #
+    # This used to read an absolute path into a DIFFERENT, pre-monorepo repo on
+    # one developer's machine:
+    #   C:/Users/.../Bijou-AI---Digital-Employee-main/.env
+    # Anywhere else that is FileNotFoundError, raised inside open() BEFORE the
+    # `pytest.skip("no gateway creds")` two lines below could run — so a test
+    # that already meant to skip without credentials instead failed the suite
+    # for everyone. The legacy path is still honoured if it happens to exist,
+    # so nothing is lost on the machine it was written for.
+    #
+    # The misspelled CUSTOME_* names are kept: they are what that .env
+    # actually contains.
+    import os
 
-    def gv(k):
-        for ln in open(land, encoding="utf-8", errors="ignore"):
-            if ln.strip().startswith(k + "="):
-                return ln.split("=", 1)[1].strip()
+    def _from_env(*names):
+        for n in names:
+            v = os.getenv(n)
+            if v and v.strip():
+                return v.strip()
         return None
 
-    ep = gv("CUSTOM_API_ENDPOINT") or gv("CUSTOME_API_ENDOINT")
-    key = gv("CUSTOM_API_KEY") or gv("CUSTOME_API_KEY")
+    def _from_legacy_env_file(*names):
+        land = os.getenv(
+            "BIJOU_LEGACY_ENV_FILE",
+            r"C:/Users/W3jde/local-projects/Bijou-AI---Digital-Employee-main/Bijou-AI---Digital-Employee-main/.env",
+        )
+        if not os.path.isfile(land):
+            return None
+        with open(land, encoding="utf-8", errors="ignore") as fh:
+            for ln in fh:
+                for n in names:
+                    if ln.strip().startswith(n + "="):
+                        return ln.split("=", 1)[1].strip()
+        return None
+
+    ep = _from_env("CUSTOM_API_ENDPOINT", "CUSTOME_API_ENDOINT") or _from_legacy_env_file(
+        "CUSTOM_API_ENDPOINT", "CUSTOME_API_ENDOINT"
+    )
+    key = _from_env("CUSTOM_API_KEY", "CUSTOME_API_KEY") or _from_legacy_env_file(
+        "CUSTOM_API_KEY", "CUSTOME_API_KEY"
+    )
     if not ep or not key:
-        pytest.skip("no gateway creds")
+        pytest.skip("no gateway creds (set CUSTOM_API_ENDPOINT and CUSTOM_API_KEY)")
     from openai import OpenAI
 
     client = OpenAI(base_url=ep, api_key=key)

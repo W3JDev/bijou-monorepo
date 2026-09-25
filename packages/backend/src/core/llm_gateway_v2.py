@@ -11,7 +11,8 @@ What this module guarantees:
 1. NO callsite names a provider directly. They all use `ai://<alias>`.
 2. Each alias has a YAML-defined policy (primary, fallbacks, budget, privacy).
 3. Cross-provider fallback: 429/500/502/503/504 from primary -> next fallback.
-4. Per-alias daily USD budget. Exceeding it returns 429 BudgetExceeded.
+4. Two daily USD budgets, both enforced: a platform-wide per-alias cap and a
+   per-tenant cap within it. Exceeding either returns 429 BudgetExceeded.
 5. Privacy level ("strict" vs "standard") — strict aliases never fall back to
    multi-tenant aggregators (OpenRouter).
 6. Structured logging — provider, model, alias, latency, token usage, cost,
@@ -29,6 +30,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import os
+import re
 import threading
 import time
 from dataclasses import dataclass, field
@@ -47,10 +49,21 @@ logger = logging.getLogger(__name__)
 
 _CONFIG_PATH = Path(__file__).resolve().parent.parent.parent / "llm_gateway.yaml"
 
-# Status codes that trigger a fallback to the next provider in the chain.
-# 400/401/403/404 are NOT retried — they indicate a config/auth bug, not a
-# transient outage. Retrying would just hit the same wall.
-FALLBACK_STATUS_CODES = {429, 500, 502, 503, 504}
+# Provider-side HTTP failure codes, used by the provider ADAPTERS below to
+# classify an error response. The cross-provider fallback DECISION lives in
+# complete() and is broader than this set: it falls through on ANY provider-side
+# failure (these codes, plus no-key / transport errors) and stops ONLY on a
+# client-side 400. See the except-block in complete() for the authoritative rule.
+# (Kept as a named set because both openai_compatible and gemini adapters test
+# membership when building their ProviderError messages.)
+FALLBACK_STATUS_CODES = {401, 403, 404, 429, 500, 502, 503, 504}
+
+# Share of an alias's platform-wide cap a single tenant may spend when the alias
+# declares no explicit per_tenant_daily_budget_usd. Absent means "derive", not
+# "unlimited" — a newly added alias must be noisy-neighbour-safe before anyone
+# remembers to tune it. Override in llm_gateway.yaml under
+# budget_defaults.per_tenant_fraction.
+DEFAULT_PER_TENANT_BUDGET_FRACTION = 0.2
 
 # Providers that are allowed when privacy=strict. They are direct, paid,
 # first-party APIs we control. OpenRouter / free pools are NOT in this list.
@@ -92,18 +105,43 @@ class CompletionResult:
 
 
 class BudgetExceeded(Exception):
-    """Raised when an alias's daily USD budget is exceeded.
+    """Raised when a daily USD budget is exceeded.
 
     The API layer turns this into HTTP 429 with a Retry-After header.
+
+    Two different caps raise this, and they are very different pages for
+    whoever is on call:
+
+        scope="tenant" — one customer burned through its own allowance. Every
+            other tenant is still being served. Talk to that customer.
+        scope="alias"  — the platform-wide cap for the alias is gone, so every
+            tenant is degraded. Raise the cap or find what is spending.
     """
 
-    def __init__(self, alias: str, spent: float, cap: float):
+    def __init__(
+        self,
+        alias: str,
+        spent: float,
+        cap: float,
+        scope: str = "alias",
+        tenant_id: Optional[str] = None,
+    ):
         self.alias = alias
         self.spent = spent
         self.cap = cap
-        super().__init__(
-            f"Alias {alias!r} daily budget exceeded: spent ${spent:.2f} of ${cap:.2f}"
-        )
+        self.scope = scope
+        self.tenant_id = tenant_id
+        if scope == "tenant":
+            msg = (
+                f"Tenant {tenant_id!r} daily budget for alias {alias!r} exceeded: "
+                f"spent ${spent:.4f} of ${cap:.4f} — other tenants unaffected"
+            )
+        else:
+            msg = (
+                f"Platform-wide daily budget for alias {alias!r} exceeded: "
+                f"spent ${spent:.4f} of ${cap:.4f} — ALL tenants affected"
+            )
+        super().__init__(msg)
 
 
 class NoProviderAvailable(Exception):
@@ -119,7 +157,7 @@ class NoProviderAvailable(Exception):
 
 
 class _UsageTracker:
-    """Per-alias daily USD spend counter.
+    """Daily USD spend counters — per alias, and per (alias, tenant).
 
     Backed by an in-process dict (fast). On .flush_to_db() it bulk-inserts the
     day's usage into public.llm_usage so the dashboard can chart it. This is
@@ -130,12 +168,26 @@ class _UsageTracker:
         self._lock = threading.Lock()
         # alias -> (date_iso, spent_usd, calls)
         self._day: Dict[str, Tuple[str, float, int]] = {}
+        # alias -> {tenant_id: spent_usd} for the day named by _tenant_stamp
+        self._tenant_day: Dict[str, Dict[str, float]] = {}
+        self._tenant_stamp: str = self._today()
         # buffered rows for the next flush_to_db
         self._buffer: List[Dict[str, Any]] = []
 
     @staticmethod
     def _today() -> str:
         return datetime.now(timezone.utc).strftime("%Y-%m-%d")
+
+    def _roll_tenant_day(self, today: str) -> None:
+        """Drop yesterday's tenant buckets. Caller must hold the lock.
+
+        Unlike the per-alias dict (bounded by the handful of aliases) this one
+        grows with the tenant count, so it is cleared wholesale at the UTC day
+        boundary rather than left to accumulate a row per tenant per day.
+        """
+        if self._tenant_stamp != today:
+            self._tenant_day.clear()
+            self._tenant_stamp = today
 
     def record(
         self,
@@ -160,6 +212,11 @@ class _UsageTracker:
             calls += 1
             self._day[alias] = (today, spent, calls)
 
+            if tenant_id:
+                self._roll_tenant_day(today)
+                bucket = self._tenant_day.setdefault(alias, {})
+                bucket[tenant_id] = bucket.get(tenant_id, 0.0) + float(cost_usd or 0.0)
+
             self._buffer.append(
                 {
                     "ts": datetime.now(timezone.utc).isoformat(),
@@ -182,6 +239,13 @@ class _UsageTracker:
             if not entry or entry[0] != self._today():
                 return 0.0
             return entry[1]
+
+    def spent_today_tenant(self, alias: str, tenant_id: Optional[str]) -> float:
+        if not tenant_id:
+            return 0.0
+        with self._lock:
+            self._roll_tenant_day(self._today())
+            return self._tenant_day.get(alias, {}).get(tenant_id, 0.0)
 
     def drain_buffer(self) -> List[Dict[str, Any]]:
         """Atomically returns + clears the pending usage rows."""
@@ -438,6 +502,16 @@ def _call_openai_compatible(
         "temperature": float(opts.get("temperature", 0.7)),
         "max_tokens": int(opts.get("max_output_tokens", 1024)),
     }
+    # Forward OpenAI-format tools. Without this, every non-Gemini provider was
+    # silently tool-less, so ai://reasoning could not call a single tool once
+    # Gemini died. Gemini-shaped entries ({"function_declarations": ...}) are
+    # dropped — no OpenAI-compatible endpoint accepts them.
+    tools = [
+        t for t in (opts.get("tools") or [])
+        if isinstance(t, dict) and t.get("type") == "function"
+    ]
+    if tools:
+        payload["tools"] = tools
     headers = {
         "Authorization": f"Bearer {api_key}",
         "Content-Type": "application/json",
@@ -465,6 +539,9 @@ def _call_openai_compatible(
         text = data["choices"][0]["message"]["content"] or ""
     except (KeyError, IndexError, TypeError):
         text = ""
+    # MiniMax M2.x reasoning models inline <think>...</think> in content; never
+    # let that reach a customer (same strip as function_caller.call_with_openai_tools).
+    text = re.sub(r"<think>.*?</think>\s*", "", text or "", flags=re.DOTALL)
     usage = data.get("usage", {}) or {}
     pt = int(usage.get("prompt_tokens", 0) or 0)
     ct = int(usage.get("completion_tokens", 0) or 0)
@@ -544,6 +621,31 @@ class LLMGateway:
                 )
         return (0.0, 0.0)
 
+    def _resolve_per_tenant_budget(self, cfg: Dict[str, Any]) -> float:
+        """Per-tenant daily cap for an alias config, in USD. 0.0 means unlimited.
+
+        An explicit `per_tenant_daily_budget_usd: 0` is the documented opt-out
+        and is honoured; only an *absent* key derives a cap from the
+        platform-wide one.
+        """
+        declared = cfg.get("per_tenant_daily_budget_usd")
+        if declared is not None:
+            return float(declared or 0.0)
+
+        platform = float(cfg.get("daily_budget_usd", 0.0) or 0.0)
+        if platform <= 0:
+            # Nothing sensible is a fraction of "unlimited" — an alias with no
+            # platform cap has to name its per-tenant cap explicitly.
+            return 0.0
+        defaults = self._config.get("budget_defaults") or {}
+        fraction = float(
+            defaults.get("per_tenant_fraction", DEFAULT_PER_TENANT_BUDGET_FRACTION)
+            or 0.0
+        )
+        if fraction <= 0:
+            return 0.0
+        return platform * fraction
+
     # ---- public ----------------------------------------------------------
 
     def list_aliases(self) -> List[Dict[str, Any]]:
@@ -558,6 +660,7 @@ class LLMGateway:
                     "fallbacks": cfg.get("fallbacks", []),
                     "privacy": cfg.get("privacy", "standard"),
                     "daily_budget_usd": cfg.get("daily_budget_usd", 0.0),
+                    "per_tenant_daily_budget_usd": self._resolve_per_tenant_budget(cfg),
                     "spent_today_usd": self._usage.spent_today(name),
                 }
             )
@@ -583,7 +686,9 @@ class LLMGateway:
 
         Raises:
             NoProviderAvailable: unknown alias or no provider has a key.
-            BudgetExceeded: alias's daily USD budget is exhausted.
+            BudgetExceeded: the calling tenant's daily cap (scope="tenant") or
+                the platform-wide cap for the alias (scope="alias") is
+                exhausted.
             ProviderError: every provider in the chain errored with a
                 non-fallback status (rare — usually a config bug).
         """
@@ -593,8 +698,26 @@ class LLMGateway:
         cfg = self._alias_cfg(alias)
         privacy = cfg.get("privacy", "standard")
         budget = float(cfg.get("daily_budget_usd", 0.0) or 0.0)
+        per_tenant_budget = self._resolve_per_tenant_budget(cfg)
+        tenant_id = opts.get("tenant_id")
 
-        # ---- budget check (cheap) ----
+        # ---- budget checks (cheap) ----
+        # Tenant cap first. A tenant that is over its own allowance has usually
+        # also pushed the platform total up, and reporting that as a
+        # platform-wide outage would hide the one customer actually causing it.
+        # Calls with no tenant_id (cron, backfills, health probes) have no
+        # tenant to charge and are only bounded by the platform cap below.
+        if tenant_id and per_tenant_budget > 0:
+            tenant_spent = self._usage.spent_today_tenant(alias, tenant_id)
+            if tenant_spent >= per_tenant_budget:
+                raise BudgetExceeded(
+                    alias,
+                    tenant_spent,
+                    per_tenant_budget,
+                    scope="tenant",
+                    tenant_id=tenant_id,
+                )
+
         spent = self._usage.spent_today(alias)
         if budget > 0 and spent >= budget:
             raise BudgetExceeded(alias, spent, budget)
@@ -612,7 +735,6 @@ class LLMGateway:
         last_err: Optional[Exception] = None
         last_fallback_reason: Optional[str] = None
         started = time.monotonic()
-        tenant_id = opts.get("tenant_id")
         # Langfuse: open one generation observation per complete() call, update as we
         # move through the provider chain. The observation records the alias, the
         # resolved provider+model, tokens, cost, and latency. PDPA-grade inputs
@@ -630,6 +752,7 @@ class LLMGateway:
             metadata={
                 "privacy": privacy,
                 "daily_budget_usd": budget,
+                "per_tenant_daily_budget_usd": per_tenant_budget,
                 "chain_len": len(chain),
             },
             tags=[alias, privacy] if privacy else [alias],
@@ -655,24 +778,32 @@ class LLMGateway:
                     )
                 except ProviderError as e:
                     last_err = e
-                    if e.status_code in FALLBACK_STATUS_CODES:
-                        last_fallback_reason = (
-                            f"http_{e.status_code}" if e.status_code else "transport_error"
-                        )
-                        logger.warning(
-                            "⚠️ alias=%s provider=%s model=%s → %s (falling back)",
-                            alias,
-                            provider_name,
-                            model,
-                            last_fallback_reason,
-                        )
-                        continue
-                    # Permanent error — don't try the next provider.
-                    try:
-                        _lf_obs.fail(str(e))
-                    except Exception:
-                        pass
-                    raise
+                    # Rotator semantics (2026-09-21): fall through to the NEXT
+                    # provider on ANY provider error, full stop. We deliberately do
+                    # NOT special-case status codes — providers disagree wildly:
+                    # Google's OpenAI-compat endpoint returns 400 for a bad key,
+                    # MiniMax returns 401, others 403; a missing key / transport
+                    # error is status_code=None. Hard-stopping on any of these would
+                    # abort the chain on a provider that a sibling could have
+                    # served. If EVERY provider fails, the loop falls out below and
+                    # raises last_err. A truly malformed request just costs a few
+                    # extra attempts — cheap insurance vs. giving up while a working
+                    # key still exists. THIS is "auto fall back to any working
+                    # provider/env-var, instead of hitting the same dead API".
+                    if e.status_code:
+                        last_fallback_reason = f"http_{e.status_code}"
+                    elif last_fallback_reason is None:
+                        # No key / transport / unreachable: skip quietly and do NOT
+                        # clobber a more informative earlier HTTP reason.
+                        last_fallback_reason = "provider_unavailable"
+                    logger.warning(
+                        "⚠️ alias=%s provider=%s model=%s → %s (falling back)",
+                        alias,
+                        provider_name,
+                        model,
+                        f"http_{e.status_code}" if e.status_code else "unavailable/no-key",
+                    )
+                    continue
 
                 # ---- success ----
                 latency_ms = int((time.monotonic() - started) * 1000)
@@ -809,8 +940,16 @@ class LLMGateway:
                 pass
             return text, raw, pt, ct, used_model, function_calls
 
-        if provider_name in ("openai_compatible", "openrouter", "minimax"):
-            pcfg = self._provider_cfg(provider_name)
+        # Data-driven: ANY provider whose YAML `type` is openai_compatible routes
+        # through the OpenAI-compatible adapter. Adding MiniMax / Vercel AI Gateway
+        # / Cloudflare Workers AI / OpenRouter / Google's OpenAI-compat endpoint /
+        # any other free router is then a PURE-YAML change (base_url + env_keys) —
+        # no edit here. base_url may embed ${ENV_VAR} (e.g. Cloudflare bakes the
+        # account id into its path), expanded from the environment at call time.
+        # (2026-09-21 — was a hardcoded name tuple, which silently blocked the
+        # "add all the free router models" ask.)
+        pcfg = (self._config.get("providers") or {}).get(provider_name) or {}
+        if pcfg.get("type") == "openai_compatible":
             keys = _read_env_keys(pcfg.get("env_keys", ""))
             if not keys:
                 raise ProviderError(
@@ -818,8 +957,9 @@ class LLMGateway:
                     f"(env_keys={pcfg.get('env_keys')!r})",
                     status_code=None,
                 )
+            base_url = os.path.expandvars(pcfg.get("base_url", ""))
             text, raw, pt, ct, used_model = _call_openai_compatible(
-                pcfg.get("base_url", ""), keys[0], model, messages, opts
+                base_url, keys[0], model, messages, opts
             )
             # OpenAI-compatible responses with tool_calls[].function.{name,arguments}.
             function_calls: List[Dict[str, Any]] = []
@@ -856,6 +996,13 @@ class LLMGateway:
     def spent_today(self, alias: str) -> float:
         return self._usage.spent_today(alias)
 
+    def spent_today_tenant(self, alias: str, tenant_id: Optional[str]) -> float:
+        return self._usage.spent_today_tenant(alias, tenant_id)
+
+    def per_tenant_budget(self, alias: str) -> float:
+        """Resolved per-tenant daily cap for an alias, in USD. 0.0 = unlimited."""
+        return self._resolve_per_tenant_budget(self._alias_cfg(alias))
+
 
 # -----------------------------------------------------------------------------
 # Module-level singleton — the public surface is `llm.complete(...)`.
@@ -863,3 +1010,31 @@ class LLMGateway:
 # -----------------------------------------------------------------------------
 
 llm = LLMGateway()
+
+
+class SyncTextModel:
+    """Sync drop-in for the retired `genai.GenerativeModel(...)` objects.
+
+    Legacy sync callers did `model.generate_content(prompt).text`; this keeps
+    that shape but routes through the gateway alias, so no callsite names a
+    provider. CompletionResult has `.text`. Async code should
+    `await llm.complete(...)` instead.
+    """
+
+    def __init__(self, alias: str, **opts: Any) -> None:
+        self.alias = alias
+        self.opts = opts
+
+    def generate_content(self, prompt: str) -> CompletionResult:
+        coro = llm.complete(self.alias, [{"role": "user", "content": prompt}], **self.opts)
+        try:
+            asyncio.get_running_loop()
+        except RuntimeError:
+            return asyncio.run(coro)  # plain sync / worker-thread caller
+        # ponytail: sync caller INSIDE a running loop (e.g. owner commands in
+        # process_message). Blocks the loop for the call, exactly as the old
+        # sync genai SDK did; make the caller async to remove the block.
+        import concurrent.futures
+
+        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
+            return pool.submit(asyncio.run, coro).result()

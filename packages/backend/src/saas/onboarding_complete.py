@@ -4,10 +4,11 @@ Handles: Payment → Details → QR → Knowledge → Agents
 Date: February 17, 2026
 """
 
-from fastapi import APIRouter, HTTPException, UploadFile, File, BackgroundTasks, Depends
+from fastapi import APIRouter, HTTPException, UploadFile, File, BackgroundTasks, Depends, Header
 from fastapi.responses import Response
 from pydantic import BaseModel, EmailStr
 from typing import Optional, List
+import hmac
 import os
 import uuid
 from datetime import datetime, timedelta
@@ -27,6 +28,89 @@ def get_supabase():
         os.getenv("SUPABASE_URL"),
         os.getenv("SUPABASE_SERVICE_KEY")
     )
+
+# ============================================================================
+# AUTHENTICATION
+# ============================================================================
+
+
+async def require_signup_token(
+    tenant_id: str,
+    x_onboarding_token: Optional[str] = Header(default=None),
+    authorization: Optional[str] = Header(default=None),
+) -> str:
+    """Prove the caller owns `tenant_id` before any route below touches it.
+
+    Every route here takes `tenant_id` from the URL path and then writes with
+    the service-role client, which bypasses RLS. Until 2026-09-06 none of them
+    checked anything, so a guessed or leaked tenant UUID was enough to rewrite
+    a tenant's business details, read its WhatsApp QR (i.e. hijack the session)
+    and stuff its knowledge base.
+
+    The credential is `tenants.signup_token` — the same one
+    `/api/onboarding/status/{token}` resolves in onboarding_api.py. Both signup
+    paths issue it and auth_api.py::_onboarding_redirect_for mints one when
+    missing, so the browser making these calls is already holding it: it is
+    sitting on /onboard/{token}. The bridge's shared secret would be the wrong
+    credential — the caller is an end user mid-signup, not the bridge.
+
+    Presented as a header (`X-Onboarding-Token`, or `Authorization: Bearer`),
+    not in the body, because three of the eight protected routes are GETs with
+    no body at all; the alternative for those is a query string, which lands in
+    access logs, browser history and Referer headers.
+
+    Failure modes, all closed:
+      401 nothing presented
+      403 wrong token, unknown tenant, or a tenant with no token set — the same
+          answer for all three so the routes are not a tenant-enumeration oracle
+      503 the token could not be looked up; unverifiable is not the same as
+          allowed
+
+    This is a dependency rather than a call inside each handler on purpose:
+    every handler wraps its body in `except Exception -> HTTPException(500)`,
+    which would swallow a 401 raised inline and answer 500 instead.
+    """
+    presented = (x_onboarding_token or "").strip()
+    if not presented and authorization:
+        auth = authorization.strip()
+        if auth.lower().startswith("bearer "):
+            presented = auth[7:].strip()
+
+    if not presented:
+        raise HTTPException(status_code=401, detail="Onboarding token required")
+
+    try:
+        supabase = get_supabase()
+        result = (
+            supabase.table("tenants")
+            .select("signup_token")
+            .eq("id", tenant_id)
+            .limit(1)
+            .execute()
+        )
+    except Exception as e:
+        logger.error(f"❌ Could not verify onboarding token for {tenant_id}: {e}")
+        raise HTTPException(
+            status_code=503,
+            detail="Could not verify your onboarding link right now. Please try again.",
+        )
+
+    rows = getattr(result, "data", None) or []
+    expected = (rows[0].get("signup_token") if rows else None) or ""
+
+    # compare_digest, not ==: a plain comparison short-circuits on the first
+    # differing byte and leaks the token's prefix through response timing.
+    # Matches _verify_webhook_secret in src/core/bijou.py.
+    if not expected or not hmac.compare_digest(presented, expected):
+        logger.warning(f"🚫 Rejected onboarding call for tenant {tenant_id}: bad token")
+        raise HTTPException(status_code=403, detail="Invalid onboarding token")
+
+    return tenant_id
+
+
+# Applied to every route that takes a {tenant_id}. POST /signup is deliberately
+# absent: it is what creates the tenant, so there is no token to present yet.
+SIGNUP_TOKEN_AUTH = [Depends(require_signup_token)]
 
 # ============================================================================
 # MODELS
@@ -141,7 +225,7 @@ async def signup(request: SignupRequest, background_tasks: BackgroundTasks):
 # STEP 2: BUSINESS DETAILS
 # ============================================================================
 
-@router.post("/details/{tenant_id}")
+@router.post("/details/{tenant_id}", dependencies=SIGNUP_TOKEN_AUTH)
 async def submit_details(tenant_id: str, details: DetailsRequest):
     """
     Step 2: Business Details
@@ -192,7 +276,7 @@ async def submit_details(tenant_id: str, details: DetailsRequest):
 # STEP 3: WHATSAPP QR CODE
 # ============================================================================
 
-@router.get("/whatsapp/qr/{tenant_id}")
+@router.get("/whatsapp/qr/{tenant_id}", dependencies=SIGNUP_TOKEN_AUTH)
 async def get_whatsapp_qr(tenant_id: str):
     """
     Step 3: WhatsApp QR Code
@@ -338,7 +422,7 @@ async def get_whatsapp_qr(tenant_id: str):
         logger.error(f"❌ QR generation failed for {tenant_id}: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to generate QR: {str(e)}")
 
-@router.get("/whatsapp/qr-image/{tenant_id}/{qr_filename}")
+@router.get("/whatsapp/qr-image/{tenant_id}/{qr_filename}", dependencies=SIGNUP_TOKEN_AUTH)
 async def get_qr_image_proxy(tenant_id: str, qr_filename: str):
     """
     Proxy QR image from bridge to avoid Basic Auth issues.
@@ -388,7 +472,7 @@ async def get_qr_image_proxy(tenant_id: str, qr_filename: str):
         logger.error(f"❌ QR image proxy failed: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to fetch QR image: {str(e)}")
 
-@router.post("/whatsapp/connected/{tenant_id}")
+@router.post("/whatsapp/connected/{tenant_id}", dependencies=SIGNUP_TOKEN_AUTH)
 async def mark_whatsapp_connected(tenant_id: str):
     """
     Step 3 (Completion): Mark WhatsApp as connected
@@ -426,7 +510,7 @@ async def mark_whatsapp_connected(tenant_id: str):
 # STEP 4: KNOWLEDGE BASE UPLOAD
 # ============================================================================
 
-@router.post("/knowledge/upload/{tenant_id}")
+@router.post("/knowledge/upload/{tenant_id}", dependencies=SIGNUP_TOKEN_AUTH)
 async def upload_knowledge(
     tenant_id: str,
     files: List[UploadFile] = File(...),
@@ -496,7 +580,7 @@ async def upload_knowledge(
 # STEP 5: HANDOVER AGENTS
 # ============================================================================
 
-@router.post("/agents/add/{tenant_id}")
+@router.post("/agents/add/{tenant_id}", dependencies=SIGNUP_TOKEN_AUTH)
 async def add_handover_agent(tenant_id: str, agent: AgentRequest):
     """
     Step 5: Add Handover Agents
@@ -528,7 +612,7 @@ async def add_handover_agent(tenant_id: str, agent: AgentRequest):
         logger.error(f"❌ Agent addition failed: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.post("/complete/{tenant_id}")
+@router.post("/complete/{tenant_id}", dependencies=SIGNUP_TOKEN_AUTH)
 async def complete_onboarding(tenant_id: str):
     """
     Final Step: Complete Onboarding
@@ -571,7 +655,7 @@ async def complete_onboarding(tenant_id: str):
 # STATUS ENDPOINT
 # ============================================================================
 
-@router.get("/status/{tenant_id}")
+@router.get("/status/{tenant_id}", dependencies=SIGNUP_TOKEN_AUTH)
 async def get_onboarding_status(tenant_id: str):
     """Get current onboarding status - with live bridge connection check"""
     try:

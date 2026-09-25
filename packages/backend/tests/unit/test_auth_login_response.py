@@ -21,6 +21,32 @@ import types
 import pytest
 from unittest.mock import Mock, patch, MagicMock
 
+
+# ---------------------------------------------------------------------------
+# 2026-09-06: auth_api now performs user-scoped auth calls (sign_up,
+# sign_in_with_password, set_session, refresh_session) on a DEDICATED client
+# from get_auth_client(), not on the shared service-role client from
+# get_supabase().
+#
+# That split is the fix for a P0: supabase-py rewrites
+# options.headers["Authorization"] on SIGNED_IN/TOKEN_REFRESHED, so running a
+# login on the shared data client replaced the service-role credential with
+# that user's JWT for the whole worker process. See
+# tests/unit/test_auth_client_isolation.py.
+#
+# These tests assert on signup/login error mapping and response shape, not on
+# which client object is used, so they keep patching get_supabase and this
+# fixture points get_auth_client at the same mock. Resolution is deferred to
+# call time so it picks up whatever `with patch(...)` is currently active.
+# ---------------------------------------------------------------------------
+@pytest.fixture(autouse=True)
+def _auth_client_uses_patched_supabase(monkeypatch):
+    import src.saas.auth_api as _auth_api
+    monkeypatch.setattr(
+        _auth_api, "get_auth_client", lambda: _auth_api.get_supabase(), raising=False
+    )
+
+
 if "supabase" not in sys.modules:
     supabase_stub = types.ModuleType("supabase")
     setattr(supabase_stub, "create_client", lambda *args, **kwargs: None)
@@ -91,7 +117,10 @@ def _build_db(
     user = _mock_user(user_id=user_id, email=user_email)
     session = _mock_session(access=access_token, refresh=refresh_token)
     db.auth.sign_in_with_password = MagicMock(return_value=_login_response(user=user, session=session))
-    db.table.return_value.select.return_value.eq.return_value.execute.return_value = MagicMock(
+    # _resolve_or_link_tenant orders the tenant_users lookup by created_at
+    # for deterministic multi-tenant resolution (2026-09-18 fix) — the mock
+    # chain needs the extra .order() hop.
+    db.table.return_value.select.return_value.eq.return_value.order.return_value.execute.return_value = MagicMock(
         data=[{"tenant_id": "tenant-xyz"}] if tenant_users is None else tenant_users
     )
     db.table.return_value.select.return_value.eq.return_value.maybe_single.return_value.execute.return_value = MagicMock(

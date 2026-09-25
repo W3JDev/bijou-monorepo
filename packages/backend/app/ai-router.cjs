@@ -96,7 +96,12 @@ const PROVIDERS = {
     type: 'gemini',
     apiKeys: () => [envOr('GEMINI_API_KEY_3'), envOr('GEMINI_API_KEY_4'), envOr('GEMINI_API_KEY'), envOr('GEMINI_API_KEY_FREE')].filter(Boolean),
     baseUrl: () => 'https://generativelanguage.googleapis.com/v1beta/models',
-    modelMap: (m) => m.startsWith('MiniMax-') ? 'gemini-1.5-flash' : m, // fallback to flash if M3 requested
+    // 3.8 Flash is the newest stable Flash. gemini-1.5-flash was RETIRED, and
+    // so is gemini-2.5-flash for new projects — measured against this project's
+    // key on 2026-09-07, both 404 on v1beta AND v1. So the gemini rung of this
+    // fallback chain could not have worked: a request that fell through from
+    // MiniMax hit a 404, not a reply.
+    modelMap: (m) => m.startsWith('MiniMax-') ? 'gemini-3.8-flash' : m, // fallback to flash if M3 requested
     costPer1k: () => 0, // free tier
   },
   openrouter: {
@@ -365,11 +370,38 @@ async function callAI({ task = DEFAULT_TASK, payload = {}, budget = {} } = {}) {
       // (could add an estTokens * costPer1k check here for stricter cap)
     }
 
-    const result = await callProvider(provider, model, {
-      ...payload,
-      max_tokens: maxTokens,
-      temperature,
-    }, timeoutMs);
+    // A THROW from callProvider must not abort the chain. It used to.
+    //
+    // callProvider throws on a missing API key (`${name} no API key`) and on
+    // anything unexpected, and this call was not guarded — so the loop only
+    // ever fell back when a provider RETURNED {ok:false}. The single most
+    // common condition, "the first provider in the chain has no key
+    // configured", blew straight out of callAI and the remaining providers
+    // were never tried.
+    //
+    // Every chain here starts with minimax, so on any deployment without
+    // MINIMAX_API_KEY set — which is the landing site on Vercel — the router
+    // threw before it could reach the gemini rung it was configured to fall
+    // back to. api/chat.js then swallowed it and returned its friendly
+    // "technical issue on my end" line with HTTP 200.
+    //
+    // Verified 2026-09-07 with a valid Gemini key and no MiniMax key:
+    //   before: Error: minimax no API key   (gemini never attempted)
+    //   after:  provider_used = gemini, a real reply
+    let result;
+    try {
+      result = await callProvider(provider, model, {
+        ...payload,
+        max_tokens: maxTokens,
+        temperature,
+      }, timeoutMs);
+    } catch (err) {
+      const message = String(err && err.message ? err.message : err);
+      lastError = message;
+      fallbackChain.push({ provider, error: message });
+      await emitPostHog('ai_call_failed', { task, provider, model, error: message });
+      continue;
+    }
 
     const totalLatency = Date.now() - startTime;
 

@@ -372,7 +372,8 @@ class ProactiveMessagingSystem:
         message_type: MessageType,
         content: str,
         delay_minutes: int = 0,
-        metadata: Optional[Dict] = None
+        metadata: Optional[Dict] = None,
+        send_at: Optional[str] = None,
     ) -> ScheduledMessage:
         """
         Schedule a message to be sent later.
@@ -389,7 +390,18 @@ class ProactiveMessagingSystem:
             ScheduledMessage object
         """
         now = datetime.utcnow()
-        scheduled_time = now + timedelta(minutes=delay_minutes)
+        if send_at:
+            # #4 (2026-09-21): an absolute ISO-8601 time OVERRIDES delay_minutes,
+            # so a dashboard date/time picker can schedule an exact moment.
+            # Normalise to naive UTC — _process_scheduled_messages compares against
+            # datetime.utcnow() (naive), and mixing aware/naive raises TypeError.
+            from datetime import timezone
+            _sa = send_at if isinstance(send_at, datetime) else datetime.fromisoformat(str(send_at).replace("Z", "+00:00"))
+            if _sa.tzinfo is not None:
+                _sa = _sa.astimezone(timezone.utc).replace(tzinfo=None)
+            scheduled_time = _sa
+        else:
+            scheduled_time = now + timedelta(minutes=delay_minutes)
 
         msg = ScheduledMessage(
             id=f"{tenant_id}_{recipient}_{int(now.timestamp())}",
@@ -510,21 +522,36 @@ class ProactiveMessagingSystem:
                         raise db_error
 
                 for row in result.data:
-                    if row["id"] not in self.scheduled_messages:
-                        # Convert to ScheduledMessage object
+                    if row["id"] in self.scheduled_messages:
+                        continue
+                    try:
+                        # Rebuild from the REAL columns written by
+                        # _save_scheduled_message (B1). recipients is a jsonb
+                        # array; message_type was encoded in schedule_name as
+                        # "oneoff:<type>:<id8>". Skip rows we can't parse (e.g.
+                        # genuine recurring-cron rows from the other app).
+                        _recips = row.get("recipients") or []
+                        _recipient = _recips[0] if isinstance(_recips, list) and _recips else ""
+                        _parts = (row.get("schedule_name") or "").split(":")
+                        try:
+                            _mtype = MessageType(_parts[1]) if len(_parts) >= 2 else MessageType.CUSTOM
+                        except ValueError:
+                            _mtype = MessageType.CUSTOM
                         msg = ScheduledMessage(
                             id=row["id"],
                             tenant_id=row["tenant_id"],
-                            recipient=row["recipient"],
-                            message_type=MessageType(row["message_type"]),
-                            content=row["content"],
+                            recipient=_recipient,
+                            message_type=_mtype,
+                            content=row.get("message_content") or "",
                             scheduled_time=datetime.fromisoformat(row["scheduled_time"].replace('Z', '+00:00')),
                             status=MessageStatus(row["status"]),
                             created_at=datetime.fromisoformat(row["created_at"].replace('Z', '+00:00')),
-                            sent_at=datetime.fromisoformat(row["sent_at"].replace('Z', '+00:00')) if row["sent_at"] else None,
-                            metadata=json.loads(row["metadata"]) if row["metadata"] else None
+                            sent_at=datetime.fromisoformat(row["sent_at"].replace('Z', '+00:00')) if row.get("sent_at") else None,
+                            metadata=None,
                         )
                         self.scheduled_messages[msg.id] = msg
+                    except Exception as _row_err:
+                        logger.debug(f"skip unparseable scheduled_messages row {row.get('id')}: {_row_err}")
 
             else:  # SQLite
                 cursor = self.db.cursor()
@@ -899,14 +926,28 @@ Bijou AI"""
             }
 
             if hasattr(self.db, 'table'):  # Supabase
-                try:
-                    self.db.table("scheduled_messages").upsert(data).execute()
-                except Exception as db_error:
-                    if "could not find" in str(db_error).lower():
-                        logger.warning(f"⚠️ Skipping message save due to schema issue: {db_error}")
-                        return  # Skip save until schema is fixed
-                    else:
-                        raise db_error
+                # 2026-09-21 (B1): map to the REAL scheduled_messages columns.
+                # The table was designed for recurring CRON schedules — NOT NULL
+                # schedule_name + cron_expression, recipients (jsonb, plural),
+                # message_content (not "content"). The old code wrote recipient/
+                # message_type/content/metadata (none exist) and omitted the NOT
+                # NULLs, so every insert failed and was SILENTLY swallowed —
+                # scheduled messages lived in memory only and vanished on restart.
+                # A one-off message uses the "@once" cron sentinel and encodes its
+                # type in schedule_name so _load_scheduled_messages can rebuild it.
+                sb = {
+                    "id": msg.id,
+                    "tenant_id": msg.tenant_id,
+                    "schedule_name": f"oneoff:{msg.message_type.value}:{str(msg.id)[:8]}",
+                    "cron_expression": "@once",
+                    "recipients": [msg.recipient],
+                    "message_content": msg.content,
+                    "scheduled_time": msg.scheduled_time.isoformat(),
+                    "next_run_at": msg.scheduled_time.isoformat(),
+                    "status": msg.status.value,
+                    "created_at": msg.created_at.isoformat(),
+                }
+                self.db.table("scheduled_messages").upsert(sb).execute()
             else:  # SQLite
                 cursor = self.db.cursor()
                 cursor.execute(

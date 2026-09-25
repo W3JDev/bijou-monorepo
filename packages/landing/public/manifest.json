@@ -1,7 +1,7 @@
 {
   "name": "Bijou AI - Digital Employee",
   "short_name": "Bijou AI",
-  "description": "RM299/month WhatsApp & Telegram AI for Malaysian SMEs. Replies in Manglish, books Cal.com appointments, and captures leads 24/7 while you sleep.",
+  "description": "Done-for-you WhatsApp and Telegram AI agents for US & EU businesses. Replies instantly, books appointments, and captures leads 24/7.",
   "start_url": "/",
   "display": "standalone",
   "display_override": ["standalone", "minimal-ui", "browser"],
@@ -9,7 +9,7 @@
   "theme_color": "#0B3B2E",
   "orientation": "portrait-primary",
   "scope": "/",
-  "lang": "en-MY",
+  "lang": "en",
   "categories": ["business", "productivity", "ai", "automation"],
   "icons": [
     {

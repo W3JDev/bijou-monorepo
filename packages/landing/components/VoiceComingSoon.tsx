@@ -3,20 +3,20 @@ import { Phone, Mic, Send } from "lucide-react";
 import React, { useState } from "react";
 
 const callScript = [
-  { speaker: "Customer", text: "Hello? Boleh tolong saya tak?" },
+  { speaker: "Customer", text: "Hi, is anyone available to help me?" },
   {
     speaker: "Bijou",
-    text: "Boleh boss! Bijou kat sini. Apa yang you perlukan hari ni?",
+    text: "Absolutely! This is Bijou. How can I help you today?",
   },
-  { speaker: "Customer", text: "I want to book appointment, tomorrow morning." },
+  { speaker: "Customer", text: "I'd like to book an appointment for tomorrow morning." },
   {
     speaker: "Bijou",
-    text: "Sure boss — 10am or 11am? I check availability now ah.",
+    text: "Of course — would 10am or 11am suit you? Let me check availability now.",
   },
   { speaker: "Customer", text: "10am please." },
   {
     speaker: "Bijou",
-    text: "Done! 10am confirmed. I send WhatsApp reminder tonight. Anything else I can help?",
+    text: "Done! 10am is confirmed. I'll send you a reminder tonight. Anything else I can help with?",
   },
 ];
 
@@ -59,7 +59,7 @@ export const VoiceComingSoon: React.FC = () => {
     <section className="py-24 relative overflow-hidden">
       {/* Background */}
       <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-purple-900/8 rounded-full blur-[160px]" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gold-600/8 rounded-full blur-[160px]" />
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
@@ -71,25 +71,20 @@ export const VoiceComingSoon: React.FC = () => {
           transition={{ duration: 0.5 }}
           className="text-center mb-12"
         >
-          <div className="inline-flex items-center gap-2 px-3 py-1 mb-4 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-400 text-xs font-bold uppercase tracking-wider">
+          <div className="inline-flex items-center gap-2 px-3 py-1 mb-4 rounded-full bg-gold-500/10 border border-gold-500/20 text-gold-400 text-xs font-bold uppercase tracking-wider">
             <Mic className="w-3 h-3" />
             Coming Q4 2026
           </div>
           <h2 className="text-3xl md:text-5xl font-black text-white mb-4">
             Bijou speaks.{" "}
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400">
-              In Manglish.
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-gold-300 to-gold-500">
+              In your brand voice.
             </span>
           </h2>
           <p className="text-gray-400 text-lg max-w-2xl mx-auto">
-            Voice calls — same Bijou brain, same Manglish warmth. Answers your
+            Voice calls — same Bijou brain, same warmth. Answers your
             phone when you can't. Books, qualifies, escalates.{" "}
             <strong className="text-white">No call center needed.</strong>
-          </p>
-          {/* MS */}
-          <p className="text-gray-600 text-sm mt-3 max-w-xl mx-auto">
-            Bijou akan jawab telefon anda dalam Manglish — buat appointment,
-            qualify lead, dan escalate bila perlu. Tanpa call center.
           </p>
         </motion.div>
 
@@ -102,24 +97,24 @@ export const VoiceComingSoon: React.FC = () => {
             transition={{ duration: 0.5 }}
           >
             {/* Phone UI */}
-            <div className="glass-panel-3d rounded-3xl border border-purple-500/20 overflow-hidden max-w-sm mx-auto">
+            <div className="glass-panel-3d rounded-3xl border border-gold-500/20 overflow-hidden max-w-sm mx-auto">
               {/* Call header */}
-              <div className="bg-purple-900/30 px-4 py-4 flex items-center justify-between border-b border-purple-500/20">
+              <div className="bg-gold-600/30 px-4 py-4 flex items-center justify-between border-b border-gold-500/20">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-400 to-pink-500 flex items-center justify-center">
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-gold-300 to-gold-500 flex items-center justify-center">
                     <Phone className="w-4 h-4 text-white" />
                   </div>
                   <div>
                     <div className="text-white text-sm font-bold">
                       Incoming Call
                     </div>
-                    <div className="text-purple-300 text-xs">
-                      +60 12-XXX XXXX
+                    <div className="text-gold-300 text-xs">
+                      +1 (555) XXX-XXXX
                     </div>
                   </div>
                 </div>
-                <div className="flex items-center gap-1 text-purple-400 text-xs">
-                  <span className="w-1.5 h-1.5 bg-purple-400 rounded-full animate-pulse" />
+                <div className="flex items-center gap-1 text-gold-400 text-xs">
+                  <span className="w-1.5 h-1.5 bg-gold-400 rounded-full animate-pulse" />
                   Live
                 </div>
               </div>
@@ -139,7 +134,7 @@ export const VoiceComingSoon: React.FC = () => {
                     <div
                       className={`flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-[9px] font-black ${
                         line.speaker === "Bijou"
-                          ? "bg-gradient-to-br from-purple-400 to-pink-500 text-white"
+                          ? "bg-gradient-to-br from-gold-300 to-gold-500 text-white"
                           : "bg-white/10 text-gray-400"
                       }`}
                     >
@@ -148,7 +143,7 @@ export const VoiceComingSoon: React.FC = () => {
                     <div
                       className={`max-w-[75%] rounded-xl px-3 py-2 text-xs ${
                         line.speaker === "Bijou"
-                          ? "bg-purple-900/40 border border-purple-500/20 text-purple-100"
+                          ? "bg-gold-600/40 border border-gold-500/20 text-gold-300"
                           : "bg-white/8 text-gray-300"
                       } ${activeIdx === i ? "opacity-100" : "opacity-60"}`}
                     >
@@ -159,8 +154,8 @@ export const VoiceComingSoon: React.FC = () => {
               </div>
 
               {/* Call footer */}
-              <div className="bg-purple-900/20 px-4 py-2 text-center border-t border-purple-500/10">
-                <p className="text-purple-400 text-xs font-semibold">
+              <div className="bg-gold-600/20 px-4 py-2 text-center border-t border-gold-500/10">
+                <p className="text-gold-400 text-xs font-semibold">
                   Call handled. Appointment booked. Owner notified.
                 </p>
               </div>
@@ -180,7 +175,7 @@ export const VoiceComingSoon: React.FC = () => {
                 Get early access.
               </h3>
               <p className="text-gray-400">
-                Voice AI for Malaysian SMEs — WhatsApp already works. Your phone
+                Voice AI for US & EU businesses — WhatsApp already works. Your phone
                 is next. Join the waitlist and we'll reach out when it ships in
                 Q4 2026.
               </p>
@@ -188,7 +183,7 @@ export const VoiceComingSoon: React.FC = () => {
               {/* Features list */}
               <ul className="space-y-2.5">
                 {[
-                  "Answers calls in Manglish, English, BM",
+                  "Answers calls in English + multilingual",
                   "Books, reschedules, cancels appointments",
                   "Qualifies leads: budget + intent detection",
                   "Escalates to human when needed",
@@ -198,7 +193,7 @@ export const VoiceComingSoon: React.FC = () => {
                     key={i}
                     className="flex items-center gap-2.5 text-sm text-gray-300"
                   >
-                    <span className="w-1.5 h-1.5 rounded-full bg-purple-400 flex-shrink-0" />
+                    <span className="w-1.5 h-1.5 rounded-full bg-gold-400 flex-shrink-0" />
                     {feat}
                   </li>
                 ))}
@@ -206,7 +201,7 @@ export const VoiceComingSoon: React.FC = () => {
             </div>
 
             {/* Email form */}
-            <div className="glass-panel-3d rounded-2xl border border-purple-500/20 p-6">
+            <div className="glass-panel-3d rounded-2xl border border-gold-500/20 p-6">
               {submitted ? (
                 <motion.div
                   initial={{ opacity: 0, y: 8 }}
@@ -231,9 +226,9 @@ export const VoiceComingSoon: React.FC = () => {
                       type="email"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      placeholder="boss@yourbusiness.com.my"
+                      placeholder="you@yourbusiness.com"
                       required
-                      className="w-full bg-black/40 border border-purple-500/30 rounded-xl px-4 py-3 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-purple-500/60 focus:ring-1 focus:ring-purple-500/30 transition-all"
+                      className="w-full bg-black/40 border border-gold-500/30 rounded-xl px-4 py-3 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-gold-500/60 focus:ring-1 focus:ring-gold-500/30 transition-all"
                     />
                   </div>
                   {failed && (
@@ -257,7 +252,7 @@ export const VoiceComingSoon: React.FC = () => {
                   <button
                     type="submit"
                     disabled={submitting}
-                    className="w-full flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-400 hover:to-pink-400 transition-all shadow-[0_0_20px_rgba(168,85,247,0.3)] disabled:opacity-60"
+                    className="w-full flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm bg-gradient-to-r from-gold-500 to-gold-600 text-white hover:from-gold-400 hover:to-gold-500 transition-all shadow-[0_0_20px_rgba(227,180,87,0.35)] disabled:opacity-60"
                   >
                     <Send className="w-4 h-4" />
                     {submitting ? "Joining..." : failed ? "Try again" : "Join Voice Waitlist"}
@@ -270,16 +265,16 @@ export const VoiceComingSoon: React.FC = () => {
             </div>
 
             {/* ETA callout */}
-            <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-purple-500/5 border border-purple-500/10">
-              <div className="w-8 h-8 rounded-full bg-purple-500/10 flex items-center justify-center flex-shrink-0">
-                <Mic className="w-4 h-4 text-purple-400" />
+            <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-gold-500/5 border border-gold-500/10">
+              <div className="w-8 h-8 rounded-full bg-gold-500/10 flex items-center justify-center flex-shrink-0">
+                <Mic className="w-4 h-4 text-gold-400" />
               </div>
               <div>
                 <div className="text-white text-xs font-bold">
                   Target: Q4 2026
                 </div>
                 <div className="text-gray-500 text-xs">
-                  WhatsApp + Telegram already live at RM299/mo — Voice is next.
+                  WhatsApp + Telegram already live at $499/mo — Voice is next.
                 </div>
               </div>
             </div>

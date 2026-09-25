@@ -7,13 +7,13 @@ import { track as trackPostHog } from "../services/posthog";
 function getUrgencyMessage(remaining: number): string {
   if (remaining >= 10) return "🎉 All 10 Early Adopter Spots Available";
   if (remaining >= 8)
-    return `⏰ Price increases to RM399/mo after spot #${10 - remaining + 1} fills`;
-  if (remaining >= 5) return `🔥 Only ${remaining} spots left at RM299/mo`;
+    return `⏰ Price increases to $599/mo after spot #${10 - remaining + 1} fills`;
+  if (remaining >= 5) return `🔥 Only ${remaining} spots left at $499/mo`;
   if (remaining >= 3) return `🚨 LAST ${remaining} SPOTS — Lock Your Rate Now!`;
   if (remaining === 2)
-    return "⚡ 2 SPOTS LEFT — Price Jumps to RM399 After This!";
-  if (remaining === 1) return "🔴 FINAL SPOT — RM299 Rate Expires Tonight!";
-  return "✅ All Early Adopter Spots Claimed — New Price: RM399/mo";
+    return "⚡ 2 SPOTS LEFT — Price Jumps to $599 After This!";
+  if (remaining === 1) return "🔴 FINAL SPOT — $499 Rate Expires Tonight!";
+  return "✅ All Early Adopter Spots Claimed — New Price: $599/mo";
 }
 
 interface PricingProps {
@@ -21,18 +21,18 @@ interface PricingProps {
 }
 
 const addOns = [
-  { name: "Extra WhatsApp number", when: "Q2 2026", price: "+RM80/mo" },
-  { name: "Extra Telegram bot", when: "Q2 2026", price: "+RM60/mo" },
-  { name: "Multi-user seats", when: "Q2 2026", price: "+RM80/seat" },
+  { name: "Extra WhatsApp number", when: "Q2 2026", price: "+$80/mo" },
+  { name: "Extra Telegram bot", when: "Q2 2026", price: "+$60/mo" },
+  { name: "Multi-user seats", when: "Q2 2026", price: "+$80/seat" },
   {
     name: "Appointment reminders (WhatsApp push)",
     when: "Q2 2026",
-    price: "+RM60/mo",
+    price: "+$60/mo",
   },
-  { name: "Facebook Messenger", when: "Q3 2026", price: "+RM60/mo" },
-  { name: "Advanced PDF parsing", when: "Q3 2026", price: "+RM100/mo" },
-  { name: "Larger context window (128K)", when: "Q3 2026", price: "+RM80/mo" },
-  { name: "Loan calculator", when: "Q4 2026", price: "+RM150/mo" },
+  { name: "Facebook Messenger", when: "Q3 2026", price: "+$60/mo" },
+  { name: "Advanced PDF parsing", when: "Q3 2026", price: "+$100/mo" },
+  { name: "Larger context window (128K)", when: "Q3 2026", price: "+$80/mo" },
+  { name: "Loan calculator", when: "Q4 2026", price: "+$150/mo" },
 ];
 
 export const Pricing: React.FC<PricingProps> = ({ onOpenModal }) => {
@@ -135,7 +135,7 @@ export const Pricing: React.FC<PricingProps> = ({ onOpenModal }) => {
               {/* Price */}
               <div className="mt-6 mb-4">
                 <div className="flex items-baseline gap-1">
-                  <span className="text-sm text-gray-400 font-medium">RM</span>
+                  <span className="text-sm text-gray-400 font-medium">$</span>
                   <span className="text-6xl font-black text-gradient-gold leading-none">
                     {t("pricing.pro.price")}
                   </span>
@@ -143,20 +143,20 @@ export const Pricing: React.FC<PricingProps> = ({ onOpenModal }) => {
                 </div>
               </div>
 
-              {/* Annual option */}
+              {/* One-Time Setup */}
               <div className="bg-emerald-900/20 border border-emerald-500/20 rounded-xl px-4 py-3 mb-6">
                 <div className="flex items-center gap-2 mb-1">
                   <Zap className="w-4 h-4 text-emerald-400 flex-shrink-0" />
                   <span className="text-emerald-400 text-xs font-bold uppercase tracking-wide">
-                    Annual Plan
+                    One-Time Setup
                   </span>
                 </div>
                 <div className="flex items-baseline gap-1">
-                  <span className="text-xs text-gray-400">RM</span>
+                  <span className="text-xs text-gray-400">$</span>
                   <span className="text-2xl font-black text-white">
                     {t("pricing.pro.yearlyPrice")}
                   </span>
-                  <span className="text-gray-400 text-xs">/year</span>
+                  <span className="text-gray-400 text-xs">one-time</span>
                 </div>
                 <p className="text-emerald-400 text-xs font-semibold mt-1">
                   {t("pricing.pro.yearlySaving")}
@@ -197,7 +197,7 @@ export const Pricing: React.FC<PricingProps> = ({ onOpenModal }) => {
                   {[
                     "WhatsApp conversation markup",
                     "Per-message charges",
-                    "WABA application fee",
+                    "DIY setup work on your end",
                     "Annual lock-in",
                     "Bot-wall for support",
                   ].map((item, i) => (
@@ -337,20 +337,19 @@ export const Pricing: React.FC<PricingProps> = ({ onOpenModal }) => {
               <div>
                 <h3 className="text-white text-2xl font-black">ENTERPRISE</h3>
                 <div className="flex items-baseline gap-1 mt-1">
-                  <span className="text-[#D4AF37] text-3xl font-black">RM999</span>
-                  <span className="text-gray-400 text-sm">/month</span>
+                  <span className="text-[#D4AF37] text-3xl font-black">Custom</span>
                 </div>
               </div>
             </div>
 
             <div className="grid sm:grid-cols-2 gap-3 mb-6">
               {[
-                "Official WABA (WhatsApp Business API)",
+                "Official WhatsApp Business API",
                 "Unlimited messages — no 3,000/mo cap",
                 "Multi-location support",
                 "Team accounts + role management",
                 "Priority support with dedicated onboarding",
-                "Custom Manglish persona per brand",
+                "Custom AI persona per brand",
               ].map((feat, i) => (
                 <div key={i} className="flex items-center gap-2 text-sm text-gray-300">
                   <span className="w-1.5 h-1.5 rounded-full bg-[#D4AF37] flex-shrink-0" />
@@ -363,9 +362,6 @@ export const Pricing: React.FC<PricingProps> = ({ onOpenModal }) => {
             <div className="p-3 rounded-xl bg-amber-500/5 border border-amber-500/10 mb-4">
               <p className="text-amber-300 text-xs font-semibold">
                 Hit the 3,000/mo cap? Tell us — we'll upgrade you to ENTERPRISE early.
-              </p>
-              <p className="text-gray-500 text-[10px] mt-0.5 italic">
-                Dah guna 3,000 perbulan? Beritahu kami — kami akan upgrade ke ENTERPRISE awal.
               </p>
             </div>
 
@@ -399,7 +395,7 @@ export const Pricing: React.FC<PricingProps> = ({ onOpenModal }) => {
 
         {/* 2026-08-23: Competitor comparison table.
             Anchors Bijou's price + feature set against the four closest
-            alternatives a Malaysian SME is most likely evaluating. Designed
+            alternatives a small business is most likely evaluating. Designed
             for the "should I just use WATI?" objection. Numbers are the
             verified 2026 entry-tier public prices (USD, billed annually):
               - WATI: $49/mo, 5 agents, 2,500 MAU
@@ -433,32 +429,32 @@ export const Pricing: React.FC<PricingProps> = ({ onOpenModal }) => {
                 <tr className="text-gray-400 text-[10px] uppercase tracking-wider border-b border-white/10">
                   <th className="py-3 pr-3 font-semibold w-1/4"></th>
                   <th className="py-3 px-2 font-semibold w-1/6">
-                    <div className="text-gold-400 text-xs font-black">Bijou PRO</div>
-                    <div className="text-[10px] text-gray-500 mt-0.5">Manglish AI agent</div>
+                    <div className="text-gold-400 text-xs font-black">Bijou</div>
+                    <div className="text-[10px] text-gray-500 mt-0.5">Done-for-you AI agent</div>
                   </th>
                   <th className="py-3 px-2 font-semibold w-1/6">
                     <div className="text-white text-xs font-bold">WATI</div>
-                    <div className="text-[10px] text-gray-500 mt-0.5">Hong Kong</div>
+                    <div className="text-[10px] text-gray-500 mt-0.5">WhatsApp API platform</div>
                   </th>
                   <th className="py-3 px-2 font-semibold w-1/6">
                     <div className="text-white text-xs font-bold">Respond.io</div>
-                    <div className="text-[10px] text-gray-500 mt-0.5">Kuala Lumpur</div>
+                    <div className="text-[10px] text-gray-500 mt-0.5">Multichannel inbox</div>
                   </th>
                   <th className="py-3 px-2 font-semibold w-1/6">
                     <div className="text-white text-xs font-bold">SleekFlow</div>
-                    <div className="text-[10px] text-gray-500 mt-0.5">Hong Kong</div>
+                    <div className="text-[10px] text-gray-500 mt-0.5">Social commerce suite</div>
                   </th>
                   <th className="py-3 px-2 font-semibold w-1/6">
                     <div className="text-white text-xs font-bold">Tidio</div>
-                    <div className="text-[10px] text-gray-500 mt-0.5">US/PL</div>
+                    <div className="text-[10px] text-gray-500 mt-0.5">Live chat + bots</div>
                   </th>
                 </tr>
               </thead>
               <tbody className="text-gray-300">
                 {[
-                  { row: "price", bij: "RM 299/mo", wati: "$49/mo", rio: "$79/mo", sleek: "~$153/mo", tidi: "$24 + $33" },
+                  { row: "price", bij: "$499/mo", wati: "$49/mo", rio: "$79/mo", sleek: "~$153/mo", tidi: "$24 + $33" },
                   { row: "biji_label", bij: "Bijou", wati: "WATI", rio: "Respond", sleek: "SleekFlow", tidi: "Tidio", isLabel: true },
-                  { row: "lang", bij: "Manglish + EN + BM + 中文 + தமிழ்", wati: "EN only", rio: "EN + ZH", sleek: "EN + ZH", tidi: "EN only" },
+                  { row: "lang", bij: "English + multilingual", wati: "EN only", rio: "EN + ZH", sleek: "EN + ZH", tidi: "EN only" },
                   { row: "ai_reasoning", bij: true, wati: false, rio: "partial", sleek: false, tidi: false },
                   { row: "ai_setup_time", bij: "5 min", wati: "30 min", rio: "30 min", sleek: "1 hour", tidi: "1 hour" },
                   { row: "telegram", bij: true, wati: false, rio: true, sleek: true, tidi: false },
@@ -481,7 +477,7 @@ export const Pricing: React.FC<PricingProps> = ({ onOpenModal }) => {
                     cal_booking: "Cal.com booking + reminders",
                     lead_score: "AI lead scoring",
                     eu_ai_act: "EU AI Act 2024 traceability",
-                    pdpa_export: "Self-serve PDPA/GDPR export",
+                    pdpa_export: "Self-serve GDPR/CCPA export",
                     msg_markup: "Per-message markup",
                     annual_lock_in: "Annual lock-in",
                   };
@@ -517,11 +513,11 @@ export const Pricing: React.FC<PricingProps> = ({ onOpenModal }) => {
                 Why Bijou costs more than WATI
               </p>
               <p className="text-gray-300 text-xs leading-relaxed">
-                WATI is great for English-only WhatsApp marketing. Bijou is built for
-                Malaysia: Manglish native, BM + 中文 + தமிழ் out of the box, Cal.com
-                booking, AI reasoning trace, and a roadmap toward EU AI Act 2026
-                compliance. For a non-technical Malaysian SME owner, the value is in
-                what you don&apos;t have to configure.
+                WATI is a self-serve tool you build and maintain yourself. Bijou is
+                fully done-for-you: we build, deploy, and manage your agent —
+                multilingual out of the box, Cal.com booking, AI reasoning trace, and a
+                roadmap toward EU AI Act 2026 compliance. For a busy US or EU business
+                owner, the value is in everything you don&apos;t have to configure.
               </p>
             </div>
             <div className="rounded-xl p-4 bg-emerald-500/5 border border-emerald-400/20">
@@ -529,11 +525,11 @@ export const Pricing: React.FC<PricingProps> = ({ onOpenModal }) => {
                 Why Bijou costs less than Respond.io / SleekFlow
               </p>
               <p className="text-gray-300 text-xs leading-relaxed">
-                Both are multi-channel platforms priced for teams of 5+ agents.
-                Bijou is WhatsApp-first, AI-first, and tuned for the 1-2 person
-                shop. No agent-seat fees. No per-message markup on Advanced-tier
-                plans. You get the same AI, the same booking, the same compliance
-                posture &mdash; without paying for seats you don&apos;t need.
+                Both are multi-channel platforms priced for teams of 5+ agents that you
+                still have to run yourself. Bijou is WhatsApp-first, AI-first, fully
+                managed, and tuned for the small business. No agent-seat fees. No
+                per-message markup. You get the AI, the booking, and the compliance
+                posture &mdash; built and run for you.
               </p>
             </div>
           </div>
@@ -557,7 +553,7 @@ export const Pricing: React.FC<PricingProps> = ({ onOpenModal }) => {
           className="glass-panel-3d rounded-3xl p-8 border border-white/10 mb-12"
         >
           <div className="text-center mb-8">
-            <div className="inline-block px-3 py-1 mb-3 rounded-full bg-purple-500/10 border border-purple-400/20 text-purple-400 text-xs font-bold uppercase tracking-wider">
+            <div className="inline-block px-3 py-1 mb-3 rounded-full bg-gold-500/10 border border-gold-400/20 text-gold-400 text-xs font-bold uppercase tracking-wider">
               Product Roadmap
             </div>
             <h3 className="text-2xl md:text-3xl font-bold text-white mb-2">
@@ -581,23 +577,23 @@ export const Pricing: React.FC<PricingProps> = ({ onOpenModal }) => {
               {
                 phase: "Q2 2026",
                 label: "Phase 5",
-                color: "bg-blue-400",
-                text: "text-blue-400",
-                border: "border-blue-400/40",
+                color: "bg-gold-300",
+                text: "text-gold-300",
+                border: "border-gold-300/40",
               },
               {
                 phase: "Q3 2026",
                 label: "Phase 6",
-                color: "bg-purple-400",
-                text: "text-purple-400",
-                border: "border-purple-400/40",
+                color: "bg-gold-400",
+                text: "text-gold-400",
+                border: "border-gold-400/40",
               },
               {
                 phase: "Q4 2026",
                 label: "Phase 7",
-                color: "bg-orange-400",
-                text: "text-orange-400",
-                border: "border-orange-400/40",
+                color: "bg-gold-500",
+                text: "text-gold-500",
+                border: "border-gold-500/40",
               },
             ].map((p, i) => (
               <React.Fragment key={i}>
@@ -623,14 +619,14 @@ export const Pricing: React.FC<PricingProps> = ({ onOpenModal }) => {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             {addOns.map((addon, i) => {
               const phaseColors: Record<string, string> = {
-                "Q2 2026": "border-blue-400/20 hover:border-blue-400/40",
-                "Q3 2026": "border-purple-400/20 hover:border-purple-400/40",
-                "Q4 2026": "border-orange-400/20 hover:border-orange-400/40",
+                "Q2 2026": "border-gold-300/20 hover:border-gold-300/40",
+                "Q3 2026": "border-gold-400/20 hover:border-gold-400/40",
+                "Q4 2026": "border-gold-500/20 hover:border-gold-500/40",
               };
               const timeBadge: Record<string, string> = {
-                "Q2 2026": "text-blue-400",
-                "Q3 2026": "text-purple-400",
-                "Q4 2026": "text-orange-400",
+                "Q2 2026": "text-gold-300",
+                "Q3 2026": "text-gold-400",
+                "Q4 2026": "text-gold-500",
               };
               return (
                 <motion.div

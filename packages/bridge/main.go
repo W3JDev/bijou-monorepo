@@ -646,8 +646,31 @@ func sendWebhook(msg Message, webhookURL string, logger waLog.Logger) {
 		return
 	}
 
-	// Send POST request to webhook
-	resp, err := http.Post(webhookURL, "application/json", bytes.NewBuffer(payload))
+	// Send POST request to webhook.
+	//
+	// http.Post cannot set headers, so build the request explicitly: the
+	// backend authenticates /webhook/* with a shared secret. Until 2026-09-06
+	// those endpoints had no authentication at all, which let anyone on the
+	// internet inject inbound messages and repoint a tenant's WhatsApp binding.
+	//
+	// BIJOU_WEBHOOK_SECRET must hold the SAME value here and on the backend.
+	// If it is unset the header is simply omitted and the backend falls back to
+	// its fail-open migration path (logging CRITICAL) — see
+	// _verify_webhook_secret in packages/backend/src/core/bijou.py.
+	req, err := http.NewRequest("POST", webhookURL, bytes.NewBuffer(payload))
+	if err != nil {
+		logger.Errorf("Failed to build webhook request for %s: %v", webhookURL, err)
+		return
+	}
+	req.Header.Set("Content-Type", "application/json")
+	if secret := os.Getenv("BIJOU_WEBHOOK_SECRET"); secret != "" {
+		req.Header.Set("X-Bijou-Webhook-Secret", secret)
+	}
+
+	// A timeout matters here: http.DefaultClient has none, so a hung backend
+	// would block this goroutine indefinitely.
+	client := &http.Client{Timeout: 30 * time.Second}
+	resp, err := client.Do(req)
 	if err != nil {
 		logger.Errorf("Failed to send webhook to %s: %v", webhookURL, err)
 		return

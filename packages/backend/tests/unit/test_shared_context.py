@@ -7,23 +7,20 @@ Covers:
 - POST /api/shared-context/append rejects invalid role
 - GET /api/shared-context with phone filter, returns rows sorted desc
 - GET /api/shared-context with no entries returns empty list
-- tenant_id isolation: a request with no session returns 401/403
+- tenant_id isolation: a request with no session returns 4xx
 
-Tests use unittest.mock to stub the Supabase client and the verify_session
-dependency. They are scaffolded for the test suite (per CLAUDE.md the
-venv in this session has no pytest; the user must `pip install -r
-requirements-dev.txt` from their terminal to actually run them).
+Supabase is stubbed with unittest.mock; the session is supplied through
+FastAPI's dependency_overrides (see _authenticate below).
 """
 from __future__ import annotations
 
 import os
-import sys
-from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional
+from datetime import datetime, timedelta, timezone
+from typing import Any, Dict
 from unittest.mock import MagicMock, patch
 
 import pytest
-from fastapi import HTTPException
+from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 
@@ -35,6 +32,29 @@ from fastapi.testclient import TestClient
 @pytest.fixture
 def fake_tenant_id() -> str:
     return "607690ec-4ff7-4ef4-b98e-bfb00442fe95"
+
+
+@pytest.fixture
+def app():
+    from src.core.shared_context_api import router
+
+    a = FastAPI()
+    a.include_router(router)
+    return a
+
+
+def _authenticate(app: FastAPI, tenant_id: str) -> None:
+    """Make verify_session resolve to `tenant_id` for this app.
+
+    Depends() captures the dependency function object when the route is
+    declared, so patching src.core.shared_context_api.verify_session after
+    import does nothing — the override registry is the only seam. The real
+    verify_session fails closed under the default DASHBOARD_MODE=strict,
+    which is why every authenticated test needs this.
+    """
+    from src.core.dashboard_api_simple import verify_session
+
+    app.dependency_overrides[verify_session] = lambda: tenant_id
 
 
 @pytest.fixture
@@ -60,18 +80,9 @@ def fake_supabase():
     select_chain.gte.return_value = select_chain
     select_chain.order.return_value = select_chain
     select_chain.limit.return_value = select_chain
+    # Returned in the order a real Postgres would hand back for
+    # ORDER BY created_at DESC — newest (the 06:05 voice turn) first.
     select_chain.execute.return_value = MagicMock(data=[
-        {
-            "id": "00000000-0000-0000-0000-000000000010",
-            "tenant_id": "607690ec-4ff7-4ef4-b98e-bfb00442fe95",
-            "customer_phone": "+60123456789",
-            "channel": "whatsapp",
-            "thread_id": "+60123456789@s.whatsapp.net",
-            "role": "assistant",
-            "content": "hello, how can I help?",
-            "metadata": {},
-            "created_at": "2026-08-23T06:00:01+00:00",
-        },
         {
             "id": "00000000-0000-0000-0000-000000000011",
             "tenant_id": "607690ec-4ff7-4ef4-b98e-bfb00442fe95",
@@ -83,6 +94,17 @@ def fake_supabase():
             "metadata": {"call_sid": "abc123"},
             "created_at": "2026-08-23T06:05:00+00:00",
         },
+        {
+            "id": "00000000-0000-0000-0000-000000000010",
+            "tenant_id": "607690ec-4ff7-4ef4-b98e-bfb00442fe95",
+            "customer_phone": "+60123456789",
+            "channel": "whatsapp",
+            "thread_id": "+60123456789@s.whatsapp.net",
+            "role": "assistant",
+            "content": "hello, how can I help?",
+            "metadata": {},
+            "created_at": "2026-08-23T06:00:01+00:00",
+        },
     ])
     return sb
 
@@ -92,14 +114,10 @@ def fake_supabase():
 # ---------------------------------------------------------------------------
 
 
-def test_append_happy_path(fake_tenant_id, fake_supabase):
+def test_append_happy_path(app, fake_tenant_id, fake_supabase):
     """POST append with valid body returns the inserted row."""
-    with patch("src.core.shared_context_api._supabase", return_value=fake_supabase), \
-         patch("src.core.shared_context_api.verify_session", return_value=fake_tenant_id):
-        from src.core.shared_context_api import router
-        from fastapi import FastAPI
-        app = FastAPI()
-        app.include_router(router)
+    _authenticate(app, fake_tenant_id)
+    with patch("src.core.shared_context_api._supabase", return_value=fake_supabase):
         client = TestClient(app)
 
         r = client.post(
@@ -112,21 +130,21 @@ def test_append_happy_path(fake_tenant_id, fake_supabase):
                 "content": "hi",
             },
         )
-        assert r.status_code == 200
+        assert r.status_code == 200, r.text
         body = r.json()
         assert body["channel"] == "whatsapp"
         assert body["role"] == "user"
         assert body["tenant_id"] == fake_tenant_id
 
+        # tenant_id is taken from the session, never from the request body.
+        written = fake_supabase.table.return_value.insert.call_args[0][0]
+        assert written["tenant_id"] == fake_tenant_id
 
-def test_append_rejects_invalid_channel(fake_tenant_id, fake_supabase):
+
+def test_append_rejects_invalid_channel(app, fake_tenant_id, fake_supabase):
     """POST append with channel='carrier-pigeon' returns 400."""
-    with patch("src.core.shared_context_api._supabase", return_value=fake_supabase), \
-         patch("src.core.shared_context_api.verify_session", return_value=fake_tenant_id):
-        from src.core.shared_context_api import router
-        from fastapi import FastAPI
-        app = FastAPI()
-        app.include_router(router)
+    _authenticate(app, fake_tenant_id)
+    with patch("src.core.shared_context_api._supabase", return_value=fake_supabase):
         client = TestClient(app)
 
         r = client.post(
@@ -143,14 +161,10 @@ def test_append_rejects_invalid_channel(fake_tenant_id, fake_supabase):
         assert "channel" in r.json()["detail"].lower()
 
 
-def test_append_rejects_invalid_role(fake_tenant_id, fake_supabase):
+def test_append_rejects_invalid_role(app, fake_tenant_id, fake_supabase):
     """POST append with role='admin' returns 400."""
-    with patch("src.core.shared_context_api._supabase", return_value=fake_supabase), \
-         patch("src.core.shared_context_api.verify_session", return_value=fake_tenant_id):
-        from src.core.shared_context_api import router
-        from fastapi import FastAPI
-        app = FastAPI()
-        app.include_router(router)
+    _authenticate(app, fake_tenant_id)
+    with patch("src.core.shared_context_api._supabase", return_value=fake_supabase):
         client = TestClient(app)
 
         r = client.post(
@@ -172,28 +186,25 @@ def test_append_rejects_invalid_role(fake_tenant_id, fake_supabase):
 # ---------------------------------------------------------------------------
 
 
-def test_get_returns_rows_sorted_desc(fake_tenant_id, fake_supabase):
-    """GET returns the Supabase rows (assumed pre-sorted desc by the API)."""
-    with patch("src.core.shared_context_api._supabase", return_value=fake_supabase), \
-         patch("src.core.shared_context_api.verify_session", return_value=fake_tenant_id):
-        from src.core.shared_context_api import router
-        from fastapi import FastAPI
-        app = FastAPI()
-        app.include_router(router)
+def test_get_returns_rows_sorted_desc(app, fake_tenant_id, fake_supabase):
+    """GET asks Postgres for newest-first and passes that order through."""
+    _authenticate(app, fake_tenant_id)
+    with patch("src.core.shared_context_api._supabase", return_value=fake_supabase):
         client = TestClient(app)
 
         r = client.get("/api/shared-context", params={"phone": "+60123456789"})
-        assert r.status_code == 200
+        assert r.status_code == 200, r.text
         body = r.json()
         assert body["count"] == 2
-        # The 2 fixture rows are voice (06:05) then assistant (06:00:01).
-        # The API does .order("created_at", desc=True), so the voice row
-        # (later) should be first.
+        # Ordering is the DB's job, so assert the API actually requested it...
+        select_chain = fake_supabase.table.return_value.select.return_value
+        select_chain.order.assert_called_once_with("created_at", desc=True)
+        # ...and that the rows reach the client in the order the DB gave them.
         assert body["entries"][0]["channel"] == "voice"
         assert body["entries"][1]["channel"] == "whatsapp"
 
 
-def test_get_empty_list_when_no_rows(fake_tenant_id):
+def test_get_empty_list_when_no_rows(app, fake_tenant_id):
     """GET returns count=0 and entries=[] when Supabase returns nothing."""
     empty_sb = MagicMock()
     chain = empty_sb.table.return_value.select.return_value
@@ -203,16 +214,12 @@ def test_get_empty_list_when_no_rows(fake_tenant_id):
     chain.limit.return_value = chain
     chain.execute.return_value = MagicMock(data=[])
 
-    with patch("src.core.shared_context_api._supabase", return_value=empty_sb), \
-         patch("src.core.shared_context_api.verify_session", return_value=fake_tenant_id):
-        from src.core.shared_context_api import router
-        from fastapi import FastAPI
-        app = FastAPI()
-        app.include_router(router)
+    _authenticate(app, fake_tenant_id)
+    with patch("src.core.shared_context_api._supabase", return_value=empty_sb):
         client = TestClient(app)
 
         r = client.get("/api/shared-context", params={"phone": "+60000000000"})
-        assert r.status_code == 200
+        assert r.status_code == 200, r.text
         body = r.json()
         assert body["count"] == 0
         assert body["entries"] == []
@@ -223,23 +230,16 @@ def test_get_empty_list_when_no_rows(fake_tenant_id):
 # ---------------------------------------------------------------------------
 
 
-def test_unauthenticated_request_returns_401_or_403():
+def test_unauthenticated_request_returns_401_or_403(app):
     """A request with no session should fail before touching Supabase.
 
-    verify_session in src.core.dashboard_api_simple returns a non-tenant
-    string (e.g. '' or raises) when no auth headers are present. We assert
-    that the endpoint does not return 200, regardless of the exact shape
-    of the auth check.
+    No dependency override here: the real verify_session runs and, under the
+    default DASHBOARD_MODE=strict, refuses a request that carries no session.
+    We don't pin the exact status (400/401/403 all mean "denied"), only that
+    it is not a success and that no write reached the DB.
     """
-    # No verify_session override; FastAPI's default behavior on Depends
-    # without override is to call the dependency. We don't care about the
-    # exact status (401 vs 403) only that it's not 200.
     sb_sentinel = MagicMock()
     with patch("src.core.shared_context_api._supabase", return_value=sb_sentinel):
-        from src.core.shared_context_api import router
-        from fastapi import FastAPI
-        app = FastAPI()
-        app.include_router(router)
         client = TestClient(app, raise_server_exceptions=False)
 
         r = client.post(
@@ -253,6 +253,7 @@ def test_unauthenticated_request_returns_401_or_403():
             },
         )
         assert r.status_code != 200
+        assert 400 <= r.status_code < 500
         # And critically: the Supabase client should not have been called
         # for a write (no tenant_id = no write).
         sb_sentinel.table.return_value.insert.assert_not_called()
@@ -302,10 +303,15 @@ def test_migration_sql_is_syntactically_clean():
 def _build_recording_supabase():
     """A Supabase mock that records every insert and returns them on GET.
 
-    The mock is stateful: each `insert().execute()` appends a row with
-    auto-generated id+created_at, and every `select().execute()` returns
-    the full list (newest first) filtered by the chained eq() filters
-    for tenant_id and customer_phone.
+    The mock is stateful: each `insert(row).execute()` stores the row with an
+    auto-generated id and a monotonically increasing created_at, and every
+    `select()...execute()` replays the stored rows honouring the chained
+    eq()/gte()/order()/limit() calls the router made.
+
+    created_at is anchored to *now* rather than a fixed date because the
+    router's GET filters with `.gte("created_at", now - since_hours)`; a
+    hard-coded 2026-08-23 timestamp would fall outside every window and the
+    round-trip would silently read back nothing.
 
     This is intentionally more realistic than the `fake_supabase` fixture
     above: the seam test exercises actual round-trip behaviour, while
@@ -314,17 +320,21 @@ def _build_recording_supabase():
     """
     sb = MagicMock()
     state: Dict[str, Any] = {"rows": []}
+    base = datetime.now(timezone.utc) - timedelta(minutes=10)
 
     def _do_insert(row):
+        seq = len(state["rows"])
         full = {
-            "id": f"00000000-0000-0000-0000-{len(state['rows']):012d}",
-            "created_at": "2026-08-23T07:00:00+00:00",
+            "id": f"00000000-0000-0000-0000-{seq:012d}",
+            "created_at": (base + timedelta(seconds=seq)).isoformat(),
             **row,
         }
         state["rows"].append(full)
-        return MagicMock(data=[full])
+        chain = MagicMock()
+        chain.execute.return_value = MagicMock(data=[full])
+        return chain
 
-    sb.table.return_value.insert.return_value.execute.side_effect = _do_insert
+    sb.table.return_value.insert.side_effect = _do_insert
 
     def _do_select(*args, **kwargs):
         # The chain captures eq() filters; capture them as we go.
@@ -371,7 +381,7 @@ def _build_recording_supabase():
     return sb, state
 
 
-def test_a2a_round_trip_whatsapp_then_voice(fake_tenant_id):
+def test_a2a_round_trip_whatsapp_then_voice(app, fake_tenant_id):
     """A customer messages on WhatsApp, then 5 min later calls the voice
     concierge. The A2A layer must let the next query return both
     messages interleaved (newest first), scoped to the same tenant.
@@ -381,12 +391,8 @@ def test_a2a_round_trip_whatsapp_then_voice(fake_tenant_id):
     """
     sb, state = _build_recording_supabase()
 
-    with patch("src.core.shared_context_api._supabase", return_value=sb), \
-         patch("src.core.shared_context_api.verify_session", return_value=fake_tenant_id):
-        from src.core.shared_context_api import router
-        from fastapi import FastAPI
-        app = FastAPI()
-        app.include_router(router)
+    _authenticate(app, fake_tenant_id)
+    with patch("src.core.shared_context_api._supabase", return_value=sb):
         client = TestClient(app)
 
         # 1. WhatsApp message — the customer asks about a viewing
@@ -483,7 +489,7 @@ def test_a2a_round_trip_whatsapp_then_voice(fake_tenant_id):
             assert entry["customer_phone"] == "+60123456789"
 
 
-def test_a2a_cross_tenant_isolation():
+def test_a2a_cross_tenant_isolation(app):
     """Two tenants both have customers with the same phone. The A2A
     read for tenant A must NEVER return rows for tenant B. This is
     the security primitive that keeps the cross-channel inbox from
@@ -493,15 +499,11 @@ def test_a2a_cross_tenant_isolation():
     tenant_a = "607690ec-4ff7-4ef4-b98e-bfb00442fe95"
     tenant_b = "00000000-0000-0000-0000-000000000999"
 
-    from src.core.shared_context_api import router
-    from fastapi import FastAPI
-    app = FastAPI()
-    app.include_router(router)
     client = TestClient(app)
 
-    # Tenant A writes a row for the phone
-    with patch("src.core.shared_context_api._supabase", return_value=sb), \
-         patch("src.core.shared_context_api.verify_session", return_value=tenant_a):
+    with patch("src.core.shared_context_api._supabase", return_value=sb):
+        # Tenant A writes a row for the phone
+        _authenticate(app, tenant_a)
         r = client.post(
             "/api/shared-context/append",
             json={
@@ -512,12 +514,11 @@ def test_a2a_cross_tenant_isolation():
                 "content": "I'm tenant A's customer",
             },
         )
-        assert r.status_code == 200
+        assert r.status_code == 200, r.text
 
-    # Tenant B writes a row for the SAME phone (totally different
-    # business, same customer, same phone)
-    with patch("src.core.shared_context_api._supabase", return_value=sb), \
-         patch("src.core.shared_context_api.verify_session", return_value=tenant_b):
+        # Tenant B writes a row for the SAME phone (totally different
+        # business, same customer, same phone)
+        _authenticate(app, tenant_b)
         r = client.post(
             "/api/shared-context/append",
             json={
@@ -528,48 +529,47 @@ def test_a2a_cross_tenant_isolation():
                 "content": "I'm tenant B's customer",
             },
         )
-        assert r.status_code == 200
+        assert r.status_code == 200, r.text
 
-    # Tenant A's read: should only see the tenant_a row
-    with patch("src.core.shared_context_api._supabase", return_value=sb), \
-         patch("src.core.shared_context_api.verify_session", return_value=tenant_a):
+        # Both rows really are in the shared store — otherwise the
+        # isolation assertions below would pass vacuously.
+        assert len(state["rows"]) == 2
+        assert {row["tenant_id"] for row in state["rows"]} == {tenant_a, tenant_b}
+
+        # Tenant A's read: should only see the tenant_a row
+        _authenticate(app, tenant_a)
         r = client.get(
             "/api/shared-context",
             params={"phone": "+60123456789"},
         )
-        assert r.status_code == 200
+        assert r.status_code == 200, r.text
         body = r.json()
         assert body["count"] == 1, f"tenant A should see 1 row, got {body['count']}"
         assert body["entries"][0]["tenant_id"] == tenant_a
         assert "tenant A" in body["entries"][0]["content"]
 
-    # Tenant B's read: should only see the tenant_b row
-    with patch("src.core.shared_context_api._supabase", return_value=sb), \
-         patch("src.core.shared_context_api.verify_session", return_value=tenant_b):
+        # Tenant B's read: should only see the tenant_b row
+        _authenticate(app, tenant_b)
         r = client.get(
             "/api/shared-context",
             params={"phone": "+60123456789"},
         )
-        assert r.status_code == 200
+        assert r.status_code == 200, r.text
         body = r.json()
         assert body["count"] == 1, f"tenant B should see 1 row, got {body['count']}"
         assert body["entries"][0]["tenant_id"] == tenant_b
         assert "tenant B" in body["entries"][0]["content"]
 
 
-def test_a2a_channel_value_set():
+def test_a2a_channel_value_set(app):
     """The A2A protocol contract documents the allowed channel values.
     Test that the API rejects an unknown channel with 400 BEFORE
     touching Supabase (so a bad client cannot waste a DB round-trip
     or smuggle in a non-canonical channel value).
     """
     sb = MagicMock()
-    with patch("src.core.shared_context_api._supabase", return_value=sb), \
-         patch("src.core.shared_context_api.verify_session", return_value="t1"):
-        from src.core.shared_context_api import router
-        from fastapi import FastAPI
-        app = FastAPI()
-        app.include_router(router)
+    _authenticate(app, "t1")
+    with patch("src.core.shared_context_api._supabase", return_value=sb):
         client = TestClient(app)
 
         r = client.post(

@@ -24,4 +24,4 @@ docker images | grep agentops-backend
 
 # 6. Restart the service
 curl -X POST https://coolify.getbijou.xyz/api/v1/services/hhtakgqeqasqciidtoy4napa/start \
-  -H "Authorization: Bearer 1|inxuyFzhxjO0jasJoLFC9eS7T8ZDAXKtw4ITrmdb3fd0ec34"
+  -H "Authorization: Bearer ${COOLIFY_API_TOKEN:?set COOLIFY_API_TOKEN}"

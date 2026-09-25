@@ -90,7 +90,7 @@ const StressTestSimulation = () => {
             {step >= 0 && (
               <ChatMessage
                 key="g1"
-                text="Walau eh, so expensive ah?"
+                text="Honestly, isn't this a bit steep?"
                 isUser={true}
                 timestamp="10:42 AM"
               />
@@ -98,7 +98,7 @@ const StressTestSimulation = () => {
             {step >= 1 && (
               <ChatMessage
                 key="g2"
-                text="I apologize, I do not understand 'Walau'. Could you please rephrase your query in standard English?"
+                text="I'm sorry, I did not understand your request. Please rephrase your query using complete sentences."
                 isUser={false}
                 timestamp="10:42 AM"
               />
@@ -106,7 +106,7 @@ const StressTestSimulation = () => {
             {step >= 2 && (
               <ChatMessage
                 key="g3"
-                text="Aiyo... nevermind la."
+                text="Ugh, never mind then."
                 isUser={true}
                 timestamp="10:43 AM"
               />
@@ -136,7 +136,7 @@ const StressTestSimulation = () => {
             {step >= 0 && (
               <ChatMessage
                 key="b1"
-                text="Walau eh, so expensive ah?"
+                text="Honestly, isn't this a bit steep?"
                 isUser={true}
                 timestamp="10:42 AM"
               />
@@ -144,7 +144,7 @@ const StressTestSimulation = () => {
             {step >= 1 && (
               <ChatMessage
                 key="b2"
-                text="Aiya boss, interest rate steady one, don't worry. This unit got best view! Value for money. Can set viewing? 😉"
+                text="I hear you! But rates are holding steady, so no worries there. This unit has the best view in the building — genuinely great value. Want me to set up a viewing? 😉"
                 isUser={false}
                 isBijou={true}
                 timestamp="10:42 AM"
@@ -153,7 +153,7 @@ const StressTestSimulation = () => {
             {step >= 2 && (
               <ChatMessage
                 key="b3"
-                text="Ok can. Tomorrow 2pm?"
+                text="Okay, sounds good. Tomorrow at 2pm?"
                 isUser={true}
                 timestamp="10:43 AM"
               />
@@ -161,7 +161,7 @@ const StressTestSimulation = () => {
             {step >= 3 && (
               <ChatMessage
                 key="b4"
-                text="On! I book the slot for you. See you tomorrow boss! 🤝"
+                text="Done! I've booked the slot for you. See you tomorrow! 🤝"
                 isUser={false}
                 isBijou={true}
                 timestamp="10:43 AM"
@@ -253,7 +253,7 @@ const SpeedRunSimulation = () => {
               }}
               className="flex items-center gap-3 bg-white/5 p-3 rounded-lg border border-white/5"
             >
-              <FileText className="w-5 h-5 text-blue-400" />
+              <FileText className="w-5 h-5 text-emerald-400" />
               <span className="text-sm text-white">Brochure.pdf Found</span>
               <Check className="w-4 h-4 text-emerald-400 ml-auto" />
             </motion.div>
@@ -294,7 +294,7 @@ const NightDashboardSimulation = () => {
   const [step, setStep] = useState(0);
   const [leadScore, setLeadScore] = useState(0);
   // 0: Idle (2:41 AM)
-  // 1: User: "Hi boss, viewing tmrw?"
+  // 1: User: "Hi, viewing tmrw?"
   // 2: Bijou: "Got slot 2pm."
   // 3: User: "On."
   // 4: Success (Lead + Calendar)
@@ -366,7 +366,7 @@ const NightDashboardSimulation = () => {
               className="bg-[#202c33] p-3 rounded-lg rounded-tl-none max-w-[85%] border border-white/5"
             >
               <p className="text-xs text-gray-200">
-                Hi boss, Honda Civic got promo? Can test drive tomorrow?
+                Hi, any promo on the Honda Civic? Can I test drive tomorrow?
               </p>
               <span className="text-[10px] text-gray-500 block text-right mt-1">
                 02:42 AM
@@ -381,8 +381,8 @@ const NightDashboardSimulation = () => {
               className="bg-[#005c4b] p-3 rounded-lg rounded-tr-none max-w-[85%] ml-auto shadow-lg shadow-emerald-900/20"
             >
               <p className="text-xs text-white">
-                Got boss! Merdeka Promo (RM2k rebate + Voucher) ending soon.
-                Tomorrow 2pm got slot. I book for you?
+                Good news! Our current promo ($2k rebate + voucher) is ending soon.
+                We have a 2pm slot tomorrow — want me to book it for you?
               </p>
               <span className="text-[10px] text-emerald-200 block text-right mt-1">
                 02:42 AM
@@ -396,7 +396,7 @@ const NightDashboardSimulation = () => {
               animate={{ opacity: 1, x: 0 }}
               className="bg-[#202c33] p-3 rounded-lg rounded-tl-none max-w-[85%] border border-white/5"
             >
-              <p className="text-xs text-gray-200">On. 2pm set.</p>
+              <p className="text-xs text-gray-200">Perfect. 2pm it is.</p>
               <span className="text-[10px] text-gray-500 block text-right mt-1">
                 02:43 AM
               </span>
@@ -410,7 +410,7 @@ const NightDashboardSimulation = () => {
               className="bg-[#005c4b] p-3 rounded-lg rounded-tr-none max-w-[85%] ml-auto"
             >
               <p className="text-xs text-white">
-                Cantik! Appointment set. See you boss. 🤝
+                Perfect! Appointment set. See you tomorrow. 🤝
               </p>
               <span className="text-[10px] text-emerald-200 block text-right mt-1">
                 02:43 AM
@@ -449,7 +449,7 @@ const NightDashboardSimulation = () => {
             </div>
             <div className="flex items-center gap-2">
               <Database
-                className={`w-5 h-5 transition-colors ${step >= 1 ? "text-blue-400" : "text-gray-600"}`}
+                className={`w-5 h-5 transition-colors ${step >= 1 ? "text-emerald-400" : "text-gray-600"}`}
               />
               <div className="text-sm font-medium text-white transition-opacity">
                 {step === 0 && <span className="opacity-50">Idle</span>}
@@ -461,7 +461,7 @@ const NightDashboardSimulation = () => {
             {step === 1 && (
               <motion.div
                 layoutId="kb-scan"
-                className="absolute bottom-0 left-0 h-1 bg-blue-500 w-full animate-progress"
+                className="absolute bottom-0 left-0 h-1 bg-emerald-500 w-full animate-progress"
               />
             )}
           </div>
@@ -568,7 +568,7 @@ export const ViralPillars: React.FC<ViralPillarsProps> = ({ onOpenModal }) => {
         <div className="text-center mb-16">
           <h2 className="text-3xl md:text-5xl font-bold mb-6">
             Why Bijou Goes{" "}
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-400">
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-gold-300">
               Viral
             </span>
           </h2>

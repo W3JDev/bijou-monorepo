@@ -23,7 +23,7 @@ import sys
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
-import google.generativeai as genai
+from src.core.llm_gateway_v2 import SyncTextModel
 
 logger = logging.getLogger(__name__)
 
@@ -51,15 +51,11 @@ class EmpatheticResponseSynthesizer:
         Initialize Empathetic Response Synthesizer.
 
         Args:
-            api_key: Google Gemini API key (defaults to env var)
+            api_key: Ignored (kept for backwards compatibility)
             custom_system_prompt: Optional custom system prompt (e.g., W3J knowledge)
         """
-        self.api_key = api_key or os.getenv("GEMINI_API_KEY")
-        if not self.api_key:
-            raise ValueError("GEMINI_API_KEY not found in environment")
-
-        genai.configure(api_key=self.api_key)  # type: ignore
-        self.model = genai.GenerativeModel("gemini-2.5-flash")  # type: ignore
+        # api_key is ignored: calls go through the AI Gateway (Gemini is dead).
+        self.model = SyncTextModel("ai://fast", max_output_tokens=1024)
 
         # Initialize humanizer for natural conversation
         self.humanizer = ConversationHumanizer()

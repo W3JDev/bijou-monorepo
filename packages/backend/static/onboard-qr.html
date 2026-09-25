@@ -278,22 +278,9 @@
                        value="${escapeHtml(tn.business_name || '')}"
                        placeholder="e.g. Sunrise Cafe" />
               </div>
-              <div class="form-row">
-                <label for="biz-business_type">Business type</label>
-                <select id="biz-business_type" name="business_type" required>
-                  <option value="">Select…</option>
-                  <option value="restaurant">Restaurant / F&B</option>
-                  <option value="retail">Retail / Shop</option>
-                  <option value="salon">Salon / Beauty / Spa</option>
-                  <option value="service">Service business (consulting, repair, etc.)</option>
-                  <option value="healthcare">Healthcare / Clinic</option>
-                  <option value="realestate">Real estate / Property</option>
-                  <option value="education">Education / Tutoring</option>
-                  <option value="fitness">Fitness / Gym / Yoga</option>
-                  <option value="ecommerce">E-commerce / Online store</option>
-                  <option value="other">Other</option>
-                </select>
-              </div>
+              <!-- Business type / vertical is intentionally NOT asked here: it
+                   was already chosen at signup (the industry picker) and stored
+                   in tenant_verticals. Re-asking it was a redundant step. -->
               <div class="form-row">
                 <label for="biz-owner_name">Your name (owner / main contact)</label>
                 <input id="biz-owner_name" name="owner_name" type="text" required
@@ -330,7 +317,7 @@
         const data = {
           tenant_id: statusData.tenant_id,
           business_name: form.business_name.value.trim(),
-          business_type: form.business_type.value,
+          // business_type omitted on purpose — chosen at signup (tenant_verticals).
           owner_name: form.owner_name.value.trim(),
           phone: form.phone.value.trim(),
         };

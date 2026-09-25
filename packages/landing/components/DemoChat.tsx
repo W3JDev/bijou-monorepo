@@ -18,7 +18,7 @@ export const DemoChat: React.FC<DemoChatProps> = ({ onOpenModal }) => {
     {
       role: "model",
       content:
-        "Eh hello boss! 👋 I'm Bijou, your AI Digital Employee. I reply customers 24/7, capture leads, book appointments — all in Manglish so they feel at home lah!\n\nFirst time we meet — nama you apa ah?",
+        "Hi there! 👋 I'm Bijou, your AI Digital Employee. I reply to customers 24/7, capture leads, and book appointments — all in your brand voice.\n\nGreat to meet you — what's your name?",
     },
   ]);
   const [inputValue, setInputValue] = useState("");
@@ -68,7 +68,7 @@ export const DemoChat: React.FC<DemoChatProps> = ({ onOpenModal }) => {
   );
 
   const quickReplies = [
-    { icon: "�", text: "My name is Ahmad" },
+    { icon: "👋", text: "My name is Alex" },
     { icon: "🏠", text: "I'm a property agent" },
     { icon: "🍜", text: "I run an F&B business" },
     { icon: "💰", text: "What's the pricing?" },
@@ -127,10 +127,10 @@ export const DemoChat: React.FC<DemoChatProps> = ({ onOpenModal }) => {
     // drives state-speaking via chatState derivation). The data-bj-state
     // change is auto-detected by the audio controller's MutationObserver
     // and broadcasts to all gems on the page.
-    // Check for Manglish keywords to trigger animation
-    const manglishKeywords =
-      /walao|boss|can|settle|aiyo|fuyoh|best|swee|on|roger/i;
-    if (manglishKeywords.test(responseText)) {
+    // Check for upbeat keywords to trigger the excited-glow animation
+    const excitedKeywords =
+      /great|perfect|absolutely|done|confirmed|awesome|happy to|let's/i;
+    if (excitedKeywords.test(responseText)) {
       setIsExcited(true);
       setTimeout(() => setIsExcited(false), 2000); // Glow for 2 seconds
     }
@@ -164,7 +164,7 @@ export const DemoChat: React.FC<DemoChatProps> = ({ onOpenModal }) => {
           </div>
           <h2 className="text-4xl md:text-5xl font-bold mb-6">Talk to Bijou</h2>
           <p className="text-gray-400 text-lg max-w-2xl mx-auto">
-            Experience the "Manglish" difference. Try asking about pricing, or
+            Experience the done-for-you difference. Try asking about pricing, or
             try to book a slot.
           </p>
         </motion.div>

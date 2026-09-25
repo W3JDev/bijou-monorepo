@@ -20,7 +20,7 @@ project before.
 |---|---|---|---|
 | Landing (`mybijou.xyz`) | `packages/landing/` | Vercel native git integration on `main`, `rootDirectory=packages/landing` | ✅ working (re-pointed 2026-08-10) |
 | Backend (`app.mybijou.xyz`, `bijou-production.fly.dev`) | `packages/backend/` | **Coolify primary** (`docker-compose.coolify.yml`); `flyctl deploy` fallback (billing-locked) | ⛔ **CI blocked**; Coolify manual deploy ready |
-| Bridge | `packages/bridge/` | **Coolify primary** (multi-tenant one-container-per-tenant); Fly fallback | ⛔ **CI blocked**; Coolify manual deploy ready |
+| Bridge | **GOWA image** `aldinokemal2104/go-whatsapp-web-multidevice`, pinned by digest. NOT `packages/bridge/` — see below | Dokploy (`docker-compose.dokploy.yml`) | ✅ verified working locally 2026-09-06 |
 | Landing preview (self-hosted) | `Dockerfile.landing` + nginx | Coolify with `--profile preview` | ✅ ready (optional) |
 
 **GitHub Actions is currently locked**: runs fail in ~3s with *"The job was not
@@ -69,10 +69,18 @@ URL. A pushed commit is not a deployed commit.
 `auth_api.py`/`google_oauth.py` both build user-facing URLs from
 `_public_base_url()`, which correctly prefers `PUBLIC_URL` (`=
 https://app.mybijou.xyz`, confirmed correctly set live) over a hardcoded
-Fly-domain fallback. But **several call sites read a *different*,
-narrower env var first, with no fallback guard**, so a stale leftover value
-from before the domain was finalized silently wins:
-`auth_api.py:848`'s magic-link builder reads `LOGIN_URL` directly;
+Fly-domain fallback. Several call sites read a *different*, narrower env var
+first, so a stale leftover value from before the domain was finalized can
+silently win.
+
+**Partly stale as of 2026-09-06:** `auth_api.py:848`'s magic-link builder was
+fixed on 2026-08-17 and now DOES guard with `_public_base_url()` — this section
+used to say it read `LOGIN_URL` unguarded, and that is no longer true. The
+residual risk is purely operational: setting one of these variables on the
+platform still overrides the correct fallback. That is why
+`ops/dokploy/dokploy.env.example` marks all four **DO NOT SET**.
+
+Still read before the fallback:
 `google_oauth.py`'s OAuth config reads `GOOGLE_REDIRECT_URI` directly;
 `pricing_engine.py`/`reporting_engine.py`/`escalation_notifier.py`/
 `stripe_service.py`/`trial_manager.py` all read `APP_URL`/`DASHBOARD_URL`.
@@ -188,7 +196,12 @@ npm run lead:research
 
 ```bash
 # Backend (FastAPI, Python 3.12) — from packages/backend/
-make test                    # pytest tests/ -v --tb=short  (54 files, 439 tests)
+make test                    # pytest tests/ -v --tb=short
+# NOTE: 889 tests collected, not 439. And you MUST pass -s:
+#   ./.venv/Scripts/python.exe -m pytest tests/ -q --tb=short -p no:cacheprovider -s
+# Without -s the run dies in capture teardown with
+# "ValueError: I/O operation on closed file" after collecting only ~248 —
+# which looks like a small green run and is neither.
 make test-fast
 python -m pytest tests/unit/test_auth_signup_error_mapping.py -q   # single file
 python -m pytest tests/unit/ -q -k "signup"                        # single pattern
@@ -275,7 +288,20 @@ fallback. They are complementary, not in conflict.
   product as **hand-written static HTML** from `static/` (`dashboard.html` is
   ~7.1k lines with in-browser JSX) — this, not `packages/landing`, is the
   actual app UI.
-- **`packages/bridge/`** — Go + whatsmeow + SQLite, one instance per tenant.
+- **`packages/bridge/`** — Go + whatsmeow + SQLite. **NOT the production
+  bridge and not deployable as one.** Production runs GOWA
+  (`aldinokemal2104/go-whatsapp-web-multidevice`), per
+  `packages/bridge/fly.bridge-production.toml:5` and the comment at
+  `src/saas/onboarding_api.py:576`. They speak different APIs —
+  `packages/bridge` exposes `/qr` and `/api/init`; the backend calls `/devices`
+  and `/app/login`. Ship `packages/bridge` and the WhatsApp QR step cannot
+  work, with no obvious error. This file previously listed it as a deployable
+  surface, which cost a full round of wrong deploy artifacts on 2026-09-06.
+
+  GOWA specifics that bite: it signs webhooks
+  (`X-Hub-Signature-256: sha256=<hmac(body, secret)>`) rather than sending the
+  secret; it needs `POST /devices` before `GET /app/login`; and its image ships
+  busybox wget, which has no `--user`/`--password`.
 
 ### Where the user-facing surfaces actually live
 
@@ -303,16 +329,31 @@ reset-password}.html` against `src/saas/auth_api.py`.
 
 ### Data + keys
 
-Supabase (project `lrwzlujomukzjykafmic`) is multi-tenant. Server-side writers
+Supabase (project `lrwzlujomukzjykafmic`) is multi-tenant. The schema is
+committed at `packages/backend/migrations-py/0000_baseline.sql` — 154 tables,
+extracted from the live project 2026-09-06 and verified by rebuilding an empty
+database from it. Before that the repo could not recreate its own database
+(79 tables queried, 13 created), so there was no DR, no staging and no local run. Server-side writers
 use the **service-role** key; the anon key appears only in `static/login.html`
 and `static/auth-callback.html` for GoTrue OAuth. Env names have undocumented
 aliases — readers accept `SUPABASE_SERVICE_KEY | SUPABASE_SERVICE_ROLE_KEY |
 SUPABASE_KEY` and `SUPABASE_URL | VITE_SUPABASE_URL | NEXT_PUBLIC_SUPABASE_URL`.
 
-RLS was hardened by `ops/_fix_rls_v6.js`, which dropped **every** permissive
-`{public}`-role policy in the public schema (no table filter). Net effect: only
-`service_role` reads/writes. Anything using the anon or authenticated role
-against Postgres will fail until policies are rewritten.
+RLS was hardened by `ops/_fix_rls_v6.js`. The claim that this left **only**
+`service_role` reading and writing is **not true of live state** — measured
+2026-09-06 against the project: 154 tables have RLS enabled and **134 policies
+exist**, of which 39 target `authenticated` and 5 are unrestricted
+(`USING (true)`). Those 5 are on `checklist_state`, `sheet_data`,
+`team_activity` and `user_profiles` — tables belonging to the OTHER application
+sharing this schema. **Bijou's own `tenants` / `conversations` / `messages` are
+properly protected**; verified as `anon` via PostgREST, which returns `[]`.
+
+The real hole was elsewhere: **SECURITY DEFINER functions bypass RLS**, and
+Postgres grants EXECUTE to PUBLIC by default, which `anon` inherits. 14 such
+functions were callable with the public browser key — including
+`search_knowledge`, which returns knowledge-base *content* cross-tenant. Fix in
+`migrations-py/add_revoke_anon_security_definer.sql`. Check for regressions with
+`get_advisors` after adding any function.
 
 ---
 
@@ -330,6 +371,59 @@ end in `|| echo` (mypy also has `continue-on-error: true`), and **`pytest` never
 runs** — all 439 tests are unexecuted in CI. Only `py_compile` and `node --check`
 can actually fail a build.
 
+## Gotcha: `app.routes` does not list the API routes
+
+Two independent traps, and together they make a mounted, serving endpoint look
+like a 404. Both have already cost a debugging session.
+
+1. **Routers mount at startup, not at import.** `_include_routers()` runs inside
+   `startup_event`. `TestClient(app)` does NOT run the lifespan;
+   `with TestClient(app)` does. A bare import sees ~41 module-level routes.
+
+2. **Included routers are stored as one opaque object each.** This FastAPI
+   version records every `include_router()` call as a single
+   `fastapi.routing._IncludedRouter` in `app.routes` instead of flattening its
+   children into the list. Measured 2026-09-06, same process, same app:
+
+   ```
+   app.routes      68 objects = 34 APIRoute + 29 _IncludedRouter + 1 Mount
+   /openapi.json  222 paths, freshly built from those same 68 objects
+   ```
+
+   So `[r.path for r in app.routes]` genuinely cannot see `/api/knowledge/upload`
+   while the app serves it. OpenAPI generation descends into those objects; a
+   flat comprehension does not.
+
+**To enumerate what the app serves, read `/openapi.json`** — 222 paths on a
+healthy instance, which is also what `ops/DOKPLOY_DEPLOY.md` checks after a
+deploy. A count near 41 means startup did not complete.
+
+Related: running the lifespan sets the module-global `bijou_instance` and
+shutdown does not unset it. Tests that do this must save and restore it, or
+they change the behaviour of every later test that expects a 503
+"Service not ready".
+
+## Webhook backpressure
+
+`/webhook/message` and `/webhook/connection` are rate limited (added 2026-09-06,
+closing CVE-2026-003). Two token buckets, both env-tunable:
+
+| Var | Default | Meaning |
+|---|---|---|
+| `WEBHOOK_RATE_CAPACITY` | 60 | global burst; **0 disables the limiter** |
+| `WEBHOOK_RATE_REFILL_PER_SEC` | 5 | global sustained rate (~432k msg/day) |
+| `WEBHOOK_DEVICE_RATE_CAPACITY` | 120 | per-device burst |
+| `WEBHOOK_DEVICE_REFILL_PER_SEC` | 20 | per-device sustained rate |
+
+The global bucket is the safety control — a per-device limit alone is defeated
+by varying the device id. The per-device bucket is fairness only. Over-limit
+returns 429 + `Retry-After`, never a silent drop, so a retrying bridge
+redelivers rather than losing a customer message.
+
+Note for anyone writing throughput tests: with the limiter on you measure the
+limiter, not the handler. Use the `no_webhook_rate_limit` fixture, and say in
+the test why.
+
 ## Known-stale docs
 
 - `packages/backend/AI_RULES.md` — targets the pre-monorepo
@@ -339,7 +433,10 @@ can actually fail a build.
 - Root `AGENTS.md` — references `memory/MEMORY.md` and `topics/*.md`; **neither
   directory exists**. Says backend tests are "when tests added" (there are 439).
 - **i18n is 4 locales** (`en`, `ms`, `zh`, `ta`), not 5 as `README.md` and
-  `AGENTS.md` claim.
+  `AGENTS.md` claim. Verified 2026-09-06: all four now at 190/190 keys
+  (`cd packages/landing && python3 scripts/i18n_audit.py`). Note `npm run
+  i18n:audit` invokes `python`, which does not exist on this machine — use
+  `python3` directly.
 - Nested `src/core/tools/AGENT.md` and `src/saas/AGENT.md` declare a
   `packages/bijou-core/` path that does not exist.
 

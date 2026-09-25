@@ -40,6 +40,53 @@ from tests.fixtures.test_tenants import (
 from tests.mocks.whatsapp_mock import MockWhatsAppBridge
 
 # ════════════════════════════════════════════════════════════════
+# HTTP TEST HELPERS
+# ════════════════════════════════════════════════════════════════
+
+_ROUTERS_INCLUDED = False
+
+
+def api_client(app) -> TestClient:
+    """TestClient for the real app with the /api/* routers actually mounted.
+
+    bijou.py defers every include_router() call into its FastAPI startup
+    handler, so an app object imported directly carries only the handful of
+    routes declared at module scope — everything under /api/* answers 404.
+    We invoke that same hook rather than entering the app's lifespan, because
+    the lifespan also constructs BijouAI and reaches out to Supabase/the
+    bridge, which no unit-level test should do.
+    """
+    global _ROUTERS_INCLUDED
+    if not _ROUTERS_INCLUDED:
+        from src.core import bijou
+
+        bijou._include_routers()
+        _ROUTERS_INCLUDED = True
+    return TestClient(app)
+
+
+def authenticate(app, tenant_id: str) -> None:
+    """Make verify_session resolve to `tenant_id` for this app.
+
+    Depends() captures the dependency function object when the route is
+    declared, so patching the router module's `verify_session` attribute after
+    import is inert — dependency_overrides is the only seam. The real
+    verify_session fails closed under the default DASHBOARD_MODE=strict, so
+    every test that hits an authenticated route needs this.
+    """
+    from src.core.dashboard_api_simple import verify_session
+
+    app.dependency_overrides[verify_session] = lambda: tenant_id
+
+
+def deauthenticate(app) -> None:
+    """Drop the session override again — `app` is a process-wide singleton."""
+    from src.core.dashboard_api_simple import verify_session
+
+    app.dependency_overrides.pop(verify_session, None)
+
+
+# ════════════════════════════════════════════════════════════════
 # TEST 1: SELF-SERVICE ONBOARDING API
 # ════════════════════════════════════════════════════════════════
 
@@ -85,7 +132,7 @@ class TestOnboardingAPI:
         onboarding_api.get_supabase = lambda: mock_supabase
 
         try:
-            test_client = TestClient(test_app)
+            test_client = api_client(test_app)
             # Signup request
             signup_data = {
                 "business_name": "Test Property Co",
@@ -129,7 +176,7 @@ class TestOnboardingAPI:
         onboarding_api.get_supabase = lambda: mock_supabase
 
         try:
-            test_client = TestClient(test_app)
+            test_client = api_client(test_app)
             signup_data = {
                 "business_name": "Duplicate Co",
                 "email": "existing@example.com",
@@ -438,20 +485,20 @@ class TestKnowledgeManagement:
         knowledge_api.get_supabase = lambda: mock_supabase
 
         try:
-            test_client = TestClient(test_app)
+            test_client = api_client(test_app)
+            # /upload takes tenant_id from the session, not from X-Tenant-ID
+            authenticate(test_app, "tenant-123")
             # Create fake file upload
             files = {"file": ("test.txt", b"Test content", "text/plain")}
-            headers = {"X-Tenant-ID": "tenant-123"}
 
-            response = test_client.post(
-                "/api/knowledge/upload", files=files, headers=headers
-            )
+            response = test_client.post("/api/knowledge/upload", files=files)
 
             assert response.status_code == 200
             data = response.json()
             assert data["success"] is True
             assert "document_id" in data
         finally:
+            deauthenticate(test_app)
             knowledge_api.get_supabase = original_get_supabase
             mock_supabase.table = original_table
 
@@ -504,19 +551,19 @@ class TestSettingsAPI:
         settings_api.get_supabase = lambda: mock_supabase
 
         try:
-            test_client = TestClient(test_app)
-            headers = {"X-Tenant-ID": "tenant-123"}
+            test_client = api_client(test_app)
+            # tenant_id comes from the session, never from a client header
+            authenticate(test_app, "tenant-123")
             payload = {"testing_mode": True, "test_numbers": ["+60143856929"]}
 
-            response = test_client.put(
-                "/api/settings/testing-mode", json=payload, headers=headers
-            )
+            response = test_client.put("/api/settings/testing-mode", json=payload)
 
             assert response.status_code == 200
             data = response.json()
             assert data["success"] is True
             assert data["testing_mode"] is True
         finally:
+            deauthenticate(test_app)
             settings_api.get_supabase = original_get_supabase
             mock_supabase.table = original_table
 
@@ -558,16 +605,15 @@ class TestSettingsAPI:
         settings_api.get_supabase = lambda: mock_supabase
 
         try:
-            test_client = TestClient(test_app)
-            headers = {"X-Tenant-ID": "tenant-123"}
+            test_client = api_client(test_app)
+            # tenant_id comes from the session, never from a client header
+            authenticate(test_app, "tenant-123")
             payload = {
                 "ignore_numbers": ["+60116060963"],
                 "private_numbers": [],
             }
 
-            response = test_client.put(
-                "/api/settings/ignore-list", json=payload, headers=headers
-            )
+            response = test_client.put("/api/settings/ignore-list", json=payload)
 
             assert response.status_code == 200
             data = response.json()
@@ -575,6 +621,7 @@ class TestSettingsAPI:
             assert len(data["ignore_numbers"]) == 1
             assert "+60116060963" in data["ignore_numbers"]
         finally:
+            deauthenticate(test_app)
             settings_api.get_supabase = original_get_supabase
             mock_supabase.table = original_table
 
@@ -610,8 +657,9 @@ class TestSettingsAPI:
         settings_api.get_supabase = lambda: mock_supabase
 
         try:
-            test_client = TestClient(test_app)
-            headers = {"X-Tenant-ID": "tenant-123"}
+            test_client = api_client(test_app)
+            # tenant_id comes from the session, never from a client header
+            authenticate(test_app, "tenant-123")
             payload = {
                 "enabled": True,
                 "timezone": "Asia/Kuala_Lumpur",
@@ -626,14 +674,13 @@ class TestSettingsAPI:
                 },
             }
 
-            response = test_client.put(
-                "/api/settings/business-hours", json=payload, headers=headers
-            )
+            response = test_client.put("/api/settings/business-hours", json=payload)
 
             assert response.status_code == 200
             data = response.json()
             assert data["success"] is True
         finally:
+            deauthenticate(test_app)
             settings_api.get_supabase = original_get_supabase
             mock_supabase.table = original_table
 
@@ -768,7 +815,7 @@ class TestFullE2EFlow:
         onboarding_api.get_supabase = lambda: mock_supabase
 
         try:
-            test_client = TestClient(test_app)
+            test_client = api_client(test_app)
             signup_response = test_client.post(
                 "/api/onboarding/signup",
                 json={

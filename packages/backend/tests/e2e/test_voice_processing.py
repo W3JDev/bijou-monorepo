@@ -4,7 +4,7 @@ E2E Tests for Voice Note Processing Pipeline
 Tests the complete voice processing flow:
 1. WhatsApp webhook receives voice message
 2. Media download from bridge (HTTP Basic Auth)
-3. Audio format conversion (OGG → MP3 via ffmpeg)
+3. Audio format conversion (OGG -> MP3 via ffmpeg)
 4. Transcription (Gemini 2.5 Flash)
 5. AI response generation
 6. Message delivery
@@ -26,27 +26,57 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import httpx
 import pytest
 
-# Test configuration
+# Test configuration.
+#
+# Defaults target the local docker stack (docker-compose.local.yml), which
+# publishes the bridge on 8081 with the basic-auth pair below. The previous
+# default, bijou-bridge-staging-v2.fly.dev, no longer resolves, so the auth
+# tests died on DNS instead of exercising the bridge.
+#
+# These read E2E_BRIDGE_* rather than BRIDGE_*: tests/conftest.py's autouse
+# setup_test_env fixture points BRIDGE_URL at a mock host for unit tests, and
+# these are the tests that want the real one.
 FIXTURES_DIR = Path(__file__).parent.parent / "fixtures" / "media"
-TEST_BRIDGE_URL = os.getenv("BRIDGE_URL", "https://bijou-bridge-staging-v2.fly.dev")
-TEST_BRIDGE_USER = os.getenv("BRIDGE_USER", "bijou")
-TEST_BRIDGE_PASSWORD = os.getenv("BRIDGE_PASSWORD", "")
+TEST_BRIDGE_URL = os.getenv("E2E_BRIDGE_URL", "http://localhost:8081")
+TEST_BRIDGE_USER = os.getenv("E2E_BRIDGE_USER", "bijou")
+TEST_BRIDGE_PASSWORD = os.getenv("E2E_BRIDGE_PASSWORD", "bijou-local-dev")
+
+# The bridge is multi-tenant: /statics/** is routed per device and answers
+# 400 DEVICE_ID_REQUIRED without this header, which would mask the auth result
+# these tests are actually checking. An unknown device id still gets past basic
+# auth and 404s, so a placeholder is enough here.
+TEST_BRIDGE_DEVICE_ID = os.getenv("E2E_BRIDGE_DEVICE_ID", "e2e-test-device")
+BRIDGE_HEADERS = {"X-Device-Id": TEST_BRIDGE_DEVICE_ID}
 
 
-@pytest.fixture
+@pytest.fixture(scope="module")
 def sample_voice_ogg() -> bytes:
     """
-    Generate a minimal valid OGG audio file for testing.
-    In production, replace with real voice samples.
+    A real 1-second OGG/Opus file, the container WhatsApp voice notes arrive in.
+
+    This used to be a hand-assembled OggS+OpusHead byte string. ffmpeg cannot
+    decode it -- it has a page header and no audio pages -- so every test that
+    converted this fixture was asserting on a broken input rather than on the
+    conversion. Encoding a real tone with ffmpeg keeps the fixture honest and
+    costs a few milliseconds.
     """
-    # Minimal OGG Opus header (valid but silent audio)
-    # This is a 1-second silent OGG file
-    ogg_header = (
-        b"OggS\x00\x02\x00\x00\x00\x00\x00\x00\x00\x00"
-        b"\x00\x00\x00\x00\x00\x00\x00\x00\x01\x00\x00\x00"
-        b"\x00\x00\x00\x00OpusHead\x01\x02\x00\x00\x00\x00"
-    )
-    return ogg_header + b"\x00" * 100  # Padded silent audio
+    with tempfile.TemporaryDirectory() as tmp:
+        ogg_path = str(Path(tmp) / "sample_voice.ogg")
+        result = subprocess.run(
+            [
+                "ffmpeg",
+                "-f", "lavfi",
+                "-i", "sine=frequency=440:duration=1",
+                "-c:a", "libopus",
+                "-b:a", "32k",
+                "-y", ogg_path,
+            ],
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+        assert result.returncode == 0, f"could not build OGG fixture: {result.stderr}"
+        return Path(ogg_path).read_bytes()
 
 
 @pytest.fixture
@@ -106,7 +136,7 @@ class TestVoiceProcessingPipeline:
         )
         assert result.returncode == 0, "ffmpeg is not installed or not working"
         assert "ffmpeg version" in result.stdout.lower()
-        print(f"✅ ffmpeg version: {result.stdout.split()[2]}")
+        print(f"OK: ffmpeg version: {result.stdout.split()[2]}")
 
     async def test_ffmpeg_opus_support(self):
         """Verify ffmpeg has libopus support (required for OGG decoding)"""
@@ -118,10 +148,10 @@ class TestVoiceProcessingPipeline:
         )
         assert result.returncode == 0
         assert "libopus" in result.stdout or "opus" in result.stdout
-        print("✅ ffmpeg has Opus codec support")
+        print("OK: ffmpeg has Opus codec support")
 
     async def test_ogg_to_mp3_conversion(self, sample_voice_ogg):
-        """Test OGG → MP3 conversion with ffmpeg"""
+        """Test OGG -> MP3 conversion with ffmpeg"""
         with tempfile.NamedTemporaryFile(suffix=".ogg", delete=False) as ogg_file:
             ogg_file.write(sample_voice_ogg)
             ogg_path = ogg_file.name
@@ -153,7 +183,7 @@ class TestVoiceProcessingPipeline:
             assert Path(mp3_path).exists(), "MP3 file was not created"
             assert Path(mp3_path).stat().st_size > 0, "MP3 file is empty"
 
-            print(f"✅ OGG → MP3 conversion successful ({Path(mp3_path).stat().st_size} bytes)")
+            print(f"OK: OGG -> MP3 conversion successful ({Path(mp3_path).stat().st_size} bytes)")
 
         finally:
             # Cleanup
@@ -197,7 +227,7 @@ class TestVoiceProcessingPipeline:
             assert transcript, "Gemini returned empty transcription"
             assert len(transcript) > 0, "Transcription is empty"
 
-            print(f"✅ Gemini transcription: {transcript[:100]}...")
+            print(f"OK: Gemini transcription: {transcript[:100]}...")
 
         finally:
             if Path(ogg_path).exists():
@@ -215,6 +245,7 @@ class TestVoiceProcessingPipeline:
             response_basic = await client.get(
                 test_media_url,
                 auth=(TEST_BRIDGE_USER, TEST_BRIDGE_PASSWORD),
+                headers=BRIDGE_HEADERS,
                 timeout=10,
             )
 
@@ -224,21 +255,23 @@ class TestVoiceProcessingPipeline:
                 "Expected 404 (not found) or 200 (success), not 401/403 (auth error)"
             )
 
-            print(f"✅ Basic Auth works (status: {response_basic.status_code})")
+            print(f"OK: Basic Auth works (status: {response_basic.status_code})")
 
             # Test with X-API-Key header (WRONG - should fail)
             response_apikey = await client.get(
                 test_media_url,
-                headers={"X-API-Key": "test_key"},
+                headers={**BRIDGE_HEADERS, "X-API-Key": "test_key"},
                 timeout=10,
             )
 
-            # This should return 401/403 (no auth or wrong auth)
-            assert response_apikey.status_code in [401, 403, 404], (
+            # This should return 401/403 (no auth or wrong auth). NOT 404: GOWA
+            # checks basic auth before device routing, so a 404 here means the
+            # target has auth disabled (or isn't the bridge) — a real failure.
+            assert response_apikey.status_code in [401, 403], (
                 f"X-API-Key incorrectly succeeded with {response_apikey.status_code}"
             )
 
-            print(f"✅ X-API-Key correctly rejected (status: {response_apikey.status_code})")
+            print(f"OK: X-API-Key correctly rejected (status: {response_apikey.status_code})")
 
     async def test_voice_webhook_processing_mock(self, webhook_voice_payload):
         """Test voice webhook processing with mocked dependencies"""
@@ -247,19 +280,27 @@ class TestVoiceProcessingPipeline:
         # Mock dependencies
         mock_download = AsyncMock(return_value=b"fake_audio_data")
         mock_ffmpeg = AsyncMock(return_value=b"fake_mp3_data")
-        mock_gemini = AsyncMock(return_value="Hello this is a test message")
+        mock_gemini = MagicMock(return_value="Hello this is a test message")
 
+        # google-generativeai was dropped from requirements.txt (deprecated
+        # Dec 2025); the audio branch in src/core/bijou.py uses google.genai's
+        # Client instead, so that is what a mocked run has to stand in for.
         with patch("httpx.AsyncClient.get", mock_download), \
              patch("subprocess.run", return_value=MagicMock(returncode=0)), \
-             patch("google.generativeai.GenerativeModel.generate_content", mock_gemini):
+             patch("google.genai.models.Models.generate_content", mock_gemini):
 
             # Simulate webhook processing
             # (In real implementation, this would call bijou.py webhook handler)
             
-            # Verify download was called with Basic Auth
-            assert mock_download.called or True  # Placeholder
-            
-            print("✅ Voice webhook processing flow verified (mocked)")
+            from google.genai import models as genai_models
+
+            assert genai_models.Models.generate_content is mock_gemini, (
+                "Gemini audio call site is not the one this test mocks"
+            )
+            assert webhook_voice_payload["messages"][0]["audio"]["id"], (
+                "webhook voice payload must carry a media id to download"
+            )
+            print("OK: Voice webhook processing flow verified (mocked)")
 
     async def test_voice_error_handling_download_failure(self):
         """Test graceful handling when media download fails"""
@@ -271,14 +312,15 @@ class TestVoiceProcessingPipeline:
                 response = await client.get(
                     test_media_url,
                     auth=(TEST_BRIDGE_USER, TEST_BRIDGE_PASSWORD),
+                    headers=BRIDGE_HEADERS,
                     timeout=10,
                 )
                 # Should return 404 or similar error
                 assert response.status_code >= 400
-                print(f"✅ Download failure handled (status: {response.status_code})")
+                print(f"OK: Download failure handled (status: {response.status_code})")
             except httpx.HTTPError as e:
                 # Network errors are also acceptable
-                print(f"✅ Network error handled: {e}")
+                print(f"OK: Network error handled: {e}")
 
     async def test_voice_error_handling_corrupt_audio(self, sample_voice_ogg):
         """Test handling of corrupt/invalid audio files"""
@@ -302,7 +344,7 @@ class TestVoiceProcessingPipeline:
 
             # ffmpeg should return non-zero exit code
             assert result.returncode != 0, "ffmpeg should fail on corrupt audio"
-            print("✅ Corrupt audio detected and rejected by ffmpeg")
+            print("OK: Corrupt audio detected and rejected by ffmpeg")
 
         finally:
             if Path(ogg_path).exists():
@@ -339,7 +381,7 @@ class TestVoiceProcessingPipeline:
             # Verify cleanup
             final_files = set(Path(temp_dir).glob("bijou_voice_*.mp3"))
             assert final_files == initial_files, "Temp files not cleaned up"
-            print("✅ Temporary files cleaned up successfully")
+            print("OK: Temporary files cleaned up successfully")
 
         finally:
             # Ensure cleanup even if test fails
@@ -364,7 +406,7 @@ class TestVoiceMultiLanguage:
 
         # Test transcription and language detection
         # (Would call actual voice processing pipeline)
-        print("✅ English voice processing (skipped - requires real sample)")
+        print("OK: English voice processing (skipped - requires real sample)")
 
     @pytest.mark.skipif(
         not os.getenv("GEMINI_API_KEY") or os.getenv("GEMINI_API_KEY").startswith("mock"),
@@ -375,7 +417,7 @@ class TestVoiceMultiLanguage:
         if not sample_voice_malay or not Path(sample_voice_malay).exists():
             pytest.skip("Malay voice sample not found")
 
-        print("✅ Malay voice processing (skipped - requires real sample)")
+        print("OK: Malay voice processing (skipped - requires real sample)")
 
     @pytest.mark.skipif(
         not os.getenv("GEMINI_API_KEY") or os.getenv("GEMINI_API_KEY").startswith("mock"),
@@ -386,7 +428,7 @@ class TestVoiceMultiLanguage:
         if not sample_voice_manglish or not Path(sample_voice_manglish).exists():
             pytest.skip("Manglish voice sample not found")
 
-        print("✅ Manglish voice processing (skipped - requires real sample)")
+        print("OK: Manglish voice processing (skipped - requires real sample)")
 
 
 @pytest.mark.e2e
@@ -416,7 +458,7 @@ class TestVoicePerformance:
 
             assert result.returncode == 0
             assert duration < 10, f"Conversion took too long: {duration:.2f}s"
-            print(f"✅ Conversion completed in {duration:.2f}s")
+            print(f"OK: Conversion completed in {duration:.2f}s")
 
         finally:
             if Path(ogg_path).exists():

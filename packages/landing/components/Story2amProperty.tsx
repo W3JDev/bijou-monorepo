@@ -6,27 +6,27 @@ export const Story2amProperty: React.FC = () => {
     {
       sender: "customer",
       time: "2:47 AM",
-      text: "Hi boss, can view property? Mont Kiara area, got high floor one?",
+      text: "Hi — are any high-floor units available to view? Looking downtown.",
     },
     {
       sender: "bijou",
       time: "2:47 AM",
-      text: "Wah 3am you still looking — serious buyer lah! Got few units at MK, high floor with balcony. Which date you free to view? I check availability now.",
+      text: "You're up late — I like a serious buyer. We have a few high-floor units downtown with balconies. What day works for a viewing? I'll check availability now.",
     },
     {
       sender: "customer",
       time: "2:49 AM",
-      text: "Saturday morning can? Budget around 900k",
+      text: "Saturday morning work? Budget around $900k.",
     },
     {
       sender: "bijou",
       time: "2:49 AM",
-      text: "Saturday 10am confirmed. I book for you now and send reminder Friday night. Budget 900k — I shortlist 3 units tonight, you check tomorrow morning. Deal?",
+      text: "Saturday 10am confirmed. I'll book it now and send a reminder Friday evening. On a $900k budget, I'll shortlist 3 units tonight for you to review first thing tomorrow. Sound good?",
     },
     {
       sender: "customer",
       time: "2:50 AM",
-      text: "Wah fast fast. Ok deal!",
+      text: "That was fast. Perfect — let's do it!",
     },
   ];
 
@@ -67,29 +67,24 @@ export const Story2amProperty: React.FC = () => {
             <p className="text-gray-400 leading-relaxed">
               That Saturday booking just happened at 2:47am. No human involved.
               Bijou qualified the budget, shortlisted units, and locked the
-              slot — in Manglish, like a colleague, not a bot.
+              slot — in your brand voice, like a colleague, not a bot.
             </p>
 
-            {/* MS translation */}
             <div className="border-l-2 border-[#D4AF37]/30 pl-4">
               <p className="text-gray-500 text-sm italic">
-                "Jumaat malam dia tanya. Sabtu pagi dia dah datang viewing.
-                Bijou yang uruskan semuanya."
-              </p>
-              <p className="text-gray-600 text-xs mt-1">
-                — Friday night he asked. Saturday morning he came for viewing.
-                Bijou handled everything.
+                "Friday night he asked. Saturday morning he came for the viewing.
+                Bijou handled everything."
               </p>
             </div>
 
             <div className="flex flex-wrap gap-3 pt-2">
               <span className="px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold">
-                No WABA needed
+                Fully managed
               </span>
               <span className="px-3 py-1.5 rounded-full bg-[#D4AF37]/10 border border-[#D4AF37]/20 text-[#D4AF37] text-xs font-semibold">
-                Manglish native
+                Brand-voice native
               </span>
-              <span className="px-3 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-semibold">
+              <span className="px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold">
                 Cal.com booking
               </span>
             </div>

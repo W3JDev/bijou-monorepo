@@ -4,30 +4,30 @@ import { Ear, Heart, BrainCircuit, Handshake, ArrowRight } from 'lucide-react';
 
 const steps = [
   {
-    icon: <Ear className="w-8 h-8 text-blue-400" />,
+    icon: <Ear className="w-8 h-8 text-emerald-400" />,
     title: "1. Detection Agent",
     subTitle: "Active Listening",
     traceElement: "Input Analysis",
-    detail: "Detects frustration, urgency, and slang (Manglish). Identification of intent <100ms.",
+    detail: "Detects frustration, urgency, and tone across languages. Identification of intent <100ms.",
     meta: "Status: Listening",
-    textColor: "text-blue-400",
-    borderColor: "group-hover:border-blue-500/30",
-    badgeBorder: "border-blue-500/30",
-    badgeText: "text-blue-400",
-    dotColor: "bg-blue-500"
+    textColor: "text-emerald-400",
+    borderColor: "group-hover:border-emerald-500/30",
+    badgeBorder: "border-emerald-500/30",
+    badgeText: "text-emerald-400",
+    dotColor: "bg-emerald-500"
   },
   {
-    icon: <Heart className="w-8 h-8 text-pink-400" />,
+    icon: <Heart className="w-8 h-8 text-gold-400" />,
     title: "2. Empathy Agent",
     subTitle: "Tone Shifting",
     traceElement: "EQ Layer",
     detail: "Mirrors user's emotion. If user is angry, tone softens. If user is casual, tone matches.",
     meta: "Status: Adapting",
-    textColor: "text-pink-400",
-    borderColor: "group-hover:border-pink-500/30",
-    badgeBorder: "border-pink-500/30",
-    badgeText: "text-pink-400",
-    dotColor: "bg-pink-500"
+    textColor: "text-gold-400",
+    borderColor: "group-hover:border-gold-500/30",
+    badgeBorder: "border-gold-500/30",
+    badgeText: "text-gold-400",
+    dotColor: "bg-gold-500"
   },
   {
     icon: <BrainCircuit className="w-8 h-8 text-emerald-400" />,
@@ -43,17 +43,17 @@ const steps = [
     dotColor: "bg-emerald-500"
   },
   {
-    icon: <Handshake className="w-8 h-8 text-purple-400" />,
+    icon: <Handshake className="w-8 h-8 text-gold-400" />,
     title: "4. Closing Agent",
     subTitle: "Conversion",
     traceElement: "Goal Completion",
     detail: "Drives the specific business goal: Booking, Sale, or Lead Capture.",
     meta: "Status: Closing",
-    textColor: "text-purple-400",
-    borderColor: "group-hover:border-purple-500/30",
-    badgeBorder: "border-purple-500/30",
-    badgeText: "text-purple-400",
-    dotColor: "bg-purple-500"
+    textColor: "text-gold-400",
+    borderColor: "group-hover:border-gold-500/30",
+    badgeBorder: "border-gold-500/30",
+    badgeText: "text-gold-400",
+    dotColor: "bg-gold-500"
   }
 ];
 
@@ -68,7 +68,7 @@ export const HowItWorks: React.FC<HowItWorksProps> = ({ onOpenModal }) => {
     if (!import.meta.env.DEV) return;
 
     console.group('TRACE System Initiation - Bijou AI');
-    console.log('[TenantRouter] Incoming message from +6012-345-6789. TenantID: MY_PROP_01.');
+    console.log('[TenantRouter] Incoming message from +1 (415) 555-0123. TenantID: US_PROP_01.');
 
     setTimeout(() => {
         console.log('[EQ Layer] Sentiment Detected: Frustrated (0.75). Intent: Urgent Inquiry.');
@@ -76,7 +76,7 @@ export const HowItWorks: React.FC<HowItWorksProps> = ({ onOpenModal }) => {
     }, 500);
 
     setTimeout(() => {
-        console.log('[Knowledge Retrieval] Searching vectors for "condo rental near klcc"...');
+        console.log('[Knowledge Retrieval] Searching vectors for "downtown loft rental"...');
         console.log('[Knowledge Retrieval] Found 3 matches. Top confidence: 0.92.');
     }, 1000);
 
@@ -106,7 +106,7 @@ export const HowItWorks: React.FC<HowItWorksProps> = ({ onOpenModal }) => {
 
         <div className="grid md:grid-cols-4 gap-6 relative">
           {/* Connecting Line (Desktop) */}
-          <div className="hidden md:block absolute top-16 left-[12%] right-[12%] h-0.5 bg-gradient-to-r from-blue-500/20 via-emerald-500/50 to-purple-500/20 z-0" />
+          <div className="hidden md:block absolute top-16 left-[12%] right-[12%] h-0.5 bg-gradient-to-r from-emerald-500/20 via-emerald-500/50 to-gold-500/20 z-0" />
 
           {steps.map((step, index) => (
             <motion.div

@@ -21,22 +21,22 @@ const phases = [
     phase: "Phase 7",
     title: "Voice AI",
     icon: <Mic className="w-6 h-6" />,
-    desc: "Bijou learns to speak. Handle phone calls with the same Manglish personality.",
+    desc: "Bijou learns to speak. Handle phone calls with the same on-brand personality.",
     color: "purple"
   },
   {
     phase: "Phase 8",
-    title: "ASEAN Expansion",
+    title: "Language Expansion",
     icon: <Languages className="w-6 h-6" />,
-    desc: "Support for Bahasa Indonesia, Tagalog, and Thai mixed dialects.",
+    desc: "Native support for Spanish, French, German, and more European languages.",
     color: "orange"
   }
 ];
 
 const languages = [
-  { id: 'ms', label: 'Bahasa Melayu (Formal)' },
-  { id: 'zh', label: 'Mandarin Mix' },
-  { id: 'ta', label: 'Tamil Mix' }
+  { id: 'es', label: 'Spanish' },
+  { id: 'fr', label: 'French' },
+  { id: 'de', label: 'German' }
 ];
 
 export const Roadmap: React.FC = () => {
@@ -104,8 +104,8 @@ export const Roadmap: React.FC = () => {
              <div className="absolute inset-0 bg-gradient-to-r from-emerald-900/20 to-blue-900/20" />
              <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-8">
                 <div>
-                   <h3 className="text-2xl font-bold text-white mb-2">More than just Manglish?</h3>
-                   <p className="text-gray-400">We are currently training models for other dialects. Vote for what you need next.</p>
+                   <h3 className="text-2xl font-bold text-white mb-2">Need another language?</h3>
+                   <p className="text-gray-400">We are currently training models for more languages. Vote for what you need next.</p>
                 </div>
                 <div className="flex gap-4 flex-wrap justify-center">
                    {languages.map((lang) => (

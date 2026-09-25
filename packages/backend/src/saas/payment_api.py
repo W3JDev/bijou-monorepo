@@ -18,6 +18,7 @@ Version: 1.0.0
 
 import hashlib
 import hmac
+import json
 import logging
 import os
 import time
@@ -59,7 +60,12 @@ def _check_stripe_price_env() -> None:
     missing = [k for k in _REQUIRED_STRIPE_ENV if not os.getenv(k, "").strip()]
     if not missing:
         return
-    is_prod = bool(os.getenv("FLY_APP_NAME", "").strip()) or os.getenv("ENV", "").lower() == "production"
+    is_prod = (
+        bool(os.getenv("FLY_APP_NAME", "").strip())
+        or os.getenv("ENV", "").lower() == "production"
+        # docker-compose.dokploy.yml sets ENVIRONMENT, not ENV or FLY_APP_NAME.
+        or os.getenv("ENVIRONMENT", "").lower() == "production"
+    )
     msg = (
         f"⚠️  Missing Stripe price-ID env vars: {', '.join(missing)}. "
         f"Checkout will use the hardcoded test/staging fallback Price IDs and FAIL at "
@@ -101,19 +107,24 @@ class StripeService:
         """
         Verify the Stripe webhook signature and parse the event.
         Returns the event dict on success, None on verification failure.
-        In dev mode (no STRIPE_WEBHOOK_SECRET) skips verification.
+
+        Fails CLOSED when STRIPE_WEBHOOK_SECRET is unset. It used to skip
+        verification ("dev mode") and trust the raw body, so on any deploy that
+        forgot the secret an unsigned POST of checkout.session.completed could
+        set any tenant's plan. `stripe listen` prints a whsec_ for local work.
         """
-        import json as _json
         webhook_secret = os.getenv("STRIPE_WEBHOOK_SECRET", "").strip()
         if not webhook_secret:
-            logger.warning("⚠️ STRIPE_WEBHOOK_SECRET not set — skipping signature verification (dev mode)")
-            try:
-                return _json.loads(payload)
-            except Exception:
-                return None
+            logger.error("❌ STRIPE_WEBHOOK_SECRET not set — rejecting Stripe webhook")
+            return None
         try:
-            st = _get_stripe()
-            return st.Webhook.construct_event(payload, sig_header, webhook_secret)
+            # Signature check is pure HMAC; it needs no API key, so do not
+            # route through _get_stripe() (which 503s without STRIPE_SECRET_KEY).
+            stripe.Webhook.construct_event(payload, sig_header, webhook_secret)
+            # Return the verified body as a plain dict. stripe>=8's Event is a
+            # StripeObject, not a dict: event.get(...) raises, so every
+            # correctly signed webhook 500'd and Stripe retried forever.
+            return json.loads(payload)
         except Exception:
             return None
 
@@ -151,11 +162,14 @@ class StripeService:
             if status in ("active", "trialing"):
                 items = data_obj.get("items", {}).get("data", [])
                 price_id = items[0].get("price", {}).get("id") if items else None
-                plan_map = {v: k for k, v in {
-                    "starter": os.getenv("STRIPE_PRICE_STARTER"),
-                    "pro":     os.getenv("STRIPE_PRICE_PRO"),
-                }.items() if v}
-                plan = plan_map.get(price_id, "starter")
+                plan = _plan_for_price(price_id)
+                if not plan:
+                    # Unknown price: leave the tier alone. This used to default
+                    # to "starter", and checkout sells the STRIPE_PRICE_PRO_MONTHLY
+                    # / _YEARLY ids which the old map never contained — so every
+                    # PRO trial converting to active was downgraded to starter.
+                    logger.warning(f"⚠️ subscription.updated with unmapped price={price_id} customer={customer_id} — tier unchanged")
+                    return True
                 db.table("tenants").update({
                     "subscription_tier": plan,
                     "plan_tier": plan,
@@ -179,6 +193,28 @@ class StripeService:
             logger.warning(f"⚠️ Payment failed: customer={customer_id} attempt={attempt_count}")
 
         return True
+
+
+def _plan_for_price(price_id: Optional[str]) -> Optional[str]:
+    """Map a Stripe price id back to a plan id, or None if unknown.
+
+    Read at call time so it matches exactly what /checkout sold: the per-interval
+    env vars (falling back to the PLANS ids), plus the legacy
+    STRIPE_PRICE_STARTER / STRIPE_PRICE_PRO names.
+    """
+    if not price_id:
+        return None
+    candidates: Dict[str, Optional[str]] = {
+        os.getenv("STRIPE_PRICE_STARTER") or "": "starter",
+        os.getenv("STRIPE_PRICE_PRO") or "": "pro",
+    }
+    for p in PLANS:
+        for interval in ("monthly", "yearly"):
+            pid = os.getenv(f"STRIPE_PRICE_{p['id'].upper()}_{interval.upper()}") or p.get(f"stripe_price_id_{interval}")
+            if pid:
+                candidates[pid] = p["id"]
+    candidates.pop("", None)
+    return candidates.get(price_id)
 
 
 def get_stripe_service() -> StripeService:
@@ -346,9 +382,11 @@ async def create_checkout_session(
             "success_url": success_url,
             "cancel_url": cancel_url,
             "allow_promotion_codes": True,  # ← Customers can enter TRIAL7DAYS, TRIAL3DAYS, etc.
-            # Stripe Dashboard controls which payment methods are shown.
-            # Enable FPX/DuitNow in Dashboard → Settings → Payment Methods for Malaysian customers.
-            "automatic_payment_methods": {"enabled": True},
+            # Stripe Dashboard controls which payment methods are shown: with
+            # payment_method_types omitted, Checkout uses dynamic payment
+            # methods. Do NOT pass automatic_payment_methods here — that is a
+            # PaymentIntent param, absent from checkout.Session.create's params
+            # (stripe-python 15.x), and Stripe rejects unknown parameters.
             "metadata": {"tenant_id": tenant_id, "plan": req.plan},
             "subscription_data": {
                 "metadata": {"tenant_id": tenant_id},

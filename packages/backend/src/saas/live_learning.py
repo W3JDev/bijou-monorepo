@@ -83,15 +83,10 @@ async def extract_and_save_live_learning(
         suggested_prompt = ""
         suggested_templates: List[Dict[str, Any]] = []
 
-        gemini_api_key = os.getenv("GEMINI_API_KEY", "").strip('"')
-        if gemini_api_key:
-            try:
-                import google.generativeai as genai  # type: ignore
+        try:
+            from src.core.llm_gateway_v2 import llm
 
-                genai.configure(api_key=gemini_api_key)
-                model = genai.GenerativeModel("gemini-2.0-flash")
-
-                analysis_prompt = f"""You are an AI business analyst. Analyse this resolved customer support conversation.
+            analysis_prompt = f"""You are an AI business analyst. Analyse this resolved customer support conversation.
 
 CONVERSATION ({raw_count} messages):
 ---
@@ -120,39 +115,40 @@ Rules:
 - Respond ONLY with valid JSON, no markdown
 """
 
-                response = model.generate_content(analysis_prompt)
-                raw_json = response.text.strip()
+            response = await llm.complete(
+                "ai://extract",
+                [{"role": "user", "content": analysis_prompt}],
+                # ai://extract defaults to 256 tokens — far too few for this JSON.
+                max_output_tokens=4096,
+                tenant_id=tenant_id,
+            )
+            raw_json = (response.text or "").strip()
 
-                # Strip markdown code fences if present
-                if raw_json.startswith("```"):
-                    raw_json = re.sub(r"^```[a-z]*\n?", "", raw_json)
-                    raw_json = re.sub(r"\n?```$", "", raw_json)
+            # Strip markdown code fences if present
+            if raw_json.startswith("```"):
+                raw_json = re.sub(r"^```[a-z]*\n?", "", raw_json)
+                raw_json = re.sub(r"\n?```$", "", raw_json)
 
-                import json
+            import json
 
-                parsed = json.loads(raw_json)
-                qa_pairs = parsed.get("qa_pairs", [])
-                tone_detected = parsed.get("tone_detected", "professional")
-                suggested_prompt = parsed.get("suggested_system_prompt", "")
-                suggested_templates = parsed.get("suggested_templates", [])
+            parsed = json.loads(raw_json)
+            qa_pairs = parsed.get("qa_pairs", [])
+            tone_detected = parsed.get("tone_detected", "professional")
+            suggested_prompt = parsed.get("suggested_system_prompt", "")
+            suggested_templates = parsed.get("suggested_templates", [])
 
-                logger.info(
-                    f"✅ Live learning Gemini analysis complete: "
-                    f"{len(qa_pairs)} Q&A pairs, tone={tone_detected} "
-                    f"(job={job_id})"
-                )
-
-            except Exception as gemini_exc:
-                logger.warning(
-                    f"⚠️ Gemini analysis failed in live learning (non-fatal): "
-                    f"{gemini_exc}"
-                )
-                # Continue with partial results
-        else:
-            logger.warning(
-                "⚠️ GEMINI_API_KEY not set — live learning saved without AI analysis"
+            logger.info(
+                f"✅ Live learning Gemini analysis complete: "
+                f"{len(qa_pairs)} Q&A pairs, tone={tone_detected} "
+                f"(job={job_id})"
             )
 
+        except Exception as gemini_exc:
+            logger.warning(
+                f"⚠️ Gemini analysis failed in live learning (non-fatal): "
+                f"{gemini_exc}"
+            )
+            # Continue with partial results
         # Step 3 — Persist results
         await service.update_job_status(
             tenant_id=tenant_id,

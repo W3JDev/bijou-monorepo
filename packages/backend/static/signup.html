@@ -494,10 +494,11 @@
         <span>or</span>
       </div>
 
-      <a
-        href="/api/auth/google/login"
+      <button
+        type="button"
+        id="googleSignUpBtn"
         class="btn-google"
-        style="display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; padding: 12px 20px; background: #fff; color: #0a1e1c; border: 1px solid #d4d4d4; border-radius: 6px; font-weight: 600; text-decoration: none; box-sizing: border-box; margin-top: 4px;"
+        style="display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; padding: 12px 20px; background: #fff; color: #0a1e1c; border: 1px solid #d4d4d4; border-radius: 6px; font-weight: 600; text-decoration: none; box-sizing: border-box; margin-top: 4px; cursor: pointer;"
         onmouseover="this.style.background='#f5f5f5'"
         onmouseout="this.style.background='#fff'"
       >
@@ -508,14 +509,45 @@
           <path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.961L3.964 7.293C4.672 5.163 6.656 3.58 9 3.58z"/>
         </svg>
         Sign up with Google
-      </a>
+      </button>
 
       <div class="login-link">
         Already have an account? <a href="/login">Sign in here</a>
       </div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
+      // "Sign up with Google" used to link straight to /api/auth/google/login,
+      // a separate legacy OAuth implementation that never creates a Supabase
+      // Auth user (no `auth.users` row, no password, no JWT session) and wrote
+      // `tenant_users` without `user_id` — the account it produced could never
+      // log in afterward. login.html already does this correctly via
+      // Supabase's native OAuth; reuse that exact flow here instead.
+      const SUPABASE_URL = "https://lrwzlujomukzjykafmic.supabase.co";
+      // Supabase ANON key — public/RLS-protected by design, not a secret.
+      // Same value already committed in login.html and auth-callback.html.
+      const SUPABASE_ANON_KEY =
+        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imxyd3psdWpvbXVremp5a2FmbWljIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkwNzA2ODMsImV4cCI6MjA4NDY0NjY4M30.ZJSvmh0Oa_51rfr0TrTSjS4OdszrUCe5Fmsnfk9X-6U"; // pragma: allowlist secret
+      const sb =
+        window.supabase &&
+        window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+      const googleSignUpBtn = document.getElementById("googleSignUpBtn");
+      if (googleSignUpBtn) {
+        googleSignUpBtn.addEventListener("click", async () => {
+          if (!sb) {
+            showMsg("error", "Auth library failed to load. Refresh and try again.");
+            return;
+          }
+          const { error } = await sb.auth.signInWithOAuth({
+            provider: "google",
+            options: { redirectTo: window.location.origin + "/static/auth-callback.html" },
+          });
+          if (error) showMsg("error", "Google sign-up failed: " + error.message);
+        });
+      }
+
       // 2026-08-22 FIX: prefill from the landing page's lead-capture modal,
       // which now passes business_name/email/phone/industry as query params
       // instead of discarding them (see OnboardingModal.tsx). Industry uses

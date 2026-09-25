@@ -210,3 +210,8 @@ legacy/
 
 # Backup / progress files
 packages/backend/scripts/_backup/
+
+# Local dev stack generated keys (ops/local/gen-local-keys.sh)
+ops/local/.env.local
+# Regenerated on every ./ops/local/up.sh run; holds sanitised Gemini keys
+ops/local/.env.gemini

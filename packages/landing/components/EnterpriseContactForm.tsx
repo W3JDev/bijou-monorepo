@@ -150,7 +150,7 @@ Sent from Bijou AI Enterprise Contact Form
                   onChange={handleChange}
                   required
                   className="w-full px-4 py-3 bg-black/40 border border-white/10 rounded-lg text-white focus:border-gold-400 focus:outline-none transition-colors"
-                  placeholder="ABC Sdn Bhd"
+                  placeholder="Acme Inc."
                 />
               </div>
 
@@ -164,7 +164,7 @@ Sent from Bijou AI Enterprise Contact Form
                   value={formData.phone}
                   onChange={handleChange}
                   className="w-full px-4 py-3 bg-black/40 border border-white/10 rounded-lg text-white focus:border-gold-400 focus:outline-none transition-colors"
-                  placeholder="+60 17-410 6981"
+                  placeholder="+1 (555) 000-0000"
                 />
               </div>
             </div>

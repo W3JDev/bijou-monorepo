@@ -5,6 +5,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { Resend } from "resend";
 import { checkRateLimit } from "../lib/rateLimit.js";
+import { normalizePhone } from "../utils/phone.js";
 import { logTypoWarning } from "../lib/env.js";
 import { captureServer, identifyServer, distinctIdFromReq } from "../lib/posthog-server.js";
 
@@ -266,6 +267,15 @@ export default async function handler(req, res) {
         code: "INVALID_EMAIL",
       });
     }
+    // Optional, but if given it must be an international number (any
+    // country) — same rule as the client, see utils/phone.js.
+    const cleanedPhone = normalizePhone(phone);
+    if (String(phone ?? "").trim() && !cleanedPhone) {
+      return res.status(400).json({
+        error: "Please provide a valid phone number with country code",
+        code: "INVALID_PHONE",
+      });
+    }
     if (!name && !company) {
       return res
         .status(400)
@@ -275,7 +285,7 @@ export default async function handler(req, res) {
     const leadData = {
       name: (name || company).trim(),
       email: email.toLowerCase().trim(),
-      phone: phone.trim() || null,
+      phone: cleanedPhone || null,
       company: company.trim() || null,
       industry: industry || null,
       source: normaliseSource(source),

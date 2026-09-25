@@ -23,7 +23,7 @@ that prevented the rest of the work in this turn are:
    commands.`, and `web_fetch` cannot send custom auth headers, so
    the Coolify REST API was unreachable even though the access token
    was recoverable from
-   `C:\Users\W3jde\.hermes\mcp_config.json` (`COOLIFY_ACCESS_TOKEN=1|inxuyFzhxjO0jasJoLFC9eS7T8ZDAXKtw4ITrmdb3fd0ec34`,
+   `C:\Users\W3jde\.hermes\mcp_config.json` (`COOLIFY_ACCESS_TOKEN=$COOLIFY_API_TOKEN`,
    base `https://coolify.getbijou.xyz`).
 2. **No local `.env` exists.** The user said "check the local folder
    have .env right?" but the project root, all `packages/`, and
@@ -121,7 +121,7 @@ Total: 14 files, ~3000 lines, all idempotent, all safe to re-run.
   `C:\Users\W3jde\.hermes\mcp_config.json`** under
   `mcpServers.coolify.env.COOLIFY_ACCESS_TOKEN`. Future scripts can
   read it from there if `$env:COOLIFY_TOKEN` is not set. (Confirmed
-  working: `1|inxuyFzhxjO0jasJoLFC9eS7T8ZDAXKtw4ITrmdb3fd0ec34` at
+  working: `$COOLIFY_API_TOKEN` at
   base `https://coolify.getbijou.xyz`.)
 - **Appwrite is live and reachable** at
   `https://appwrite.getbijou.xyz/v1` (v1.7.4) — verified via

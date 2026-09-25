@@ -12,8 +12,8 @@ const playbooks = [
         description: 'Agents waste 70% of time filtering window shoppers. Bijou qualifies budget, location, and urgency before you ever speak to them.',
         stats: ['Auto-sends Brochures', 'Qualifies Budget & Loans', 'Syncs to Google Calendar'],
         chat: {
-            user: "Hi, interested in the Mont Kiara unit. Available?",
-            bijou: "Hi Boss! Unit still available. Rental RM3.5k. You looking for own stay or investment? 🏙️"
+            user: "Hi, interested in the downtown unit. Available?",
+            bijou: "Hi there! The unit is still available — $3,500/mo. Are you looking to live there or invest? 🏙️"
         }
     },
     {
@@ -25,8 +25,8 @@ const playbooks = [
         description: 'Empty chairs cost money. Bijou sends reminders, handles rescheduling, and even detects emergency keywords like "pain" to prioritize booking.',
         stats: ['Emergency Triage', 'Deposit Collection Links', 'Post-Treatment Checkups'],
         chat: {
-            user: "My tooth pain since last night. Got slot today?",
-            bijou: "Aiya sorry to hear! Emergency slot got 2pm. I book for you now? Can ease pain fast. 🦷"
+            user: "I've had tooth pain since last night. Any openings today?",
+            bijou: "So sorry to hear that! We have an emergency slot at 2pm. Want me to book it now so we can ease the pain fast? 🦷"
         }
     },
     {
@@ -38,8 +38,8 @@ const playbooks = [
         description: 'Managing registration for 100+ teams on WhatsApp is a nightmare. Bijou automates team registration, payment verification, and bracket updates.',
         stats: ['Team Data Collection', 'Payment Receipt OCR', 'Automated FAQs'],
         chat: {
-            user: "Nak register team Valorant tourney.",
-            bijou: "On boss! Send me Team Name and Captain IC. Registration fee RM50 transfer here... 🎮"
+            user: "I'd like to register a team for the Valorant tourney.",
+            bijou: "You got it! Send me your Team Name and Captain ID. The $50 registration fee can be paid here... 🎮"
         }
     },
     {
@@ -51,8 +51,8 @@ const playbooks = [
         description: 'Don\'t let staff answer phones during dinner rush. Bijou handles reservations and menu questions so your team can focus on serving food.',
         stats: ['Table Reservation', 'Menu Recommendations', 'Dietary Restriction Check'],
         chat: {
-            user: "Table for 5 tonight 8pm?",
-            bijou: "Checking boss... Alamak 8pm full. 8:30pm can? We reserve nice corner table for you. 🍔"
+            user: "Table for 5 tonight at 8pm?",
+            bijou: "Let me check... 8pm is full, but 8:30pm is open. Want me to reserve a nice corner table for you? 🍔"
         }
     }
 ];
@@ -139,7 +139,7 @@ export const Playbooks: React.FC<PlaybooksProps> = ({ onOpenModal }) => {
 
                 {/* Chat Preview Side */}
                 <div className="relative h-[400px]">
-                    <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/20 to-blue-500/20 blur-[60px] rounded-full" />
+                    <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/20 to-gold-500/20 blur-[60px] rounded-full" />
                     <div className="glass-panel-3d p-6 rounded-3xl border border-white/10 relative bg-black/40 h-full flex flex-col">
                         
                         {/* Status Bar Mockup */}

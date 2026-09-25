@@ -552,7 +552,12 @@
 
             // Redirect to dashboard
             setTimeout(() => {
-              window.location.href = "/dashboard";
+              // Honour the server's routing decision. A tenant that has not
+              // connected WhatsApp yet gets next_url = /onboard/{token} so the
+              // QR step actually happens; everyone else falls through to the
+              // dashboard. Previously this was hardcoded to /dashboard, so a
+              // brand-new user landed on an empty shell with no onboarding.
+              window.location.href = data.next_url || "/dashboard";
             }, 1000);
           } else {
             // Error from backend. Same formatApiError helper as signup.html

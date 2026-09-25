@@ -17,19 +17,19 @@ export const InfoModal: React.FC<InfoModalProps> = ({ type, onClose }) => {
           <p className="text-gray-300 mb-4">
             Bijou AI is a production of{" "}
             <strong className="text-gold-400">W3J LLC</strong>, a Wyoming-based
-            technology company with operations in Kuala Lumpur, Malaysia.
+            technology company serving US & EU businesses.
           </p>
           <p className="text-gray-300 mb-4">
-            We're on a mission to bring AI-powered customer service to Malaysian
-            SMEs through WhatsApp - the platform your customers already use
-            every day.
+            We're on a mission to bring done-for-you AI-powered customer service to
+            US & EU businesses through WhatsApp - the platform your customers already
+            use every day.
           </p>
           <div className="bg-deep-green-500/20 border border-gold-400/30 rounded-lg p-4 mb-4">
             <h3 className="text-gold-400 font-semibold mb-2">Our Vision</h3>
             <p className="text-gray-300 text-sm">
-              Stop losing RM300k/year to late-night WhatsApp leads. Bijou AI
-              speaks fluent Manglish and closes sales 24/7 for Malaysian
-              businesses.
+              Stop losing revenue to late-night WhatsApp leads. Bijou AI replies
+              instantly in your brand voice and closes sales 24/7 — built, deployed,
+              and managed for you.
             </p>
           </div>
           <div className="grid md:grid-cols-2 gap-4 text-sm">
@@ -38,8 +38,8 @@ export const InfoModal: React.FC<InfoModalProps> = ({ type, onClose }) => {
               <p className="text-gray-400">W3J LLC - Wyoming, USA</p>
             </div>
             <div>
-              <strong className="text-emerald-400">📍 Operations:</strong>
-              <p className="text-gray-400">Kuala Lumpur, Malaysia</p>
+              <strong className="text-emerald-400">📍 Serving:</strong>
+              <p className="text-gray-400">US & EU businesses</p>
             </div>
             <div>
               <strong className="text-emerald-400">👨‍💼 Founder:</strong>
@@ -68,7 +68,7 @@ export const InfoModal: React.FC<InfoModalProps> = ({ type, onClose }) => {
       content: (
         <>
           <p className="text-gray-300 mb-4">
-            Join us in revolutionizing customer service for Malaysian
+            Join us in revolutionizing customer service for US & EU
             businesses!
           </p>
           <div className="bg-deep-green-500/20 border border-gold-400/30 rounded-lg p-4 mb-4">
@@ -78,7 +78,7 @@ export const InfoModal: React.FC<InfoModalProps> = ({ type, onClose }) => {
             <p className="text-gray-300 text-sm">
               Bijou AI is currently in rapid growth mode. We're looking for
               passionate individuals who want to make an impact in the AI and
-              SME space.
+              small-business space.
             </p>
           </div>
           <div className="space-y-3 mb-4">
@@ -188,7 +188,7 @@ export const InfoModal: React.FC<InfoModalProps> = ({ type, onClose }) => {
               </h3>
               <p className="text-gray-400">
                 By using Bijou AI, you agree to use our WhatsApp AI service in
-                compliance with WhatsApp Business API policies and Malaysian
+                compliance with WhatsApp Business API policies and applicable
                 laws.
               </p>
             </div>
@@ -199,8 +199,7 @@ export const InfoModal: React.FC<InfoModalProps> = ({ type, onClose }) => {
               <ul className="list-disc list-inside space-y-1 text-gray-400">
                 <li>30-day money-back guarantee (no credit card at signup)</li>
                 <li>
-                  Monthly billing at RM299/month (PRO plan) or RM2,990/year
-                  (save RM598)
+                  $499/month managed plan, plus a one-time $2,500 setup
                 </li>
                 <li>Cancel anytime — no minimum contract</li>
                 <li>Refunds available within 30 days of first payment</li>

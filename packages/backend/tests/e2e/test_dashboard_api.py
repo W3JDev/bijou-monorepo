@@ -14,8 +14,52 @@ Author: @qa-engineer
 
 import pytest
 import httpx
-from typing import Dict, Any
+from typing import Any, Dict
 from supabase import Client
+
+# These fixtures point the suite at the running local stack and hand it a real,
+# confirmed Supabase session — see the module docstring there for why a
+# synthetic bearer token never authenticated anything. They live in a test
+# module rather than conftest.py because conftest.py is shared with the other
+# e2e suites; importing them is the documented pytest way to reuse a fixture.
+from tests.e2e.test_dashboard_complete import (  # noqa: F401
+    TIMEOUT,
+    api_base_url,
+    live_dashboard_login,
+    service_supabase,
+    test_tenant_id,
+)
+
+
+@pytest.fixture
+async def api_client(
+    api_base_url: str, live_dashboard_login: Dict[str, str]
+) -> httpx.AsyncClient:
+    """Authenticated async client for the dashboard API.
+
+    The Authorization header is a client default so the per-request
+    `headers={"X-Tenant-ID": ...}` in each test still merges on top of it.
+    Without it every request lands on verify_session's "Authentication
+    required" branch (dashboard_api_simple.py:417) and returns 401.
+    """
+    async with httpx.AsyncClient(
+        base_url=api_base_url,
+        timeout=TIMEOUT,
+        follow_redirects=True,
+        headers={"Authorization": f"Bearer {live_dashboard_login['access_token']}"},
+    ) as client:
+        yield client
+
+
+@pytest.fixture
+def supabase_client(service_supabase) -> Client:
+    """Service-role client for the stack under test.
+
+    Overrides the conftest fixture, which reads SUPABASE_URL/SUPABASE_SERVICE_KEY
+    — and the session-wide setup_test_env fixture has already pinned those to
+    https://mock-supabase.test, a host that does not resolve.
+    """
+    return service_supabase
 
 
 @pytest.mark.e2e
@@ -79,7 +123,7 @@ async def test_dashboard_stats_endpoint(
         f"❌ Logical error: ai_handled ({stats['ai_handled']}) + human_handled ({stats['human_handled']}) " \
         f"should not exceed active_conversations ({stats['active_conversations']})"
     
-    print(f"✅ TC-DASH-001 PASSED: Dashboard stats returned successfully")
+    print(f"OK: TC-DASH-001 PASSED: Dashboard stats returned successfully")
     print(f"   Active conversations: {stats['active_conversations']}")
     print(f"   AI handled: {stats['ai_handled']}")
     print(f"   Human handled: {stats['human_handled']}")
@@ -161,7 +205,7 @@ async def test_conversations_list_endpoint(
                 assert " " in customer_name or len(customer_name) < 15, \
                     f"⚠️ Phone number may not be formatted correctly: {customer_name}"
             
-            print(f"✅ TC-DASH-002 PASSED: Conversations list returned successfully")
+            print(f"OK: TC-DASH-002 PASSED: Conversations list returned successfully")
             print(f"   Total conversations: {len(conversations)}")
             print(f"   Sample conversation: {first_conv.get('chat_jid')}")
             print(f"   Customer name: {first_conv.get('customer_name')}")
@@ -270,7 +314,7 @@ async def test_conversation_detail_endpoint(
         assert detail["status"] in ["ai", "human"], \
             f"❌ Invalid status '{detail['status']}', expected 'ai' or 'human'"
         
-        print(f"✅ TC-DASH-003 PASSED: Conversation detail returned successfully")
+        print(f"OK: TC-DASH-003 PASSED: Conversation detail returned successfully")
         print(f"   Customer: {detail['customer_jid']}")
         print(f"   Status: {detail['status']}")
         print(f"   Message count: {len(messages)}")
@@ -378,10 +422,10 @@ async def test_escalations_endpoint(
                 
                 # Current priority should be >= next priority (urgent comes first)
                 if current_order > next_order:
-                    print(f"⚠️ Warning: Escalations may not be sorted by priority")
+                    print(f"WARN: Warning: Escalations may not be sorted by priority")
                     print(f"   Found {current_priority} before {next_priority}")
         
-        print(f"✅ TC-DASH-004 PASSED: Escalations endpoint working")
+        print(f"OK: TC-DASH-004 PASSED: Escalations endpoint working")
         print(f"   Total escalations: {len(escalations)}")
         print(f"   Test escalations found: {len(test_escalations_returned)}")
         

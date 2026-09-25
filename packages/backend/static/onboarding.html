@@ -445,6 +445,16 @@
       const MAX_POLL_ATTEMPTS = 60; // ✅ BUG 4 FIX: 5 minutes max (60 * 5s = 300s)
       const QR_REFRESH_INTERVAL = 25; // seconds before QR auto-refresh
 
+      // Every /api/onboarding/v2/{tenant_id}/... route past signup requires
+      // this (see onboarding_complete.py::require_signup_token) — without it
+      // every call below 401s and the UI hangs with no visible error.
+      function onboardingHeaders(extra) {
+        return Object.assign(
+          signupToken ? { "X-Onboarding-Token": signupToken } : {},
+          extra || {},
+        );
+      }
+
       // Handle signup form (V2 API)
       document
         .getElementById("signupForm")
@@ -539,6 +549,7 @@
           // Use V2 QR endpoint with tenant_id
           const response = await fetch(
             `/api/onboarding/v2/whatsapp/qr/${tenantId}`,
+            { headers: onboardingHeaders() },
           );
 
           if (response.ok) {
@@ -636,7 +647,9 @@
           }
 
           // Use V2 status endpoint
-          const response = await fetch(`/api/onboarding/v2/status/${tenantId}`);
+          const response = await fetch(`/api/onboarding/v2/status/${tenantId}`, {
+            headers: onboardingHeaders(),
+          });
           if (!response.ok) return;
 
           const data = await response.json();
@@ -659,7 +672,7 @@
             try {
               await fetch(`/api/onboarding/v2/whatsapp/connected/${tenantId}`, {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: onboardingHeaders({ "Content-Type": "application/json" }),
               });
             } catch (_) {}
 
@@ -693,7 +706,7 @@
             `/api/onboarding/v2/complete/${tenantId}`,
             {
               method: "POST",
-              headers: { "Content-Type": "application/json" },
+              headers: onboardingHeaders({ "Content-Type": "application/json" }),
               body: JSON.stringify({}),
             },
           );

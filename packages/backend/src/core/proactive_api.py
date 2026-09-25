@@ -46,6 +46,10 @@ class ScheduleMessageRequest(BaseModel):
     message_type: str  # lead_followup, silence_reengagement, campaign, reminder, custom
     content: str
     delay_minutes: int = 0
+    # Absolute ISO-8601 send time (e.g. "2026-09-22T15:00:00+08:00"). When set it
+    # OVERRIDES delay_minutes so a dashboard date/time picker can schedule an exact
+    # moment rather than a relative delay. (#4 2026-09-21)
+    send_at: Optional[str] = None
     metadata: Optional[dict] = None
 
 
@@ -92,14 +96,20 @@ class CampaignResponse(BaseModel):
 # ==================== API ENDPOINTS ====================
 
 @router.get("/status")
-async def get_status():
-    """Get proactive messaging system status"""
-    from src.core.bijou import bijou_instance
-    
+async def get_status(
+    tenant_id: str = Depends(verify_session),
+    system = Depends(get_proactive_system)
+):
+    """Get proactive messaging system status.
+
+    The state reported is process-global, not tenant-scoped, but it is behind
+    the same session check as the rest of this router: an unauthenticated
+    caller has no business reading our scheduler's internals.
+    """
     return {
-        "bijou_instance_exists": bijou_instance is not None,
-        "proactive_messaging_exists": bijou_instance.proactive_messaging is not None if bijou_instance else False,
-        "system_active": bijou_instance.proactive_messaging._running if (bijou_instance and bijou_instance.proactive_messaging) else False
+        "system_active": system.running,
+        "scheduled_messages": len(system.scheduled_messages),
+        "campaigns": len(system.campaigns),
     }
 
 
@@ -133,7 +143,8 @@ async def schedule_message(
             message_type=msg_type,
             content=req.content,
             delay_minutes=req.delay_minutes,
-            metadata=req.metadata
+            metadata=req.metadata,
+            send_at=req.send_at,
         )
         
         return MessageResponse(

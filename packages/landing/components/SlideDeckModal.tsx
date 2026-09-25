@@ -49,7 +49,7 @@ export const SlideDeckModal: React.FC<SlideDeckModalProps> = ({
 
       setStep("success");
     } catch (err: any) {
-      setErrorMsg(err.message || "Aiyo, server hiccup. Try again boss.");
+      setErrorMsg(err.message || "Our server hit a snag. Please try again.");
       setStep("error");
     }
   };
@@ -70,7 +70,7 @@ export const SlideDeckModal: React.FC<SlideDeckModalProps> = ({
       label: "Sales Presentation",
       desc: "Full Bijou AI slide deck with pricing & case studies",
       url: "https://app.mybijou.xyz/static/sales-presentation.html",
-      color: "from-blue-600 to-blue-500",
+      color: "from-gold-600 to-gold-500",
     },
     {
       icon: <BookOpen className="w-5 h-5" />,
@@ -119,13 +119,13 @@ export const SlideDeckModal: React.FC<SlideDeckModalProps> = ({
               </button>
 
               {/* Glow */}
-              <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-32 bg-blue-500/15 blur-[50px] pointer-events-none" />
+              <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-32 bg-gold-500/15 blur-[50px] pointer-events-none" />
 
               <div className="p-8 relative z-10">
                 {/* ── FORM ── */}
                 {step === "form" && (
                   <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                    <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-bold uppercase tracking-wider mb-5">
+                    <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-gold-500/10 border border-gold-500/20 text-gold-400 text-xs font-bold uppercase tracking-wider mb-5">
                       <Presentation className="w-3.5 h-3.5" />
                       Instant Access
                     </div>
@@ -165,7 +165,7 @@ export const SlideDeckModal: React.FC<SlideDeckModalProps> = ({
                         type="text"
                         value={name}
                         onChange={(e) => setName(e.target.value)}
-                        className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 transition-all text-sm"
+                        className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-gold-500/50 focus:ring-1 focus:ring-gold-500/50 transition-all text-sm"
                         placeholder="Your name (optional)"
                       />
                       <input
@@ -173,12 +173,12 @@ export const SlideDeckModal: React.FC<SlideDeckModalProps> = ({
                         type="email"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
-                        className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 transition-all text-sm"
+                        className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-gold-500/50 focus:ring-1 focus:ring-gold-500/50 transition-all text-sm"
                         placeholder="your@email.com"
                       />
                       <button
                         type="submit"
-                        className="w-full bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white font-bold py-3.5 rounded-xl transition-all transform hover:scale-[1.01] flex items-center justify-center gap-2"
+                        className="w-full bg-gradient-to-r from-gold-600 to-gold-500 hover:from-gold-500 hover:to-gold-400 text-white font-bold py-3.5 rounded-xl transition-all transform hover:scale-[1.01] flex items-center justify-center gap-2"
                       >
                         <Mail className="w-4 h-4" />
                         Send Me the Resources
@@ -198,7 +198,7 @@ export const SlideDeckModal: React.FC<SlideDeckModalProps> = ({
                     animate={{ opacity: 1 }}
                     className="py-16 flex flex-col items-center justify-center text-center"
                   >
-                    <Loader2 className="w-10 h-10 text-blue-400 animate-spin mb-4" />
+                    <Loader2 className="w-10 h-10 text-gold-400 animate-spin mb-4" />
                     <h3 className="text-lg font-bold text-white mb-1">
                       Sending your resources...
                     </h3>
@@ -285,7 +285,7 @@ export const SlideDeckModal: React.FC<SlideDeckModalProps> = ({
                       <span className="text-3xl">😅</span>
                     </div>
                     <h3 className="text-xl font-bold text-white mb-3">
-                      Aiyo, hiccup lah!
+                      Something went wrong
                     </h3>
                     <p className="text-gray-400 text-sm mb-6">{errorMsg}</p>
                     <div className="flex gap-3">

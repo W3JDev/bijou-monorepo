@@ -76,7 +76,11 @@ services:
     healthcheck:
       # Use the comprehensive self-test, not the trivial /health.
       # 503 here triggers Coolify's auto-rollback; 200 = system is healthy.
-      test: ["CMD", "curl", "-fsS", "http://localhost:8080/api/self-test/summary"]
+      # /health/database, not /api/self-test/summary (which times out — probed
+      # 2026-09-05, no response inside the 10s timeout below) and not /health
+      # (which returns 200 with the database completely unreachable, so it
+      # cannot signal a broken deploy and defeats auto-rollback).
+      test: ["CMD-SHELL", "curl -fsS --max-time 8 http://localhost:8080/health/database || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -101,18 +105,28 @@ services:
       - "8081:8080"
     environment:
       <<: *common-env
-      # Bridge-specific
-      BRIDGE_URL: "http://bridge:8080"
-      BRIDGE_DB_PATH: "/data/bridge.db"
-      # WhatsApp Web auth (per-tenant session storage in the volume)
-      WHATSAPP_SESSION_PATH: "/data/whatsapp-session"
-      # Webhook to backend
-      BIJOU_BACKEND_URL: "http://backend:8080"
-      BIJOU_BACKEND_API_KEY: "${BRIDGE_API_KEY:?required}"
+      # These are the names packages/bridge/main.go ACTUALLY reads.
+      # Until 2026-09-06 this block set BRIDGE_URL / BRIDGE_DB_PATH /
+      # WHATSAPP_SESSION_PATH / BIJOU_BACKEND_URL / BIJOU_BACKEND_API_KEY —
+      # main.go reads NONE of those. The important one is BIJOU_WEBHOOK_URL:
+      # main.go:743-744 is `webhookURL := os.Getenv("BIJOU_WEBHOOK_URL"); if
+      # webhookURL != "" {`, so with it unset EVERY inbound WhatsApp message
+      # was dropped with no log line. Verify with:
+      #   grep -rhoE 'os\.Getenv\("[A-Z_0-9]+"\)' packages/bridge/*.go | sort -u
+      BIJOU_WEBHOOK_URL: "http://backend:8080/webhook/message"
+      DB_PATH: "/data/bridge.db"
+      # main.go:70-73 falls back to the literal string "default" when unset,
+      # which misattributes every message in a multi-tenant system.
+      DEFAULT_TENANT_ID: "${DEFAULT_TENANT_ID:?required}"
+      ENABLE_HISTORY_SYNC: "${ENABLE_HISTORY_SYNC:-false}"
+      PORT: "8080"
     volumes:
       - bridge-data:/data
     healthcheck:
-      test: ["CMD", "/app/bridge", "--health-check"]
+      # NOT `/app/bridge --health-check`: main.go parses no flags at all
+      # (grep "flag\." packages/bridge/main.go -> no matches), so that starts
+      # a SECOND full bridge against the same SQLite file every 30 seconds.
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:8080/health || exit 1"]
       interval: 30s
       timeout: 5s
       retries: 3
@@ -142,7 +156,9 @@ services:
   voice:
     build:
       context: .
-      dockerfile: Dockerfile.voice
+      # packages/voice/, not ./Dockerfile.voice — no such file exists at the
+      # repo root, so `--profile voice` could never build.
+      dockerfile: packages/voice/Dockerfile.voice
     image: bijou-voice:latest
     container_name: bijou-voice
     restart: unless-stopped

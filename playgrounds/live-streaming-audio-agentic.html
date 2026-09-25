@@ -1,0 +1,1254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Live Streaming Audio Agentic — Chat UI Playground</title>
+<style>
+  :root {
+    --bg: #08090c;
+    --panel: #111217;
+    --panel-2: #161821;
+    --border: #232634;
+    --text: #e8eaf0;
+    --muted: #8b91a3;
+    --dim: #5a6075;
+    --accent: #00e5ff;
+    --accent-2: #ff3ea5;
+    --good: #4ade80;
+    --warn: #fbbf24;
+    --bad: #f87171;
+    --shadow: 0 12px 40px rgba(0,0,0,0.5);
+    --radius: 10px;
+    --radius-sm: 6px;
+    --pad: 14px;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; height: 100%; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, system-ui, sans-serif;
+    font-size: 13px;
+    color: var(--text);
+    background: var(--bg);
+    overflow: hidden;
+  }
+
+  .app {
+    display: grid;
+    grid-template-rows: 48px 1fr 132px;
+    height: 100vh;
+  }
+
+  /* HEADER */
+  header.topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 16px;
+    background: var(--panel);
+    border-bottom: 1px solid var(--border);
+  }
+  .title { font-weight: 600; font-size: 13px; letter-spacing: 0.2px; }
+  .title span { color: var(--muted); font-weight: 400; margin-left: 6px; }
+  .topbar-right { display: flex; gap: 8px; align-items: center; }
+  .preset-bar { display: flex; gap: 6px; }
+  .preset-btn {
+    background: var(--panel-2);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 5px 10px;
+    font-size: 11px;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .preset-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .reset-btn {
+    background: transparent; color: var(--muted);
+    border: 1px solid var(--border);
+    border-radius: 6px; padding: 5px 10px;
+    font-size: 11px; cursor: pointer; font-family: inherit;
+  }
+  .reset-btn:hover { color: var(--text); border-color: var(--text); }
+
+  /* MAIN LAYOUT */
+  main {
+    display: grid;
+    grid-template-columns: 360px 1fr;
+    min-height: 0;
+  }
+
+  /* CONTROLS PANEL */
+  .controls {
+    background: var(--panel);
+    border-right: 1px solid var(--border);
+    overflow-y: auto;
+    padding: 12px;
+  }
+  .controls::-webkit-scrollbar { width: 8px; }
+  .controls::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+  .section {
+    margin-bottom: 16px;
+  }
+  .section h3 {
+    margin: 0 0 8px 0;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--muted);
+    display: flex; align-items: center; gap: 6px;
+  }
+  .section h3::before {
+    content: ''; width: 3px; height: 10px;
+    background: var(--accent); border-radius: 1px;
+  }
+  .control-group {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4px;
+  }
+  .control-group.three { grid-template-columns: 1fr 1fr 1fr; }
+  .control-group.one { grid-template-columns: 1fr; }
+  .seg {
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    border-radius: var(--radius-sm);
+    padding: 6px 8px;
+    font-size: 11px;
+    cursor: pointer;
+    text-align: center;
+    font-family: inherit;
+    transition: all 0.15s;
+    line-height: 1.2;
+  }
+  .seg:hover { color: var(--text); }
+  .seg.active {
+    background: var(--accent);
+    color: #001318;
+    border-color: var(--accent);
+    font-weight: 600;
+  }
+  .seg.wide { grid-column: span 2; padding: 8px; }
+  .seg-label {
+    font-size: 10px; color: var(--muted); margin-bottom: 4px;
+    display: block; text-transform: uppercase; letter-spacing: 0.5px;
+  }
+
+  /* PREVIEW PANEL */
+  .preview {
+    background: var(--bg);
+    overflow: auto;
+    position: relative;
+    display: flex;
+    align-items: stretch;
+    justify-content: center;
+  }
+  .preview-inner {
+    width: 100%;
+    max-width: 880px;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* CHAT SHELL — this is what the design actually styles */
+  .chat-shell {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background: var(--bg-chat, #0c0d12);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+    position: relative;
+    min-height: 0;
+  }
+  .chat-shell[data-bg="solid"] { --bg-chat: #0c0d12; }
+  .chat-shell[data-bg="gradient"] {
+    background: linear-gradient(135deg, #0c0d12 0%, #11131c 50%, #0c0d12 100%);
+  }
+  .chat-shell[data-bg="mesh"] {
+    background:
+      radial-gradient(at 20% 20%, rgba(0,229,255,0.08) 0px, transparent 50%),
+      radial-gradient(at 80% 30%, rgba(255,62,165,0.06) 0px, transparent 50%),
+      radial-gradient(at 50% 90%, rgba(123,97,255,0.06) 0px, transparent 50%),
+      #0c0d12;
+  }
+  .chat-shell[data-bg="particles"] {
+    background:
+      radial-gradient(at 20% 20%, rgba(0,229,255,0.04) 0px, transparent 40%),
+      radial-gradient(at 80% 70%, rgba(255,62,165,0.04) 0px, transparent 40%),
+      #0a0b10;
+  }
+  .chat-shell[data-bg="particles"]::before {
+    content: '';
+    position: absolute; inset: 0;
+    background-image:
+      radial-gradient(1px 1px at 20% 30%, rgba(255,255,255,0.3), transparent),
+      radial-gradient(1px 1px at 40% 70%, rgba(255,255,255,0.25), transparent),
+      radial-gradient(1px 1px at 60% 20%, rgba(255,255,255,0.2), transparent),
+      radial-gradient(1px 1px at 80% 80%, rgba(255,255,255,0.3), transparent),
+      radial-gradient(1px 1px at 30% 50%, rgba(255,255,255,0.2), transparent),
+      radial-gradient(1px 1px at 70% 40%, rgba(255,255,255,0.25), transparent);
+    pointer-events: none;
+    animation: particleDrift 20s linear infinite;
+  }
+  @keyframes particleDrift {
+    from { transform: translateY(0); }
+    to { transform: translateY(-20px); }
+  }
+
+  /* CHAT HEADER */
+  .chat-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    background: rgba(0,0,0,0.2);
+    z-index: 2; position: relative;
+  }
+  .chat-title { display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 13px; }
+  .chat-status { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--muted); }
+  .status-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--good);
+    box-shadow: 0 0 8px var(--good);
+  }
+  .chat-shell[data-agent-state="thinking"] .status-dot { background: var(--warn); box-shadow: 0 0 8px var(--warn); }
+  .chat-shell[data-agent-state="speaking"] .status-dot { background: var(--accent); box-shadow: 0 0 8px var(--accent); animation: pulse 1s ease-in-out infinite; }
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+  /* AGENT AVATAR */
+  .agent-orb {
+    position: relative;
+    width: 32px; height: 32px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .orb-core {
+    width: 24px; height: 24px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 30% 30%, var(--accent), #0066aa);
+    box-shadow: 0 0 12px rgba(0,229,255,0.5);
+    position: relative;
+  }
+  .chat-shell[data-agent-state="idle"] .orb-core { animation: orbPulse 3s ease-in-out infinite; }
+  .chat-shell[data-agent-state="thinking"] .orb-core {
+    background: radial-gradient(circle at 30% 30%, var(--warn), #8a5a00);
+    box-shadow: 0 0 12px rgba(251,191,36,0.5);
+    animation: orbSpin 2s linear infinite;
+  }
+  .chat-shell[data-agent-state="speaking"] .orb-core {
+    background: radial-gradient(circle at 30% 30%, var(--accent-2), #aa1656);
+    box-shadow: 0 0 16px rgba(255,62,165,0.7);
+    animation: orbSpeak 0.5s ease-in-out infinite alternate;
+  }
+  @keyframes orbPulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }
+  @keyframes orbSpin { from { transform: rotate(0); } to { transform: rotate(360deg); } }
+  @keyframes orbSpeak { from { transform: scale(1); } to { transform: scale(1.15); } }
+
+  /* Avatar variants */
+  .chat-shell[data-avatar="face"] .orb-core {
+    border-radius: 30% 30% 50% 50%;
+    background: linear-gradient(180deg, #2a2d3a 0%, #1a1d28 100%);
+    box-shadow: inset 0 -2px 4px rgba(0,0,0,0.4);
+  }
+  .chat-shell[data-avatar="face"] .orb-core::before,
+  .chat-shell[data-avatar="face"] .orb-core::after {
+    content: ''; position: absolute; width: 3px; height: 3px;
+    background: var(--accent); border-radius: 50%; top: 8px;
+  }
+  .chat-shell[data-avatar="face"] .orb-core::before { left: 6px; }
+  .chat-shell[data-avatar="face"] .orb-core::after { right: 6px; }
+  .chat-shell[data-avatar="geometric"] .orb-core {
+    border-radius: 6px;
+    background: conic-gradient(from 0deg, var(--accent), #aa00aa, var(--accent));
+  }
+  .chat-shell[data-avatar="particle"] .orb-core {
+    background: transparent; box-shadow: none;
+  }
+  .chat-shell[data-avatar="particle"] .orb-core::before {
+    content: ''; position: absolute; inset: -4px;
+    background:
+      radial-gradient(2px 2px at 20% 30%, var(--accent), transparent),
+      radial-gradient(2px 2px at 70% 20%, var(--accent-2), transparent),
+      radial-gradient(2px 2px at 80% 70%, var(--accent), transparent),
+      radial-gradient(2px 2px at 30% 80%, var(--accent-2), transparent);
+  }
+  .chat-shell[data-avatar="none"] .agent-orb { display: none; }
+
+  /* MESSAGES AREA */
+  .chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    z-index: 2;
+    position: relative;
+  }
+  .chat-shell[data-density="compact"] .chat-messages { gap: 6px; padding: 10px; }
+  .chat-shell[data-density="spacious"] .chat-messages { gap: 20px; padding: 24px; }
+
+  /* MESSAGE */
+  .msg { display: flex; gap: 8px; max-width: 85%; }
+  .msg[data-role="user"] { align-self: flex-end; flex-direction: row-reverse; }
+  .msg[data-role="agent"] { align-self: flex-start; }
+  .msg-bubble {
+    padding: 9px 12px;
+    border-radius: 12px;
+    font-size: 13px;
+    line-height: 1.45;
+    word-wrap: break-word;
+  }
+  .msg[data-role="user"] .msg-bubble {
+    background: var(--accent);
+    color: #001318;
+    font-weight: 500;
+  }
+  .msg[data-role="agent"] .msg-bubble {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid var(--border);
+    color: var(--text);
+  }
+  .chat-shell[data-density="compact"] .msg-bubble { padding: 6px 10px; font-size: 12px; }
+  .chat-shell[data-density="spacious"] .msg-bubble { padding: 12px 16px; font-size: 14px; }
+
+  /* Tool call message */
+  .msg-tool {
+    align-self: flex-start;
+    max-width: 85%;
+    background: rgba(0,229,255,0.04);
+    border: 1px dashed rgba(0,229,255,0.3);
+    border-radius: 10px;
+    padding: 8px 12px;
+    font-size: 11px;
+    color: var(--muted);
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+  .msg-tool .tool-name { color: var(--accent); font-weight: 600; }
+  .msg-tool .tool-arrow { color: var(--dim); margin: 0 6px; }
+  .msg-tool .tool-result { color: var(--good); }
+
+  /* Tool call display variants */
+  .chat-shell[data-tools="sidebar"] .msg-tool { display: none; }
+  .chat-shell[data-tools="sidebar"] .tool-sidebar { display: block; }
+  .tool-sidebar {
+    display: none;
+    align-self: stretch;
+    background: rgba(0,0,0,0.3);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px;
+    font-size: 11px;
+    font-family: ui-monospace, monospace;
+  }
+  .tool-sidebar-title {
+    font-size: 10px; text-transform: uppercase; letter-spacing: 1px;
+    color: var(--muted); margin-bottom: 8px;
+  }
+  .tool-sidebar-item {
+    display: flex; align-items: center; gap: 8px;
+    padding: 6px 0; border-bottom: 1px solid var(--border);
+    color: var(--muted);
+  }
+  .tool-sidebar-item:last-child { border-bottom: none; }
+  .tool-sidebar-item .tool-name { color: var(--accent); }
+  .tool-sidebar-item .tool-status { margin-left: auto; }
+  .tool-sidebar-item .tool-status.done { color: var(--good); }
+  .tool-sidebar-item .tool-status.run { color: var(--warn); }
+
+  .chat-shell[data-tools="timeline"] .msg-tool { display: none; }
+  .chat-shell[data-tools="timeline"] .timeline-rail { display: flex; }
+  .timeline-rail {
+    display: none;
+    align-self: stretch;
+    flex-direction: column;
+    gap: 6px;
+    padding: 8px 0;
+    margin-left: 16px;
+    border-left: 2px solid var(--accent);
+  }
+  .timeline-step {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 11px; color: var(--muted);
+    padding-left: 12px;
+    position: relative;
+  }
+  .timeline-step::before {
+    content: ''; position: absolute; left: -7px;
+    width: 12px; height: 12px;
+    border-radius: 50%;
+    background: var(--bg);
+    border: 2px solid var(--accent);
+  }
+  .timeline-step.done::before { background: var(--accent); }
+  .timeline-step .step-num {
+    font-family: ui-monospace, monospace;
+    color: var(--accent);
+    font-weight: 600;
+  }
+
+  /* Thinking indicator */
+  .thinking {
+    align-self: flex-start;
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 8px 12px;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .thinking-dots { display: inline-flex; gap: 3px; }
+  .thinking-dots span {
+    width: 5px; height: 5px; border-radius: 50%;
+    background: var(--accent);
+    animation: dotBounce 1.2s ease-in-out infinite;
+  }
+  .thinking-dots span:nth-child(2) { animation-delay: 0.15s; }
+  .thinking-dots span:nth-child(3) { animation-delay: 0.3s; }
+  @keyframes dotBounce { 0%, 60%, 100% { transform: translateY(0); opacity: 0.4; } 30% { transform: translateY(-4px); opacity: 1; } }
+  .chat-shell[data-thinking="hidden"] .thinking { display: none; }
+  .chat-shell[data-thinking="banner"] .thinking {
+    background: rgba(251,191,36,0.08);
+    border-color: rgba(251,191,36,0.3);
+    color: var(--warn);
+  }
+  .chat-shell[data-thinking="banner"] .thinking-dots span { background: var(--warn); }
+
+  /* Streaming cursor */
+  .stream-cursor {
+    display: inline-block;
+    width: 6px; height: 14px;
+    background: var(--accent);
+    margin-left: 2px;
+    vertical-align: text-bottom;
+    animation: cursorBlink 0.8s steps(2) infinite;
+  }
+  @keyframes cursorBlink { 50% { opacity: 0; } }
+  .chat-shell[data-reveal="fade"] .stream-cursor { display: none; }
+  .chat-shell[data-reveal="fade"] .msg-streaming { animation: fadeIn 0.4s ease-out; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+
+  /* Waveform (inline with streaming text) */
+  .wave-inline {
+    display: inline-flex; align-items: center; gap: 2px;
+    height: 16px; vertical-align: middle;
+    margin-right: 6px;
+  }
+  .wave-inline span {
+    width: 2px; background: var(--accent);
+    border-radius: 1px;
+    animation: waveBar 0.8s ease-in-out infinite;
+  }
+  .wave-inline span:nth-child(1) { animation-delay: 0.0s; }
+  .wave-inline span:nth-child(2) { animation-delay: 0.1s; }
+  .wave-inline span:nth-child(3) { animation-delay: 0.2s; }
+  .wave-inline span:nth-child(4) { animation-delay: 0.3s; }
+  .wave-inline span:nth-child(5) { animation-delay: 0.4s; }
+  @keyframes waveBar { 0%, 100% { height: 4px; } 50% { height: 14px; } }
+
+  /* Top/Bottom waveform bar */
+  .wave-bar {
+    display: none;
+    height: 36px;
+    align-items: center; justify-content: center;
+    gap: 3px;
+    padding: 0 16px;
+    background: rgba(0,0,0,0.3);
+  }
+  .chat-shell[data-wave-pos="top"] .wave-bar.top { display: flex; }
+  .chat-shell[data-wave-pos="bottom"] .wave-bar.bottom { display: flex; }
+  .chat-shell[data-wave-pos="inline"] .wave-bar { display: none; }
+  .wave-bar .wavebar {
+    width: 3px; background: var(--accent); border-radius: 2px;
+    animation: waveBar 0.7s ease-in-out infinite;
+  }
+
+  /* Floating waveform */
+  .wave-float {
+    display: none;
+    position: absolute;
+    right: 16px; top: 50%; transform: translateY(-50%);
+    width: 40px; height: 120px;
+    z-index: 3;
+  }
+  .chat-shell[data-wave-pos="floating"] .wave-float { display: block; }
+  .chat-shell[data-wave-pos="floating"] .chat-messages { padding-right: 70px; }
+
+  /* INPUT AREA */
+  .chat-input {
+    padding: 12px 16px;
+    border-top: 1px solid var(--border);
+    background: rgba(0,0,0,0.2);
+    display: flex; align-items: center; gap: 8px;
+    z-index: 2; position: relative;
+  }
+  .input-box {
+    flex: 1;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 8px 14px;
+    color: var(--text);
+    font-size: 13px;
+    font-family: inherit;
+  }
+  .input-box::placeholder { color: var(--dim); }
+  .mic-btn, .send-btn {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px;
+  }
+  .mic-btn:hover, .send-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .mic-btn.listening {
+    background: var(--accent-2); border-color: var(--accent-2);
+    animation: micPulse 1s ease-in-out infinite;
+  }
+  @keyframes micPulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(255,62,165,0.5); } 50% { box-shadow: 0 0 0 8px rgba(255,62,165,0); } }
+  .chat-shell[data-mic="hidden"] .mic-btn { display: none; }
+  .chat-shell[data-mic="voicemode"] .mic-btn { display: none; }
+  .chat-shell[data-mic="voicemode"] .voice-mode-pill { display: inline-flex; }
+
+  .voice-mode-pill {
+    display: none;
+    align-items: center; gap: 6px;
+    padding: 6px 12px;
+    background: rgba(0,229,255,0.1);
+    border: 1px solid var(--accent);
+    border-radius: 16px;
+    color: var(--accent);
+    font-size: 11px;
+    cursor: pointer;
+  }
+
+  /* Step indicator at top of messages */
+  .step-indicator {
+    display: none;
+    align-items: center; gap: 6px;
+    padding: 6px 10px;
+    background: rgba(0,229,255,0.05);
+    border: 1px solid rgba(0,229,255,0.2);
+    border-radius: 16px;
+    font-size: 10px;
+    color: var(--accent);
+    align-self: flex-start;
+    font-family: ui-monospace, monospace;
+  }
+  .chat-shell[data-step="counter"] .step-indicator[data-kind="counter"] { display: inline-flex; }
+  .chat-shell[data-step="progress"] .step-indicator[data-kind="progress"] { display: flex; flex-direction: column; align-items: stretch; }
+  .step-bar { height: 3px; background: var(--border); border-radius: 2px; overflow: hidden; margin-top: 4px; }
+  .step-bar-fill { height: 100%; background: var(--accent); width: 60%; }
+  .chat-shell[data-step="timeline"] .step-indicator[data-kind="counter"] { display: none; }
+
+  /* Theme variants */
+  .chat-shell[data-theme="cyanDark"] { --accent: #00e5ff; --accent-2: #ff3ea5; }
+  .chat-shell[data-theme="magentaDark"] { --accent: #ff3ea5; --accent-2: #00e5ff; }
+  .chat-shell[data-theme="mono"] { --accent: #e8eaf0; --accent-2: #8b91a3; }
+  .chat-shell[data-theme="warm"] { --accent: #fbbf24; --accent-2: #f87171; }
+  .chat-shell[data-theme="neon"] { --accent: #4ade80; --accent-2: #a78bfa; }
+
+  .chat-shell[data-accent="subtle"] { --accent: color-mix(in srgb, var(--accent) 50%, var(--text)); }
+  .chat-shell[data-accent="pronounced"] { --accent: color-mix(in srgb, var(--accent) 130%, white 20%); }
+  .chat-shell[data-accent="maximum"] { --accent: color-mix(in srgb, var(--accent) 160%, white 40%); }
+
+  /* Typography */
+  .chat-shell[data-type="sans"] { font-family: -apple-system, system-ui, sans-serif; }
+  .chat-shell[data-type="mono"] { font-family: ui-monospace, "SF Mono", Menlo, monospace; }
+  .chat-shell[data-type="display"] { font-family: Georgia, "Times New Roman", serif; }
+  .chat-shell[data-type="display"] .msg-bubble { font-size: 15px; }
+
+  /* PROMPT BAR */
+  .prompt-bar {
+    background: var(--panel);
+    border-top: 1px solid var(--border);
+    padding: 12px 16px;
+    display: flex; flex-direction: column;
+    gap: 6px;
+  }
+  .prompt-label {
+    font-size: 10px; text-transform: uppercase; letter-spacing: 1px;
+    color: var(--muted); display: flex; justify-content: space-between; align-items: center;
+  }
+  .prompt-text {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 12px;
+    color: var(--text);
+    font-size: 12px;
+    line-height: 1.5;
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    flex: 1;
+    overflow-y: auto;
+    white-space: pre-wrap;
+  }
+  .copy-btn {
+    background: var(--accent);
+    color: #001318;
+    border: none;
+    border-radius: 6px;
+    padding: 4px 10px;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .copy-btn:hover { background: color-mix(in srgb, var(--accent) 80%, white); }
+  .copy-btn.copied { background: var(--good); color: #00210a; }
+
+  /* Layout: chat vs centered */
+  .chat-shell[data-layout="centered"] .chat-messages .msg { max-width: 70%; }
+  .chat-shell[data-layout="chat"] .chat-messages { padding: 12px; }
+  .chat-shell[data-layout="immersive"] { border: none; border-radius: 0; }
+  .chat-shell[data-layout="immersive"] .chat-messages .msg { max-width: 60%; }
+
+  /* Message alignment */
+  .chat-shell[data-align="alternating"] .msg[data-role="user"] { align-self: flex-end; }
+  .chat-shell[data-align="alternating"] .msg[data-role="agent"] { align-self: flex-start; }
+  .chat-shell[data-align="centered"] .msg { align-self: center !important; max-width: 80% !important; }
+
+  /* Mobile/responsive */
+  @media (max-width: 900px) {
+    main { grid-template-columns: 280px 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="topbar">
+    <div class="title">Live Streaming Audio Agentic — Chat UI Playground <span>explore &rarr; copy prompt</span></div>
+    <div class="topbar-right">
+      <div class="preset-bar" id="presets"></div>
+      <button class="reset-btn" id="reset">Reset</button>
+    </div>
+  </header>
+
+  <main>
+    <aside class="controls" id="controls">
+      <!-- populated by JS -->
+    </aside>
+
+    <section class="preview">
+      <div class="preview-inner">
+        <div class="chat-shell" id="chatShell"
+             data-bg="gradient" data-theme="cyanDark" data-type="mixed"
+             data-avatar="orb" data-agent-state="speaking"
+             data-density="comfortable" data-layout="chat" data-align="left"
+             data-stream="textwave" data-type-speed="normal" data-reveal="word"
+             data-wave="oscilloscope" data-wave-color="cyan" data-wave-pos="inline"
+             data-tools="inline" data-tool-result="card"
+             data-thinking="visible" data-step="counter"
+             data-mic="always" data-voice="waveform"
+             data-accent="normal">
+
+          <div class="chat-header">
+            <div class="chat-title">
+              <div class="agent-orb"><div class="orb-core"></div></div>
+              <div>
+                <div>W3J Portfolio Concierge</div>
+                <div class="chat-status">
+                  <span class="status-dot"></span>
+                  <span data-status-text>Live — speaking</span>
+                </div>
+              </div>
+            </div>
+            <div style="font-size:11px; color: var(--muted);">0:42</div>
+          </div>
+
+          <!-- Top waveform bar -->
+          <div class="wave-bar top">
+            <div class="wavebar" style="height: 8px; animation-delay: 0s;"></div>
+            <div class="wavebar" style="height: 14px; animation-delay: 0.1s;"></div>
+            <div class="wavebar" style="height: 22px; animation-delay: 0.2s;"></div>
+            <div class="wavebar" style="height: 18px; animation-delay: 0.3s;"></div>
+            <div class="wavebar" style="height: 26px; animation-delay: 0.15s;"></div>
+            <div class="wavebar" style="height: 12px; animation-delay: 0.25s;"></div>
+            <div class="wavebar" style="height: 20px; animation-delay: 0.05s;"></div>
+            <div class="wavebar" style="height: 28px; animation-delay: 0.35s;"></div>
+            <div class="wavebar" style="height: 14px; animation-delay: 0.18s;"></div>
+            <div class="wavebar" style="height: 24px; animation-delay: 0.28s;"></div>
+            <div class="wavebar" style="height: 10px; animation-delay: 0.12s;"></div>
+            <div class="wavebar" style="height: 18px; animation-delay: 0.22s;"></div>
+            <div class="wavebar" style="height: 22px; animation-delay: 0.08s;"></div>
+            <div class="wavebar" style="height: 16px; animation-delay: 0.32s;"></div>
+            <div class="wavebar" style="height: 26px; animation-delay: 0.16s;"></div>
+          </div>
+
+          <div class="chat-messages" id="messages">
+            <!-- Rendered by JS -->
+          </div>
+
+          <!-- Floating waveform -->
+          <svg class="wave-float" viewBox="0 0 40 120" preserveAspectRatio="none">
+            <g fill="currentColor" style="color: var(--accent); opacity: 0.6;">
+              <rect x="6"  y="40" width="3" height="40" rx="1"><animate attributeName="height" values="20;50;30;40;20" dur="1.2s" repeatCount="indefinite"/><animate attributeName="y" values="50;35;45;40;50" dur="1.2s" repeatCount="indefinite"/></rect>
+              <rect x="12" y="30" width="3" height="60" rx="1"><animate attributeName="height" values="40;20;60;30;40" dur="1s" repeatCount="indefinite"/><animate attributeName="y" values="40;50;30;45;40" dur="1s" repeatCount="indefinite"/></rect>
+              <rect x="18" y="20" width="3" height="80" rx="1"><animate attributeName="height" values="30;70;50;80;30" dur="0.9s" repeatCount="indefinite"/><animate attributeName="y" values="45;25;35;20;45" dur="0.9s" repeatCount="indefinite"/></rect>
+              <rect x="24" y="35" width="3" height="50" rx="1"><animate attributeName="height" values="50;20;40;30;50" dur="1.1s" repeatCount="indefinite"/><animate attributeName="y" values="35;50;40;45;35" dur="1.1s" repeatCount="indefinite"/></rect>
+              <rect x="30" y="45" width="3" height="30" rx="1"><animate attributeName="height" values="20;40;30;50;20" dur="0.8s" repeatCount="indefinite"/><animate attributeName="y" values="50;40;45;35;50" dur="0.8s" repeatCount="indefinite"/></rect>
+            </g>
+          </svg>
+
+          <!-- Bottom waveform bar -->
+          <div class="wave-bar bottom">
+            <div class="wavebar" style="height: 14px; animation-delay: 0s;"></div>
+            <div class="wavebar" style="height: 20px; animation-delay: 0.1s;"></div>
+            <div class="wavebar" style="height: 10px; animation-delay: 0.2s;"></div>
+            <div class="wavebar" style="height: 26px; animation-delay: 0.3s;"></div>
+            <div class="wavebar" style="height: 18px; animation-delay: 0.15s;"></div>
+            <div class="wavebar" style="height: 22px; animation-delay: 0.25s;"></div>
+            <div class="wavebar" style="height: 12px; animation-delay: 0.05s;"></div>
+            <div class="wavebar" style="height: 28px; animation-delay: 0.35s;"></div>
+            <div class="wavebar" style="height: 16px; animation-delay: 0.18s;"></div>
+            <div class="wavebar" style="height: 24px; animation-delay: 0.28s;"></div>
+          </div>
+
+          <div class="chat-input">
+            <button class="mic-btn" title="Microphone">🎙</button>
+            <div class="voice-mode-pill">Voice mode <span style="color: var(--accent);">●</span></div>
+            <input class="input-box" placeholder="Ask about W3J's work, stack, or recent projects..." />
+            <button class="send-btn" title="Send">↑</button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="prompt-bar">
+    <div class="prompt-label">
+      <span>Generated prompt — paste back to Mavis to build the real component</span>
+      <button class="copy-btn" id="copy">Copy</button>
+    </div>
+    <div class="prompt-text" id="prompt"></div>
+  </footer>
+</div>
+
+<script>
+const DEFAULTS = {
+  bg: 'gradient',
+  theme: 'cyanDark',
+  type: 'mixed',
+  accent: 'normal',
+
+  avatar: 'orb',
+  agentState: 'speaking',
+  density: 'comfortable',
+  layout: 'chat',
+  align: 'left',
+
+  stream: 'textwave',
+  typeSpeed: 'normal',
+  reveal: 'word',
+
+  wave: 'oscilloscope',
+  waveColor: 'cyan',
+  wavePos: 'inline',
+
+  tools: 'inline',
+  toolResult: 'card',
+  thinking: 'visible',
+  step: 'counter',
+
+  mic: 'always',
+  voice: 'waveform',
+};
+
+const state = { ...DEFAULTS };
+
+const PRESETS = {
+  classic: {
+    label: 'Classic Chat',
+    values: {
+      bg: 'solid', theme: 'mono', type: 'sans', accent: 'subtle',
+      avatar: 'none', agentState: 'idle', density: 'comfortable', layout: 'chat', align: 'left',
+      stream: 'text', typeSpeed: 'normal', reveal: 'chunk',
+      wave: 'bars', waveColor: 'white', wavePos: 'hidden',
+      tools: 'hidden', toolResult: 'inline', thinking: 'hidden', step: 'minimal',
+      mic: 'hidden', voice: 'static',
+    }
+  },
+  voicefirst: {
+    label: 'Voice First',
+    values: {
+      bg: 'gradient', theme: 'cyanDark', type: 'sans', accent: 'pronounced',
+      avatar: 'orb', agentState: 'speaking', density: 'spacious', layout: 'centered', align: 'centered',
+      stream: 'audio', typeSpeed: 'fast', reveal: 'chunk',
+      wave: 'oscilloscope', waveColor: 'cyan', wavePos: 'top',
+      tools: 'hidden', toolResult: 'card', thinking: 'banner', step: 'minimal',
+      mic: 'always', voice: 'waveform',
+    }
+  },
+  agentic: {
+    label: 'Agentic Pro',
+    values: {
+      bg: 'mesh', theme: 'cyanDark', type: 'mixed', accent: 'normal',
+      avatar: 'geometric', agentState: 'thinking', density: 'compact', layout: 'chat', align: 'left',
+      stream: 'agentic', typeSpeed: 'normal', reveal: 'word',
+      wave: 'bars', waveColor: 'cyan', wavePos: 'hidden',
+      tools: 'timeline', toolResult: 'card', thinking: 'visible', step: 'counter',
+      mic: 'voicemode', voice: 'waveform',
+    }
+  },
+  cinematic: {
+    label: 'Immersive',
+    values: {
+      bg: 'particles', theme: 'neon', type: 'display', accent: 'maximum',
+      avatar: 'particle', agentState: 'speaking', density: 'spacious', layout: 'immersive', align: 'alternating',
+      stream: 'textwave', typeSpeed: 'slow', reveal: 'fade',
+      wave: 'circular', waveColor: 'multi', wavePos: 'floating',
+      tools: 'inline', toolResult: 'card', thinking: 'banner', step: 'timeline',
+      mic: 'always', voice: 'waveform',
+    }
+  },
+  minimal: {
+    label: 'Minimal Live',
+    values: {
+      bg: 'solid', theme: 'mono', type: 'mono', accent: 'subtle',
+      avatar: 'face', agentState: 'idle', density: 'comfortable', layout: 'chat', align: 'left',
+      stream: 'text', typeSpeed: 'fast', reveal: 'chunk',
+      wave: 'equalizer', waveColor: 'white', wavePos: 'inline',
+      tools: 'hidden', toolResult: 'inline', thinking: 'hidden', step: 'minimal',
+      mic: 'hidden', voice: 'static',
+    }
+  },
+  genui: {
+    label: 'GenUI Native',
+    values: {
+      bg: 'gradient', theme: 'magentaDark', type: 'sans', accent: 'normal',
+      avatar: 'orb', agentState: 'thinking', density: 'comfortable', layout: 'chat', align: 'left',
+      stream: 'agentic', typeSpeed: 'normal', reveal: 'word',
+      wave: 'oscilloscope', waveColor: 'magenta', wavePos: 'inline',
+      tools: 'inline', toolResult: 'card', thinking: 'inline', step: 'progress',
+      mic: 'always', voice: 'waveform',
+    }
+  },
+};
+
+const SECTIONS = [
+  {
+    title: 'Visual Theme',
+    controls: [
+      { name: 'bg', label: 'Background', kind: 'seg',
+        options: [['solid','Solid'],['gradient','Gradient'],['mesh','Mesh'],['particles','Particles'],['none','None']] },
+      { name: 'theme', label: 'Color Theme', kind: 'seg',
+        options: [['cyanDark','Cyan'],['magentaDark','Magenta'],['mono','Mono'],['warm','Warm'],['neon','Neon']] },
+      { name: 'accent', label: 'Accent Intensity', kind: 'seg',
+        options: [['subtle','Subtle'],['normal','Normal'],['pronounced','Pronounced'],['maximum','Maximum']] },
+      { name: 'type', label: 'Typography', kind: 'seg',
+        options: [['sans','Sans'],['mono','Mono'],['mixed','Mixed'],['display','Display']] },
+    ]
+  },
+  {
+    title: 'Layout',
+    controls: [
+      { name: 'layout', label: 'Layout', kind: 'seg',
+        options: [['chat','Chat'],['centered','Centered'],['split','Split'],['immersive','Immersive']] },
+      { name: 'density', label: 'Density', kind: 'seg',
+        options: [['compact','Compact'],['comfortable','Normal'],['spacious','Spacious']] },
+      { name: 'align', label: 'Message Align', kind: 'seg',
+        options: [['left','Left'],['alternating','Alt'],['centered','Center']] },
+    ]
+  },
+  {
+    title: 'Streaming',
+    controls: [
+      { name: 'stream', label: 'Stream Mode', kind: 'seg',
+        options: [['text','Text'],['textwave','Text+Wave'],['audio','Audio'],['agentic','Agentic']] },
+      { name: 'typeSpeed', label: 'Type Speed', kind: 'seg',
+        options: [['slow','Slow'],['normal','Normal'],['fast','Fast'],['instant','Instant']] },
+      { name: 'reveal', label: 'Reveal Style', kind: 'seg',
+        options: [['char','Char'],['word','Word'],['chunk','Chunk'],['fade','Fade']] },
+    ]
+  },
+  {
+    title: 'Agent Avatar',
+    controls: [
+      { name: 'avatar', label: 'Avatar Style', kind: 'seg',
+        options: [['orb','Orb'],['face','Face'],['geometric','Geo'],['particle','Particle'],['none','None']] },
+      { name: 'agentState', label: 'State', kind: 'seg',
+        options: [['idle','Idle'],['thinking','Thinking'],['speaking','Speaking']] },
+    ]
+  },
+  {
+    title: 'Audio Waveform',
+    controls: [
+      { name: 'wave', label: 'Waveform', kind: 'seg',
+        options: [['oscilloscope','O-Scope'],['bars','Bars'],['circular','Circular'],['particle','Particle'],['equalizer','EQ']] },
+      { name: 'waveColor', label: 'Color', kind: 'seg',
+        options: [['cyan','Cyan'],['magenta','Magenta'],['amber','Amber'],['white','White'],['multi','Multi']] },
+      { name: 'wavePos', label: 'Position', kind: 'seg',
+        options: [['inline','Inline'],['top','Top'],['bottom','Bottom'],['floating','Float'],['hidden','Hidden']] },
+    ]
+  },
+  {
+    title: 'Agentic Indicators',
+    controls: [
+      { name: 'tools', label: 'Tool Display', kind: 'seg',
+        options: [['inline','Inline'],['sidebar','Sidebar'],['timeline','Timeline'],['hidden','Hidden']] },
+      { name: 'thinking', label: 'Thinking', kind: 'seg',
+        options: [['visible','Dots'],['hidden','Hidden'],['banner','Banner'],['inline','Inline']] },
+      { name: 'step', label: 'Step Indicator', kind: 'seg',
+        options: [['counter','Counter'],['progress','Progress'],['timeline','Timeline'],['minimal','Minimal']] },
+      { name: 'toolResult', label: 'Tool Result', kind: 'seg',
+        options: [['code','Code'],['card','Card'],['inline','Inline'],['collapsed','Collapsed']] },
+    ]
+  },
+  {
+    title: 'Voice / Mic',
+    controls: [
+      { name: 'mic', label: 'Mic Button', kind: 'seg',
+        options: [['always','Always'],['voicemode','Voice Mode'],['hidden','Hidden']] },
+      { name: 'voice', label: 'Voice Activity', kind: 'seg',
+        options: [['waveform','Waveform'],['simulated','Simulated'],['static','Static']] },
+    ]
+  },
+];
+
+// Build controls
+const controlsRoot = document.getElementById('controls');
+SECTIONS.forEach(sec => {
+  const secEl = document.createElement('div');
+  secEl.className = 'section';
+  secEl.innerHTML = `<h3>${sec.title}</h3>`;
+  sec.controls.forEach(ctrl => {
+    const wrap = document.createElement('div');
+    wrap.style.marginBottom = '8px';
+    const lbl = document.createElement('span');
+    lbl.className = 'seg-label';
+    lbl.textContent = ctrl.label;
+    wrap.appendChild(lbl);
+    const grp = document.createElement('div');
+    grp.className = 'control-group';
+    if (ctrl.options.length === 3) grp.classList.add('three');
+    if (ctrl.options.length >= 5) grp.classList.add('three');
+    ctrl.options.forEach(([val, lbl]) => {
+      const b = document.createElement('button');
+      b.className = 'seg';
+      b.dataset.name = ctrl.name;
+      b.dataset.value = val;
+      b.textContent = lbl;
+      b.addEventListener('click', () => {
+        state[ctrl.name] = val;
+        updateAll();
+      });
+      grp.appendChild(b);
+    });
+    wrap.appendChild(grp);
+    secEl.appendChild(wrap);
+  });
+  controlsRoot.appendChild(secEl);
+});
+
+// Build presets
+const presetsRoot = document.getElementById('presets');
+Object.entries(PRESETS).forEach(([key, p]) => {
+  const b = document.createElement('button');
+  b.className = 'preset-btn';
+  b.textContent = p.label;
+  b.addEventListener('click', () => {
+    Object.assign(state, p.values);
+    updateAll();
+  });
+  presetsRoot.appendChild(b);
+});
+
+// Reset
+document.getElementById('reset').addEventListener('click', () => {
+  Object.assign(state, DEFAULTS);
+  updateAll();
+});
+
+// Copy
+const copyBtn = document.getElementById('copy');
+copyBtn.addEventListener('click', () => {
+  const txt = document.getElementById('prompt').textContent;
+  navigator.clipboard.writeText(txt).then(() => {
+    copyBtn.textContent = 'Copied!';
+    copyBtn.classList.add('copied');
+    setTimeout(() => {
+      copyBtn.textContent = 'Copy';
+      copyBtn.classList.remove('copied');
+    }, 1500);
+  });
+});
+
+// Message template
+function renderMessages() {
+  const root = document.getElementById('messages');
+  root.innerHTML = '';
+
+  // Step indicator
+  if (state.step === 'counter' || state.step === 'progress' || state.step === 'timeline') {
+    const ind = document.createElement('div');
+    ind.className = 'step-indicator';
+    ind.dataset.kind = state.step === 'progress' ? 'progress' : 'counter';
+    if (state.step === 'counter') {
+      ind.innerHTML = '<span>STEP 3 / 5</span> · <span style="opacity:0.7;">searching portfolio</span>';
+    } else if (state.step === 'progress') {
+      ind.innerHTML = '<span>3 of 5 steps complete</span><div class="step-bar"><div class="step-bar-fill"></div></div>';
+    }
+    root.appendChild(ind);
+  }
+
+  // User message
+  const userMsg = document.createElement('div');
+  userMsg.className = 'msg';
+  userMsg.dataset.role = 'user';
+  userMsg.innerHTML = `<div class="msg-bubble">What can you tell me about my recent agent work?</div>`;
+  root.appendChild(userMsg);
+
+  // Thinking
+  if (state.thinking === 'visible' || state.thinking === 'banner') {
+    const t = document.createElement('div');
+    t.className = 'thinking';
+    t.innerHTML = `<div class="thinking-dots"><span></span><span></span><span></span></div><span>Searching across 12 portfolio entries</span>`;
+    root.appendChild(t);
+  }
+
+  // Tool calls (inline)
+  if (state.tools === 'inline') {
+    const tool = document.createElement('div');
+    tool.className = 'msg-tool';
+    const resultStyle = state.toolResult;
+    if (resultStyle === 'card') {
+      tool.innerHTML = `<span class="tool-name">⚡ search_portfolio</span><span class="tool-arrow">→</span><span class="tool-result">3 matches · 124ms</span>`;
+    } else if (resultStyle === 'code') {
+      tool.innerHTML = `<span class="tool-name">search_portfolio("agent")</span><span class="tool-arrow">→</span><span class="tool-result">{hits: 3}</span>`;
+    } else if (resultStyle === 'inline') {
+      tool.innerHTML = `<span class="tool-name">search_portfolio</span> <span class="tool-result">3 hits</span>`;
+    } else {
+      tool.innerHTML = `<span class="tool-name">⚡ tool used</span>`;
+    }
+    root.appendChild(tool);
+  }
+
+  // Sidebar variant
+  if (state.tools === 'sidebar') {
+    const side = document.createElement('div');
+    side.className = 'tool-sidebar';
+    side.innerHTML = `
+      <div class="tool-sidebar-title">Agent activity</div>
+      <div class="tool-sidebar-item">
+        <span class="tool-name">search_portfolio</span>
+        <span class="tool-status done">✓ 124ms</span>
+      </div>
+      <div class="tool-sidebar-item">
+        <span class="tool-name">fetch_project_detail</span>
+        <span class="tool-status run">● running</span>
+      </div>
+      <div class="tool-sidebar-item" style="opacity:0.5;">
+        <span class="tool-name">synthesize</span>
+        <span class="tool-status">queued</span>
+      </div>
+    `;
+    root.appendChild(side);
+  }
+
+  // Timeline variant
+  if (state.tools === 'timeline') {
+    const rail = document.createElement('div');
+    rail.className = 'timeline-rail';
+    rail.innerHTML = `
+      <div class="timeline-step done"><span class="step-num">01</span> parse question</div>
+      <div class="timeline-step done"><span class="step-num">02</span> search_portfolio → 3 hits</div>
+      <div class="timeline-step"><span class="step-num">03</span> fetch detail for W3J-Bot</div>
+      <div class="timeline-step" style="opacity:0.4;"><span class="step-num">04</span> draft response</div>
+    `;
+    root.appendChild(rail);
+  }
+
+  // Agent streaming message
+  const agentMsg = document.createElement('div');
+  agentMsg.className = 'msg';
+  agentMsg.dataset.role = 'agent';
+
+  const bubble = document.createElement('div');
+  bubble.className = 'msg-bubble msg-streaming';
+
+  // Build content based on stream mode
+  const fullText = "Your agent work shows three notable threads. The W3J-Bot portfolio assistant, the Bijou WhatsApp agent, and the brand-evolution deploy system.";
+
+  if (state.stream === 'text' || state.stream === 'textwave') {
+    if (state.wavePos === 'inline' && (state.stream === 'textwave' || state.stream === 'audio')) {
+      const wave = document.createElement('span');
+      wave.className = 'wave-inline';
+      wave.innerHTML = '<span></span><span></span><span></span><span></span><span></span>';
+      bubble.appendChild(wave);
+    }
+    bubble.appendChild(document.createTextNode(fullText));
+    if (state.reveal !== 'fade') {
+      const cursor = document.createElement('span');
+      cursor.className = 'stream-cursor';
+      bubble.appendChild(cursor);
+    }
+  } else if (state.stream === 'audio') {
+    const wave = document.createElement('span');
+    wave.className = 'wave-inline';
+    wave.innerHTML = '<span></span><span></span><span></span><span></span><span></span>';
+    bubble.appendChild(wave);
+    bubble.appendChild(document.createTextNode(fullText));
+    const cursor = document.createElement('span');
+    cursor.className = 'stream-cursor';
+    bubble.appendChild(cursor);
+  } else if (state.stream === 'agentic') {
+    bubble.appendChild(document.createTextNode(fullText));
+    const cursor = document.createElement('span');
+    cursor.className = 'stream-cursor';
+    bubble.appendChild(cursor);
+  }
+
+  agentMsg.appendChild(bubble);
+  root.appendChild(agentMsg);
+
+  // Update status text
+  const statusText = root.parentElement.querySelector('[data-status-text]');
+  if (statusText) {
+    const s = state.agentState;
+    statusText.textContent = s === 'idle' ? 'Idle' : s === 'thinking' ? 'Thinking…' : 'Live — speaking';
+  }
+}
+
+function applyState() {
+  const shell = document.getElementById('chatShell');
+  Object.entries(state).forEach(([k, v]) => {
+    shell.dataset[k] = v;
+  });
+  // Set wavePos to hidden
+  if (state.wavePos === 'hidden') {
+    shell.dataset.wavePos = 'hidden';
+  }
+  // Active button highlight
+  document.querySelectorAll('.seg').forEach(btn => {
+    if (state[btn.dataset.name] === btn.dataset.value) {
+      btn.classList.add('active');
+    } else {
+      btn.classList.remove('active');
+    }
+  });
+  renderMessages();
+}
+
+function updatePrompt() {
+  const parts = [];
+  const nonDefault = (k) => state[k] !== DEFAULTS[k];
+
+  if (state.stream !== DEFAULTS.stream) {
+    const s = state.stream;
+    if (s === 'text') parts.push('text-only streaming');
+    else if (s === 'textwave') parts.push('streaming with inline audio waveform');
+    else if (s === 'audio') parts.push('audio-first streaming with subtle text');
+    else if (s === 'agentic') parts.push('agentic timeline streaming with visible tool steps');
+  }
+  if (nonDefault('typeSpeed')) {
+    parts.push(`${state.typeSpeed} type speed`);
+  }
+  if (nonDefault('reveal')) {
+    parts.push(`${state.reveal} reveal animation`);
+  }
+  if (nonDefault('wave')) {
+    parts.push(`${state.wave} waveform`);
+  }
+  if (nonDefault('waveColor')) {
+    parts.push(`${state.waveColor} accent color`);
+  }
+  if (nonDefault('wavePos')) {
+    parts.push(`waveform positioned ${state.wavePos}`);
+  }
+  if (nonDefault('avatar')) {
+    const a = state.avatar;
+    if (a === 'orb') parts.push('orb avatar');
+    else if (a === 'face') parts.push('cartoon face avatar');
+    else if (a === 'geometric') parts.push('geometric avatar');
+    else if (a === 'particle') parts.push('particle-cluster avatar');
+    else if (a === 'none') parts.push('no avatar, just status indicator');
+  }
+  if (nonDefault('agentState')) {
+    parts.push(`currently in ${state.agentState} state`);
+  }
+  if (nonDefault('tools')) {
+    const t = state.tools;
+    if (t === 'inline') parts.push('tool calls shown inline as dashed chips');
+    else if (t === 'sidebar') parts.push('tool activity in a sidebar log');
+    else if (t === 'timeline') parts.push('tool steps on a vertical timeline rail');
+    else if (t === 'hidden') parts.push('no visible tool calls');
+  }
+  if (nonDefault('thinking')) {
+    const t = state.thinking;
+    if (t === 'visible') parts.push('animated thinking dots');
+    else if (t === 'banner') parts.push('thinking shown as a warning banner');
+    else if (t === 'inline') parts.push('thinking inline with response');
+    else if (t === 'hidden') parts.push('no thinking indicator');
+  }
+  if (nonDefault('step')) {
+    const s = state.step;
+    if (s === 'counter') parts.push('step counter at top (e.g. "STEP 3 / 5")');
+    else if (s === 'progress') parts.push('progress bar for steps');
+    else if (s === 'timeline') parts.push('step timeline indicator');
+    else if (s === 'minimal') parts.push('minimal step indicator');
+  }
+  if (nonDefault('toolResult')) {
+    parts.push(`tool results in ${state.toolResult} style`);
+  }
+  if (nonDefault('layout')) {
+    parts.push(`${state.layout} layout`);
+  }
+  if (nonDefault('density')) {
+    parts.push(`${state.density} message density`);
+  }
+  if (nonDefault('align')) {
+    parts.push(`${state.align} message alignment`);
+  }
+  if (nonDefault('mic')) {
+    if (state.mic === 'always') parts.push('always-visible mic button');
+    else if (state.mic === 'voicemode') parts.push('mic hidden in text mode, voice-mode pill shown instead');
+    else if (state.mic === 'hidden') parts.push('no mic, text-only input');
+  }
+  if (nonDefault('voice')) {
+    parts.push(`${state.voice} voice activity indicator`);
+  }
+  if (nonDefault('bg')) {
+    parts.push(`${state.bg} background`);
+  }
+  if (nonDefault('theme')) {
+    const t = state.theme;
+    if (t === 'cyanDark') parts.push('dark cyan accent theme');
+    else if (t === 'magentaDark') parts.push('dark magenta accent theme');
+    else if (t === 'mono') parts.push('monochrome theme');
+    else if (t === 'warm') parts.push('warm amber theme');
+    else if (t === 'neon') parts.push('neon multi-color theme');
+  }
+  if (nonDefault('type')) {
+    parts.push(`${state.type} typography`);
+  }
+  if (nonDefault('accent')) {
+    parts.push(`${state.accent} accent intensity`);
+  }
+
+  if (parts.length === 0) {
+    document.getElementById('prompt').textContent =
+      'Build a live-streaming audio agentic chat agent UI for a portfolio concierge. Default styling — clean dark theme with cyan accents, inline waveform, orb avatar, text+wave streaming.';
+    return;
+  }
+
+  const prompt = `Build a live-streaming audio agentic chat agent UI for a portfolio concierge. Use ${parts.join(', ')}. The component should be a self-contained React module with inline SVG waveforms, smooth state transitions between idle/thinking/speaking, and proper handling of streaming text with an animated cursor. Keep it keyboard-accessible and dark-theme native.`;
+  document.getElementById('prompt').textContent = prompt;
+}
+
+function updateAll() {
+  applyState();
+  updatePrompt();
+}
+
+// Init
+updateAll();
+</script>
+</body>
+</html>

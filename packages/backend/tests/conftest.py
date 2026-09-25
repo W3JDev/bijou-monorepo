@@ -249,9 +249,39 @@ def reset_test_state():
     Reset test state after each test.
 
     Runs automatically for every test function.
+
+    The webhook rate limiter (src/core/bijou.py) keeps its token buckets in
+    process-global state — it has to, it is shared across requests. Without
+    this reset, tests/security/test_call_security.py's 100-request DoS flood
+    leaves the global bucket empty and the NEXT test to POST /webhook/message
+    gets a 429 it did nothing to earn. Clearing before each test keeps the
+    limiter real in production and deterministic here.
     """
+    try:
+        from src.core.bijou import _reset_webhook_rate_limits
+        _reset_webhook_rate_limits()
+    except ImportError:
+        pass  # tests that never import the app do not need it
+
     yield
-    # Cleanup code here if needed
+
+
+@pytest.fixture
+def no_webhook_rate_limit(monkeypatch):
+    """Turn the /webhook/* backpressure off for this test.
+
+    For tests whose SUBJECT is the handler's throughput or per-call memory
+    cost. With the limiter on they measure the limiter instead — a capacity
+    number that is really just the token-bucket refill rate tells you nothing
+    about the handler.
+
+    This is an opt-in, per-test bypass of a security control, so it belongs
+    only on tests that say what they measure and why. Anything asserting on
+    flood behaviour (tests/security/test_call_security.py, and
+    test_memory_exhaustion_protection in tests/load/) must NOT use it.
+    """
+    monkeypatch.setenv("WEBHOOK_RATE_CAPACITY", "0")
+    monkeypatch.setenv("WEBHOOK_DEVICE_RATE_CAPACITY", "0")
 
 
 # ════════════════════════════════════════════════════════════════

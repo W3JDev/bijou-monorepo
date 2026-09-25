@@ -1,0 +1,110 @@
+#!/bin/sh
+# Pre-commit secret guard — Bijou monorepo.
+#
+# TRACKED IN THE REPO on purpose. The previous version lived only in
+# .git/hooks/, which git never tracks, so every clone needed it installed by
+# hand and most did not have it at all. Install with:
+#
+#     ./ops/githooks/install.sh          (sets core.hooksPath)
+#
+# Self-tested: ./ops/githooks/test-secret-guard.sh exercises this file against
+# known-bad and known-good fixtures. A secret scanner nobody tests is theatre —
+# run that script after touching PATTERN.
+#
+# History this exists because of:
+#   2026-08-10  admin API key committed  (docs/SECURITY_ALERT_2026-08-24_admin_key.md)
+#   2026-08-29  live Coolify API token committed and pushed
+#               (docs/SECURITY_ALERT_2026-09-06_coolify_token.md)
+# The second slipped past the previous guard because a Coolify/Laravel Sanctum
+# token looks like `1|<40+ chars>` and appeared as `Authorization: Bearer …`,
+# matching none of its patterns. Verified before this rewrite: the old pattern
+# returned no match on that exact line.
+#
+# This is regex matching, not entropy analysis. It is a fast last line of
+# defence, NOT a substitute for gitleaks in CI (.github/workflows/secret-scan.yml),
+# which scans full history rather than one staged diff.
+
+staged=$(git diff --cached --name-only --diff-filter=ACM)
+[ -z "$staged" ] && exit 0
+
+fail=0
+
+# ── 1. Never commit an env file, even force-added past .gitignore ───────────
+for f in $staged; do
+  base=$(basename "$f")
+  case "$base" in
+    .env.example|*.env.example) continue ;;
+    .env|.env.*|*.env|*.env.local|*.env.production|*.env.staging|*.env.flyio|*.env.composio)
+      echo "❌ pre-commit: refusing to commit env file: $f"
+      fail=1
+      ;;
+  esac
+done
+
+# ── 2. Scan added lines for credential shapes ──────────────────────────────
+# Deliberately NOT case-insensitive. The old guard used -i, which made
+# "ops/coolify: ops/coolify/PRODUCTION-CUTOVER-PLAN.md" — an ordinary git log
+# line — match the COOLIFY key=value alternative and block legitimate commits.
+# Real env keys are uppercase, so matching case-sensitively removes that whole
+# class of false positive. The value class also excludes "/" for the same
+# reason: paths were being read as secrets.
+. "$(dirname "$0")/secret-patterns.sh" 2>/dev/null || . "$(git rev-parse --show-toplevel)/ops/githooks/secret-patterns.sh"
+PATTERN="$SECRET_PATTERN"
+
+# Only ADDED lines. Removing a secret — as a redaction commit must — is the
+# fix, not the offence, and blocking it would make cleanup impossible.
+added=$(git diff --cached -- $staged | grep '^+' | grep -v '^+++')
+
+hit=$(printf '%s\n' "$added" | grep -En "$PATTERN")
+
+# Shell/compose interpolation is a REFERENCE to a secret, not a secret:
+#   GEMINI_API_KEY: "${LOCAL_GEMINI_API_KEY:-${GEMINI_API_KEY:-placeholder}}"
+#   -H "Authorization: Bearer ${COOLIFY_API_TOKEN:?set it}"
+# Both are exactly what we want people to write, and both used to be blocked —
+# which teaches contributors to reach for --no-verify, the opposite of the
+# point. .gitleaks.toml already allowlists this; the hook did not.
+hit=$(printf '%s\n' "$hit" | grep -v '\${')
+
+# Obvious non-secrets. A value that literally says "placeholder" or "<your-...>"
+# is not a credential, and blocking it means documentation cannot explain how
+# to set one — this fired on the comment
+#   "Set LOCAL_GEMINI_API_KEY=local-placeholder-key to opt back out."
+#
+# The test is on the MATCHED VALUE, not the line. Filtering whole lines was the
+# first attempt and it was too broad: it let through
+#   STRIPE_SECRET_KEY=sk_live_9x8y7z6w5v4u3t2s1r  # replaces the placeholder  (pragma: allowlist secret — this is the fixture, not a key)
+# because the word appeared in a trailing comment. A real key does not stop
+# being real because something else on the line says "placeholder".
+_drop_placeholders() {
+  while IFS= read -r line; do
+    [ -z "$line" ] && continue
+    match=$(printf '%s\n' "$line" | grep -oE "$PATTERN" | head -1)
+    printf '%s\n' "$match" | grep -qiE 'placeholder|changeme|not-a-real|local-dev-only|<your-|your-key-here|xxxxx' && continue
+    printf '%s\n' "$line"
+  done
+}
+hit=$(printf '%s\n' "$hit" | _drop_placeholders)
+
+# Allow an explicit, reviewed opt-out on a specific line.
+hit=$(printf '%s\n' "$hit" | grep -v 'pragma: allowlist secret')
+
+if [ -n "$hit" ] && [ "$hit" != "" ]; then
+  echo "❌ pre-commit: an ADDED line looks like a live credential:"
+  printf '%s\n' "$hit" | sed -E 's/(.{0,24}).*/\1<redacted>/' | head -20
+  fail=1
+fi
+
+if [ "$fail" = "1" ]; then
+  echo ""
+  echo "Commit blocked."
+  echo ""
+  echo "If it is real: remove it, and remember that redacting the file is not"
+  echo "enough once it has been pushed — the credential must be ROTATED."
+  echo ""
+  echo "If it is a false positive, either append the marker"
+  echo "  pragma: allowlist secret"
+  echo "to that line, or use 'git commit --no-verify' AFTER confirming by eye."
+  exit 1
+fi
+
+exit 0

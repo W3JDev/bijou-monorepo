@@ -14,7 +14,7 @@ export const RevenueCalculator: React.FC<RevenueCalculatorProps> = ({
   const annualLoss = Math.floor(
     inquiries * (missedRate / 100) * commission * 12,
   );
-  const bijouCost = 299 * 12; // RM299/month PRO plan
+  const bijouCost = 499 * 12; // $499/month managed plan
   const roi = Math.floor(((annualLoss - bijouCost) / bijouCost) * 100);
 
   return (
@@ -60,10 +60,10 @@ export const RevenueCalculator: React.FC<RevenueCalculatorProps> = ({
               <div>
                 <div className="flex justify-between text-sm font-medium mb-2">
                   <span className="text-gray-300">
-                    Avg. Commission / Order Value (RM)
+                    Avg. Commission / Order Value (USD)
                   </span>
                   <span className="text-gold-400 font-bold">
-                    RM {commission}
+                    ${commission}
                   </span>
                 </div>
                 <input
@@ -94,7 +94,7 @@ export const RevenueCalculator: React.FC<RevenueCalculatorProps> = ({
                   className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-red-500"
                 />
                 <p className="text-xs text-gray-500 mt-1">
-                  *Industry avg for SMEs is ~48%
+                  *Industry avg for small businesses is ~48%
                 </p>
               </div>
             </div>
@@ -108,7 +108,7 @@ export const RevenueCalculator: React.FC<RevenueCalculatorProps> = ({
                   Potential Annual Revenue Loss
                 </div>
                 <div className="text-5xl md:text-6xl font-black text-white text-glow-strong">
-                  RM {annualLoss.toLocaleString()}
+                  ${annualLoss.toLocaleString()}
                 </div>
               </div>
 
@@ -118,7 +118,7 @@ export const RevenueCalculator: React.FC<RevenueCalculatorProps> = ({
                     Cost of Bijou/Year
                   </div>
                   <div className="text-xl font-bold text-gold-400">
-                    RM {bijouCost.toLocaleString()}
+                    ${bijouCost.toLocaleString()}
                   </div>
                 </div>
                 <div className="bg-white/5 rounded-xl p-4 border border-white/5">
@@ -134,17 +134,14 @@ export const RevenueCalculator: React.FC<RevenueCalculatorProps> = ({
               {/* Fix 1: Honest savings callout — verified math, no inflation */}
               <div className="mb-6 p-4 rounded-xl bg-[#0d3d3d]/60 border border-[#D4AF37]/20 text-left">
                 <p className="text-[#D4AF37] text-xs font-bold uppercase tracking-wider mb-1">
-                  Honest baseline (RM299/mo plan)
+                  Honest baseline ($499/mo managed plan)
                 </p>
                 <p className="text-white text-sm font-bold">
-                  Save <span className="text-[#D4AF37]">RM2,700+ every month</span> vs a part-time WhatsApp staff.
+                  Save <span className="text-[#D4AF37]">thousands every month</span> vs a part-time support hire.
                 </p>
                 <p className="text-gray-400 text-xs mt-1">
-                  That's <strong className="text-white">~900% ROI</strong> at our RM299 price.
-                  Math that holds up when your accountant runs PayScale.
-                </p>
-                <p className="text-gray-600 text-[10px] mt-1 italic">
-                  Jimat <strong>RM2,700+</strong> sebulan berbanding pekerja separuh masa. ROI ~900% pada harga RM299.
+                  A fully managed AI agent for a fraction of the cost of hiring —
+                  math that holds up when your accountant runs the numbers.
                 </p>
               </div>
 

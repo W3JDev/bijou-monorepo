@@ -808,6 +808,31 @@ class TenantRouter:
                         "business_name", "Unknown"
                     )
 
+                # D-STYLE-1: the dashboard Manglish toggle writes
+                # tenants.manglish_mode, but client_configs has no such column,
+                # so the reply prompt — which reads client_config["manglish_mode"]
+                # (bijou.py) — never saw it and the toggle was a no-op. Merge it
+                # in here, the one chokepoint every client_config reader passes
+                # through, so the toggle actually reaches the prompt.
+                # ponytail: one extra PK-keyed single-column select per config
+                # load; cache client_config if this ever shows on the hot path.
+                try:
+                    tenant_row = (
+                        self.supabase.table("tenants")
+                        .select("manglish_mode")
+                        .eq("id", tenant_id)
+                        .limit(1)
+                        .execute()
+                    )
+                    if tenant_row.data:
+                        config["manglish_mode"] = tenant_row.data[0].get(
+                            "manglish_mode"
+                        )
+                except Exception as e:
+                    logger.warning(
+                        f"Could not merge manglish_mode for {tenant_id}: {e}"
+                    )
+
                 logger.info(
                     f"📋 Loaded config for tenant {tenant_id}: "
                     f"{config.get('business_name', 'Unknown')}"

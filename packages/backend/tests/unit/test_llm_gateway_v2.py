@@ -85,8 +85,18 @@ def fresh_gateway():
 
 
 def _set_dispatch(gw, **per_provider):
-    """Inject fake adapters by provider name."""
-    gw._dispatch_override = per_provider
+    """Inject fake adapters by provider name. Every provider declared in the
+    gateway config that is NOT named here is stubbed to raise a no-key
+    ProviderError (status None) so tests stay hermetic (no network) and un-faked
+    fallbacks are simply skipped by the rotator. Needed now that the standard
+    aliases fan out to minimax/vercel/google_openai/cloudflare — without this the
+    suite would hit real endpoints for any provider whose key happens to be set."""
+    dispatch = {
+        name: _err(None, "not configured in test")
+        for name in (gw._config.get("providers") or {})
+    }
+    dispatch.update(per_provider)
+    gw._dispatch_override = dispatch
 
 
 # -----------------------------------------------------------------------------
@@ -94,32 +104,32 @@ def _set_dispatch(gw, **per_provider):
 # -----------------------------------------------------------------------------
 
 
-def test_fast_alias_routes_to_gemini_primary(fresh_gateway):
-    _set_dispatch(fresh_gateway, gemini=_ok("fast reply", model="gemini-2.5-flash"))
+def test_fast_alias_routes_to_minimax_primary(fresh_gateway):
+    _set_dispatch(fresh_gateway, minimax=_ok("fast reply", model="MiniMax-M3"))
     r = asyncio.run(
         fresh_gateway.complete("ai://fast", [{"role": "user", "content": "hi"}])
     )
-    assert r.provider == "gemini"
+    assert r.provider == "minimax"
     assert r.text == "fast reply"
     assert r.alias == "ai://fast"
     assert r.fallback_reason is None  # primary answered
 
 
-def test_reasoning_alias_routes_to_gemini_primary(fresh_gateway):
-    _set_dispatch(fresh_gateway, gemini=_ok("reasoning reply"))
+def test_reasoning_alias_routes_to_minimax_primary(fresh_gateway):
+    _set_dispatch(fresh_gateway, minimax=_ok("reasoning reply"))
     r = asyncio.run(
         fresh_gateway.complete("ai://reasoning", [{"role": "user", "content": "x"}])
     )
-    assert r.provider == "gemini"
+    assert r.provider == "minimax"
     assert r.alias == "ai://reasoning"
 
 
-def test_extract_alias_routes_to_gemini_primary(fresh_gateway):
-    _set_dispatch(fresh_gateway, gemini=_ok('{"intent":"buy"}'))
+def test_extract_alias_routes_to_minimax_primary(fresh_gateway):
+    _set_dispatch(fresh_gateway, minimax=_ok('{"intent":"buy"}'))
     r = asyncio.run(
         fresh_gateway.complete("ai://extract", [{"role": "user", "content": "x"}])
     )
-    assert r.provider == "gemini"
+    assert r.provider == "minimax"
     assert r.alias == "ai://extract"
 
 
@@ -140,7 +150,7 @@ def test_private_alias_routes_to_gemini_primary(fresh_gateway):
 def test_fallback_on_429_uses_next_provider(fresh_gateway):
     _set_dispatch(
         fresh_gateway,
-        gemini=_err(429, "quota"),
+        minimax=_err(429, "quota"),
         openrouter=_ok("from openrouter", model="google/gemini-2.5-flash"),
     )
     r = asyncio.run(
@@ -154,7 +164,7 @@ def test_fallback_on_429_uses_next_provider(fresh_gateway):
 def test_fallback_on_503_uses_next_provider(fresh_gateway):
     _set_dispatch(
         fresh_gateway,
-        gemini=_err(503, "down"),
+        minimax=_err(503, "down"),
         openrouter=_ok("ok"),
     )
     r = asyncio.run(fresh_gateway.complete("ai://fast", [{"role": "user", "content": "x"}]))
@@ -165,7 +175,7 @@ def test_fallback_on_503_uses_next_provider(fresh_gateway):
 def test_fallback_chain_walks_through_all_entries(fresh_gateway):
     _set_dispatch(
         fresh_gateway,
-        gemini=_err(429),
+        minimax=_err(429),
         openrouter=_err(502),
         openai_compatible=_ok("final", model="gpt-4o-mini"),
     )
@@ -174,22 +184,59 @@ def test_fallback_chain_walks_through_all_entries(fresh_gateway):
     assert r.fallback_reason == "http_502"  # last failure that triggered the move
 
 
-def test_fallback_does_not_retry_400_class_errors(fresh_gateway):
-    """400/401/403/404 are config bugs — falling back is wrong (just hits the same wall)."""
+def test_provider_side_403_falls_through(fresh_gateway):
+    """A suspended key (403) — like the real Gemini outage — is a PROVIDER-side
+    failure: a different provider can still serve the request, so the rotator
+    must fall through, not surface the error. (2026-09-21 fix — previously 403
+    aborted and the agent replied "I'm having trouble processing your request".)"""
     _set_dispatch(
         fresh_gateway,
-        gemini=_err(401, "bad key"),
-        openrouter=_ok("should not reach"),
+        minimax=_err(403, "key suspended"),
+        vercel=_ok("from vercel", model="google/gemini-2.5-flash"),
     )
-    with pytest.raises(ProviderError) as exc:
-        asyncio.run(fresh_gateway.complete("ai://fast", [{"role": "user", "content": "x"}]))
-    assert exc.value.status_code == 401
+    r = asyncio.run(fresh_gateway.complete("ai://fast", [{"role": "user", "content": "x"}]))
+    assert r.provider == "vercel"
+    assert r.fallback_reason == "http_403"
+    assert r.text == "from vercel"
+
+
+def test_400_also_falls_through_because_providers_disagree(fresh_gateway):
+    """We do NOT hard-stop on 400. Google's OpenAI-compat endpoint returns 400 for
+    a bad API key, so treating 400 as fatal would abort the chain on an auth
+    failure a sibling provider could serve. 400 falls through like any other."""
+    _set_dispatch(
+        fresh_gateway,
+        minimax=_err(400, "please pass a valid api key"),
+        vercel=_ok("from vercel", model="google/gemini-2.5-flash"),
+    )
+    r = asyncio.run(fresh_gateway.complete("ai://fast", [{"role": "user", "content": "x"}]))
+    assert r.provider == "vercel"
+    assert r.text == "from vercel"
+
+
+def test_keyless_provider_is_skipped_not_fatal(fresh_gateway):
+    """A fallback provider with no API key raises ProviderError(status_code=None).
+    That must SKIP to the next provider (so the chain reaches a configured one),
+    never abort — otherwise adding MiniMax as the first fallback with no key set
+    would break every reply."""
+    _set_dispatch(
+        fresh_gateway,
+        minimax=_err(403, "suspended"),
+        vercel=_err(None, "no key"),
+        google_openai=_err(None, "no key"),
+        openrouter=_ok("reached openrouter"),
+    )
+    r = asyncio.run(fresh_gateway.complete("ai://fast", [{"role": "user", "content": "x"}]))
+    assert r.provider == "openrouter"
+    assert r.text == "reached openrouter"
+    # The no-key skips must NOT clobber the informative 403 reason.
+    assert r.fallback_reason == "http_403"
 
 
 def test_all_providers_failing_raises_last_error(fresh_gateway):
     _set_dispatch(
         fresh_gateway,
-        gemini=_err(500),
+        minimax=_err(500),
         openrouter=_err(503),
         openai_compatible=_err(429),
     )
@@ -253,7 +300,7 @@ def test_budget_exceeded_raises_after_spending_cap(fresh_gateway):
     call must raise BudgetExceeded without hitting any provider."""
     # Force a tiny budget.
     fresh_gateway._config["aliases"]["ai://fast"]["daily_budget_usd"] = 0.0001
-    _set_dispatch(fresh_gateway, gemini=_ok("first", pt=1000, ct=1000, model="gemini-2.5-flash"))
+    _set_dispatch(fresh_gateway, minimax=_ok("first", pt=1000, ct=1000, model="MiniMax-M3"))
     # First call: 1000 * 0.000075 + 1000 * 0.0003 = $0.000375 — well over budget.
     asyncio.run(fresh_gateway.complete("ai://fast", [{"role": "user", "content": "x"}]))
     # Now the next call must be blocked.
@@ -265,7 +312,7 @@ def test_budget_exceeded_raises_after_spending_cap(fresh_gateway):
 def test_budget_zero_means_unlimited(fresh_gateway):
     """A daily_budget_usd of 0 (or missing) means 'no cap'."""
     fresh_gateway._config["aliases"]["ai://fast"]["daily_budget_usd"] = 0
-    _set_dispatch(fresh_gateway, gemini=_ok("ok", pt=1_000_000, ct=1_000_000))
+    _set_dispatch(fresh_gateway, minimax=_ok("ok", pt=1_000_000, ct=1_000_000))
     # Should not raise even with huge cost.
     r = asyncio.run(fresh_gateway.complete("ai://fast", [{"role": "user", "content": "x"}]))
     assert r.text == "ok"
@@ -274,7 +321,7 @@ def test_budget_zero_means_unlimited(fresh_gateway):
 def test_spent_today_isolated_per_alias(fresh_gateway):
     """Spending on ai://fast must NOT consume ai://reasoning's budget."""
     fresh_gateway._config["aliases"]["ai://fast"]["daily_budget_usd"] = 0.01
-    _set_dispatch(fresh_gateway, gemini=_ok("ok", pt=1000, ct=1000, model="gemini-2.5-flash"))
+    _set_dispatch(fresh_gateway, minimax=_ok("ok", pt=1000, ct=1000, model="MiniMax-M3"))
     asyncio.run(fresh_gateway.complete("ai://fast", [{"role": "user", "content": "x"}]))
     # reasoning budget untouched
     assert fresh_gateway.spent_today("ai://reasoning") == 0.0
@@ -286,7 +333,7 @@ def test_spent_today_isolated_per_alias(fresh_gateway):
 
 
 def test_completion_result_has_all_observability_fields(fresh_gateway):
-    _set_dispatch(fresh_gateway, gemini=_ok("hi", pt=12, ct=7, model="gemini-2.5-flash"))
+    _set_dispatch(fresh_gateway, minimax=_ok("hi", pt=12, ct=7, model="MiniMax-M3"))
     r = asyncio.run(
         fresh_gateway.complete(
             "ai://fast",
@@ -295,20 +342,19 @@ def test_completion_result_has_all_observability_fields(fresh_gateway):
         )
     )
     # Every documented field is present and typed correctly.
-    assert r.provider == "gemini"
-    assert r.model == "gemini-2.5-flash"
+    assert r.provider == "minimax"
+    assert r.model == "MiniMax-M3"
     assert r.alias == "ai://fast"
     assert r.fallback_reason is None
     assert r.prompt_tokens == 12
     assert r.completion_tokens == 7
-    assert r.cost_usd > 0.0  # we have cost data for gemini-2.5-flash
+    assert r.cost_usd > 0.0  # we have cost data for MiniMax-M3
     assert r.latency_ms >= 0
     assert isinstance(r.text, str)
 
 
 def test_drain_buffer_returns_one_row_per_successful_call(fresh_gateway):
-    _set_dispatch(fresh_gateway, gemini=_ok("ok1"), gemini_b=_ok("ok2"))
-    _set_dispatch(fresh_gateway, gemini=_ok("ok1"))
+    _set_dispatch(fresh_gateway, minimax=_ok("ok1"))
     asyncio.run(fresh_gateway.complete("ai://fast", [{"role": "user", "content": "a"}]))
     asyncio.run(fresh_gateway.complete("ai://reasoning", [{"role": "user", "content": "b"}]))
     rows = fresh_gateway.drain_usage()
@@ -320,7 +366,7 @@ def test_drain_buffer_returns_one_row_per_successful_call(fresh_gateway):
 
 
 def test_drain_buffer_is_idempotent(fresh_gateway):
-    _set_dispatch(fresh_gateway, gemini=_ok("ok"))
+    _set_dispatch(fresh_gateway, minimax=_ok("ok"))
     asyncio.run(fresh_gateway.complete("ai://fast", [{"role": "user", "content": "x"}]))
     first = fresh_gateway.drain_usage()
     second = fresh_gateway.drain_usage()
@@ -329,7 +375,7 @@ def test_drain_buffer_is_idempotent(fresh_gateway):
 
 
 def test_fallback_records_fallback_reason_in_buffer(fresh_gateway):
-    _set_dispatch(fresh_gateway, gemini=_err(429), openrouter=_ok("ok"))
+    _set_dispatch(fresh_gateway, minimax=_err(429), openrouter=_ok("ok"))
     asyncio.run(fresh_gateway.complete("ai://fast", [{"role": "user", "content": "x"}]))
     rows = fresh_gateway.drain_usage()
     assert len(rows) == 1
@@ -425,13 +471,130 @@ def test_openai_compatible_adapter_raises_without_key(monkeypatch):
 
 
 def test_cost_estimation_uses_yaml_table(fresh_gateway):
-    """gemini-2.5-flash input $0.000075/1k, output $0.0003/1k."""
-    in_rate, out_rate = fresh_gateway._cost_per_1k("gemini-2.5-flash")
-    cost = fresh_gateway._estimate_cost("gemini-2.5-flash", prompt_tokens=1000, completion_tokens=500)
-    expected = (1000 / 1000.0) * 0.000075 + (500 / 1000.0) * 0.0003
+    """The estimator must READ the table, not carry its own copy of the rates.
+
+    This test used to hardcode $0.000075/$0.0003 for gemini-2.5-flash. That is
+    the table duplicated into the test, so correcting the table broke the test
+    — even though nothing about the estimator changed. (The old numbers were
+    wrong as well: the published gemini-2.5-flash price is $0.30/$2.50 per 1M,
+    not $0.075/$0.30.)
+
+    Rates now come from _cost_per_1k, so this asserts the arithmetic and the
+    lookup, which is what the name promises. A wrong VALUE in the YAML is a
+    pricing question, checked where the rates are documented, not here.
+    """
+    model = "gemini-3.6-flash"
+    in_rate, out_rate = fresh_gateway._cost_per_1k(model)
+    assert in_rate > 0 and out_rate > 0, f"{model} missing from cost_per_1k"
+
+    cost = fresh_gateway._estimate_cost(model, prompt_tokens=1000, completion_tokens=500)
+    expected = (1000 / 1000.0) * in_rate + (500 / 1000.0) * out_rate
     assert abs(cost - expected) < 1e-9
 
 
 def test_cost_estimation_returns_zero_for_unknown_model(fresh_gateway):
     cost = fresh_gateway._estimate_cost("no/such-model", 1000, 1000)
     assert cost == 0.0
+
+
+# -----------------------------------------------------------------------------
+# 11. Gemini is dead (2026-09-26) — regression guards
+# -----------------------------------------------------------------------------
+
+
+def test_no_standard_alias_depends_on_native_gemini(fresh_gateway):
+    """Every Gemini key is revoked. A standard alias that lists native `gemini`
+    costs a failing round-trip per call; one led by it is a silent outage.
+    ai://private is the deliberate exception: it stays strict-only rather than
+    falling back to a non-strict provider (MiniMax is not strict)."""
+    for name, cfg in fresh_gateway._config["aliases"].items():
+        chain = [cfg["primary"]] + list(cfg.get("fallbacks") or [])
+        if cfg.get("privacy") == "strict":
+            assert all(e["provider"] in g.STRICT_PRIVACY_PROVIDERS for e in chain), name
+            continue
+        assert cfg["primary"]["provider"] == "minimax", name
+        assert not any(e["provider"] == "gemini" for e in chain), name
+
+
+class _FakeResp:
+    status_code = 200
+    text = ""
+
+    def __init__(self, data):
+        self._data = data
+
+    def json(self):
+        return self._data
+
+
+def _fake_client(sent, data):
+    class _Client:
+        def __init__(self, *a, **k):
+            pass
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *a):
+            return False
+
+        def post(self, url, json=None, headers=None):
+            sent["payload"] = json
+            return _FakeResp(data)
+
+    return _Client
+
+
+def test_openai_compatible_forwards_tools_and_strips_think(monkeypatch):
+    """_call_openai_compatible used to DROP `tools`, so once Gemini died no
+    provider in ai://reasoning could call a single tool. It must forward
+    OpenAI-format tools, skip Gemini-shaped ones, and never leak <think>."""
+    sent = {}
+    monkeypatch.setattr(g.httpx, "Client", _fake_client(sent, {
+        "choices": [{"message": {"content": "<think>plan</think>\nHi boss"}}],
+        "usage": {"prompt_tokens": 3, "completion_tokens": 2},
+    }))
+    fn_tool = {"type": "function", "function": {"name": "book", "parameters": {"type": "object"}}}
+    gemini_tool = {"function_declarations": [{"name": "old"}]}
+    text, _raw, pt, ct, _model = _call_openai_compatible(
+        "https://x/v1", "k", "MiniMax-M3", [{"role": "user", "content": "hi"}],
+        {"tools": [fn_tool, gemini_tool]},
+    )
+    assert sent["payload"]["tools"] == [fn_tool]
+    assert text == "Hi boss"
+    assert (pt, ct) == (3, 2)
+
+
+def test_openai_compatible_omits_tools_key_when_none(monkeypatch):
+    sent = {}
+    monkeypatch.setattr(g.httpx, "Client", _fake_client(sent, {
+        "choices": [{"message": {"content": "ok"}}],
+    }))
+    _call_openai_compatible(
+        "https://x/v1", "k", "m", [{"role": "user", "content": "hi"}], {"tools": None}
+    )
+    assert "tools" not in sent["payload"]
+
+
+def test_sync_text_model_works_with_and_without_running_loop(monkeypatch):
+    """SyncTextModel replaces genai.GenerativeModel for sync callers. It must
+    work from plain sync code (TRACE agents in worker threads) AND from sync
+    code called inside a running loop (owner commands in process_message),
+    where a bare asyncio.run would raise."""
+    calls = []
+
+    class _FakeGW:
+        async def complete(self, alias, messages, **opts):
+            calls.append((alias, messages[0]["content"], opts))
+            return SimpleNamespace(text="ok")
+
+    monkeypatch.setattr(g, "llm", _FakeGW())
+    model = g.SyncTextModel("ai://extract", max_output_tokens=7)
+    assert model.generate_content("a").text == "ok"
+
+    async def _inside_loop():
+        return model.generate_content("b").text
+
+    assert asyncio.run(_inside_loop()) == "ok"
+    assert calls == [("ai://extract", "a", {"max_output_tokens": 7}),
+                     ("ai://extract", "b", {"max_output_tokens": 7})]

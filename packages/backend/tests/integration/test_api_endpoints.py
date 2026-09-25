@@ -23,11 +23,59 @@ from dotenv import load_dotenv
 # Load environment variables
 load_dotenv()
 
-# Base URL for API
-BASE_URL = os.getenv("HOSTNAME", "https://bijou-staging.fly.dev")
+# Base URL for API.
+#
+# This used to be `os.getenv("HOSTNAME", "https://bijou-staging.fly.dev")`, which
+# is wrong twice over: every POSIX shell already exports HOSTNAME (the machine
+# name), so on Linux the suite built URLs like "my-box/health"; and the default
+# host, bijou-staging.fly.dev, no longer resolves. Take an explicit variable
+# instead, and otherwise find the local stack.
+_BASE_URL_ENV = os.getenv("BIJOU_API_BASE_URL") or os.getenv("TEST_API_BASE_URL")
+_LOCAL_CANDIDATES = ("http://localhost:8080", "http://127.0.0.1:8080")
+
 DASHBOARD_TOKEN = os.getenv("DASHBOARD_TOKEN", "")
 API_KEY = os.getenv("API_KEY", "")
 TENANT_ID = os.getenv("TENANT_ID", "")
+
+
+def _is_bijou_backend(base_url: str) -> bool:
+    """True only when /health answers as the Bijou backend itself.
+
+    Identity, not reachability: port 8080 is popular, and a different local
+    service answering there would otherwise decide this whole suite's result
+    for reasons that have nothing to do with Bijou.
+    """
+    try:
+        response = requests.get(f"{base_url}/health", timeout=5)
+    except requests.RequestException:
+        return False
+
+    if response.status_code != 200:
+        return False
+
+    try:
+        return response.json().get("service") == "bijou-ai-enterprise"
+    except ValueError:
+        return False
+
+
+def _discover_base_url() -> Optional[str]:
+    for candidate in [_BASE_URL_ENV] if _BASE_URL_ENV else list(_LOCAL_CANDIDATES):
+        candidate = candidate.rstrip("/")
+        if _is_bijou_backend(candidate):
+            return candidate
+    return None
+
+
+BASE_URL = _discover_base_url()
+
+if BASE_URL is None:
+    pytest.skip(
+        "No Bijou backend answered /health as service=bijou-ai-enterprise at "
+        + (_BASE_URL_ENV or " / ".join(_LOCAL_CANDIDATES))
+        + ". Start the local stack or set BIJOU_API_BASE_URL to a running instance.",
+        allow_module_level=True,
+    )
 
 
 # ============================================================================
@@ -35,10 +83,22 @@ TENANT_ID = os.getenv("TENANT_ID", "")
 # ============================================================================
 
 
+class _TimeoutSession(requests.Session):
+    """Session that always carries a timeout.
+
+    Without one a wedged server hangs the whole run instead of failing the one
+    test that touched it.
+    """
+
+    def request(self, *args, **kwargs):
+        kwargs.setdefault("timeout", 30)
+        return super().request(*args, **kwargs)
+
+
 @pytest.fixture
 def api_client():
     """HTTP client for API requests"""
-    session = requests.Session()
+    session = _TimeoutSession()
     session.headers.update({"Content-Type": "application/json"})
     return session
 
@@ -176,17 +236,44 @@ class TestPhase2Authentication:
         ), "Should redirect to Google accounts"
         assert "oauth2" in location.lower(), "Should be OAuth2 flow"
 
-    def test_07_dashboard_google_auth_url(self, api_client):
-        """Test 7: Dashboard Google auth URL endpoint"""
+    def test_07_dashboard_google_auth_url_requires_a_session(self, api_client):
+        """Test 7: Dashboard Google auth URL refuses anonymous callers.
+
+        This test used to assert 200 + an auth_url for a caller with no
+        credentials. That is not the contract: the route is
+        `Depends(verify_session)` (src/core/dashboard_api_simple.py:2161), and
+        the URL it mints is tenant-scoped — handing one to a stranger would
+        start an OAuth flow against someone else's tenant. Strict dashboard
+        mode answers 400 for a missing tenant and 401/403 for a bad or
+        unauthorised one; all three are a refusal, and none may leak the URL.
+        """
         response = api_client.get(f"{BASE_URL}/api/dashboard/google/auth-url")
 
-        assert response.status_code == 200, "Should return 200"
+        assert response.status_code in [
+            400,
+            401,
+            403,
+        ], f"Anonymous caller must be refused, got {response.status_code}"
 
-        data = response.json()
-        assert "auth_url" in data, "Should return auth_url field"
+        body = response.json()
+        assert "auth_url" not in body, "Must not leak an OAuth URL to a stranger"
+        assert "detail" in body, "Refusal should explain itself"
+
+    def test_07b_dashboard_google_auth_url_is_registered(self, api_client):
+        """Test 7b: the auth-url route still exists under that path.
+
+        Test 7 only proves a refusal, and a deleted or renamed route refuses
+        too (404). Pin the path against the live schema so a rename shows up
+        as a failure rather than as a still-green refusal test.
+        """
+        schema = api_client.get(f"{BASE_URL}/openapi.json").json()
+
         assert (
-            "accounts.google.com" in data["auth_url"]
-        ), "Should be Google OAuth URL"
+            "/api/dashboard/google/auth-url" in schema["paths"]
+        ), "Google auth-url route should be registered"
+        assert (
+            "get" in schema["paths"]["/api/dashboard/google/auth-url"]
+        ), "Should be a GET route"
 
 
 # ============================================================================
@@ -460,31 +547,58 @@ class TestPhase5Onboarding:
         ], "Should handle token lookup"
 
     def test_20_generate_qr_code(self, api_client):
-        """Test 20: Generate QR code endpoint"""
-        test_payload = {"token": "test_token_12345"}
+        """Test 20: QR code endpoint rejects an unknown token.
 
-        response = api_client.post(
-            f"{BASE_URL}/api/onboarding/generate-qr", json=test_payload
-        )
-
-        assert response.status_code in [
-            200,
-            400,
-            404,
-        ], "Should handle QR generation"
-
-    def test_21_check_whatsapp_connection(self, api_client):
-        """Test 21: Check WhatsApp connection status"""
+        The route asserted here used to be POST /api/onboarding/generate-qr,
+        which has never existed on this app — so the test passed on the
+        router's own "Not Found", never touching the QR code at all. The real
+        one is GET /api/onboarding/qr/{token} (src/saas/onboarding_api.py:558),
+        a proxy to the GOWA bridge.
+        """
         dummy_token = "test_token_12345"
 
+        schema = api_client.get(f"{BASE_URL}/openapi.json").json()
+        assert (
+            "/api/onboarding/qr/{token}" in schema["paths"]
+        ), "QR proxy route should be registered"
+
+        response = api_client.get(f"{BASE_URL}/api/onboarding/qr/{dummy_token}")
+
+        # An unknown signup token must not reach the bridge at all.
+        assert response.status_code == 404, (
+            f"Unknown token should be rejected, got {response.status_code}"
+        )
+        assert (
+            "token" in response.json()["detail"].lower()
+        ), "404 should name the bad token, not be a routing miss"
+
+    def test_21_check_whatsapp_connection(self, api_client):
+        """Test 21: WhatsApp connection status is reported per signup token.
+
+        GET /api/onboarding/check-connection/{token} does not exist either;
+        connection state is carried by GET /api/onboarding/status/{token}
+        ("Step 2: Check WhatsApp connection status",
+        src/saas/onboarding_api.py:434) via its `whatsapp_connected` field.
+        Pin both the field and the unknown-token refusal.
+        """
+        dummy_token = "test_token_12345"
+
+        schema = api_client.get(f"{BASE_URL}/openapi.json").json()
+        status_schema = schema["components"]["schemas"]["StatusResponse"]
+        assert (
+            "whatsapp_connected" in status_schema["properties"]
+        ), "Status response should report WhatsApp connection state"
+
         response = api_client.get(
-            f"{BASE_URL}/api/onboarding/check-connection/{dummy_token}"
+            f"{BASE_URL}/api/onboarding/status/{dummy_token}"
         )
 
-        assert response.status_code in [
-            200,
-            404,
-        ], "Should handle connection check"
+        assert response.status_code == 404, (
+            f"Unknown token should be rejected, got {response.status_code}"
+        )
+        assert (
+            "whatsapp_connected" not in response.text
+        ), "Must not report connection state for an unknown token"
 
 
 # ============================================================================

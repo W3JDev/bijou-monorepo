@@ -22,18 +22,30 @@ from unittest.mock import MagicMock, patch, call
 from fastapi import HTTPException
 from fastapi.testclient import TestClient
 
+from src.core.dashboard_api_simple import verify_session
 from src.core.outreach_api import _normalize_phone, _phone_to_jid, router
 
 # ── Shared TestClient fixture ──────────────────────────────────────────────────
 
 from fastapi import FastAPI
 
-_app = FastAPI()
-_app.include_router(router)
-client = TestClient(_app, raise_server_exceptions=False)
-
 TENANT_ID = "dae52bc5-8ad7-40fb-81bb-84325b23c6ff"
 HEADERS = {"X-Tenant-ID": TENANT_ID, "Content-Type": "application/json"}
+
+# Every outreach route resolves `verify_session` before FastAPI validates the
+# request body, so an unauthenticated call is rejected with an auth error and
+# never reaches Pydantic. Tests that want to exercise the handler (or its
+# validation) therefore need a real session; `client` supplies one by
+# overriding the dependency. `unauth_client` keeps the real verify_session so
+# the auth gate itself can be asserted.
+_app = FastAPI()
+_app.include_router(router)
+_app.dependency_overrides[verify_session] = lambda: TENANT_ID
+client = TestClient(_app, raise_server_exceptions=False)
+
+_unauth_app = FastAPI()
+_unauth_app.include_router(router)
+unauth_client = TestClient(_unauth_app, raise_server_exceptions=False)
 
 
 def _mock_db(
@@ -60,6 +72,7 @@ def _mock_db(
         chain.eq.return_value = chain
         chain.order.return_value = chain
         chain.single.return_value = chain
+        chain.maybe_single.return_value = chain
         chain.execute.return_value = m
         return chain
 
@@ -341,10 +354,32 @@ class TestContactsImportEndpoint:
         )
         assert resp.status_code == 422
 
-    def test_missing_tenant_id_returns_401(self):
-        resp = client.post(
+    def test_tenant_header_without_session_returns_401(self):
+        resp = unauth_client.post(
+            "/api/outreach/contacts/import",
+            headers=HEADERS,
+            json={"segment_name": "x", "contacts": [{"phone": "601112223333"}]},
+        )
+        assert resp.status_code == 401
+        assert "log in" in resp.json()["detail"].lower()
+
+    def test_no_credentials_at_all_is_rejected(self):
+        """verify_session runs in strict mode and fails closed when it cannot
+        resolve a tenant from either a session or a portal link."""
+        resp = unauth_client.post(
             "/api/outreach/contacts/import",
             json={"segment_name": "x", "contacts": [{"phone": "601112223333"}]},
+        )
+        assert resp.status_code == 400
+        assert "tenant_id" in resp.json()["detail"].lower()
+
+    def test_auth_is_checked_before_body_validation(self):
+        """An unauthenticated caller must not learn which body fields are
+        wrong — the auth failure has to win over the 422."""
+        resp = unauth_client.post(
+            "/api/outreach/contacts/import",
+            headers=HEADERS,
+            json={"numbers": ["601112223333"], "segment_name": "x"},
         )
         assert resp.status_code == 401
 
@@ -422,9 +457,14 @@ class TestListSegmentsEndpoint:
         assert resp.status_code == 200
         assert resp.json()["segments"] == []
 
-    def test_no_tenant_returns_401(self):
-        resp = client.get("/api/outreach/segments")
+    def test_tenant_header_without_session_returns_401(self):
+        resp = unauth_client.get("/api/outreach/segments", headers=HEADERS)
         assert resp.status_code == 401
+
+    def test_no_credentials_at_all_is_rejected(self):
+        resp = unauth_client.get("/api/outreach/segments")
+        assert resp.status_code == 400
+        assert "tenant_id" in resp.json()["detail"].lower()
 
 
 class TestCreateCampaignEndpoint:
@@ -538,6 +578,7 @@ class TestCampaignStartEndpoint:
         chain.select.return_value = chain
         chain.eq.return_value = chain
         chain.single.return_value = chain
+        chain.maybe_single.return_value = chain
         chain.execute.return_value = c_result
         db_mock.table.return_value = chain
 
@@ -557,6 +598,7 @@ class TestCampaignStartEndpoint:
         chain.select.return_value = chain
         chain.eq.return_value = chain
         chain.single.return_value = chain
+        chain.maybe_single.return_value = chain
         chain.execute.return_value = c_result
         db_mock.table.return_value = chain
 
@@ -575,6 +617,7 @@ class TestCampaignStartEndpoint:
         chain.select.return_value = chain
         chain.eq.return_value = chain
         chain.single.return_value = chain
+        chain.maybe_single.return_value = chain
         chain.execute.return_value = c_result
         db_mock.table.return_value = chain
 
@@ -584,9 +627,16 @@ class TestCampaignStartEndpoint:
         assert "message template" in resp.json()["detail"].lower() or \
                "description" in resp.json()["detail"].lower()
 
-    def test_no_tenant_id_returns_401(self):
-        resp = client.post(f"/api/outreach/campaigns/{CAMP_ID}/start")
+    def test_tenant_header_without_session_returns_401(self):
+        resp = unauth_client.post(
+            f"/api/outreach/campaigns/{CAMP_ID}/start", headers=HEADERS
+        )
         assert resp.status_code == 401
+
+    def test_no_credentials_at_all_is_rejected(self):
+        resp = unauth_client.post(f"/api/outreach/campaigns/{CAMP_ID}/start")
+        assert resp.status_code == 400
+        assert "tenant_id" in resp.json()["detail"].lower()
 
 
 class TestCSVImportEndpoint:

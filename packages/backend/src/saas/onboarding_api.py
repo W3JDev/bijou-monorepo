@@ -431,6 +431,49 @@ async def signup_property_agent(request: SignupRequest):
         raise HTTPException(status_code=500, detail=f"Signup failed: {str(e)}")
 
 
+def _resolve_device_id(supabase, tenant_id: str) -> str:
+    """The bridge device id for a tenant: the stored mapping, else the
+    predictable `bijou-{tenant_id}`. Mirrors the QR endpoint's resolution."""
+    device_id = f"bijou-{tenant_id}"
+    try:
+        dev_row = (
+            supabase.table("whatsapp_devices")
+            .select("device_id")
+            .eq("tenant_id", tenant_id)
+            .limit(1)
+            .execute()
+        )
+        if dev_row.data and dev_row.data[0].get("device_id"):
+            device_id = dev_row.data[0]["device_id"]
+    except Exception as e:
+        logger.warning(f"⚠️ device_id lookup failed for {tenant_id}: {e}")
+    return device_id
+
+
+async def _bridge_device_state(device_id: str):
+    """Return (state, jid) for device_id from the bridge, or (None, None).
+
+    GOWA flips a device to 'logged_in' the instant its QR is scanned, but only
+    POSTs a webhook on the first inbound MESSAGE. The onboarding page therefore
+    can't rely on whatsapp_connected_at (webhook-set) to notice the scan — it
+    would sit on "waiting for scan" forever with the phone already linked. This
+    lets the status poll ask the bridge directly.
+    """
+    try:
+        bridge_url = get_whatsapp_bridge_url()
+        headers = get_bridge_auth_headers()
+        async with httpx.AsyncClient(timeout=8.0) as client:
+            r = await client.get(f"{bridge_url}/devices", headers=headers)
+        if r.status_code != 200:
+            return None, None
+        for dev in (r.json().get("results") or []):
+            if dev.get("id") == device_id:
+                return dev.get("state"), dev.get("jid")
+    except Exception as e:
+        logger.debug(f"bridge device-state check failed (non-fatal): {e}")
+    return None, None
+
+
 @router.get("/status/{token}", response_model=StatusResponse)
 async def get_onboarding_status(token: str):
     """
@@ -461,8 +504,34 @@ async def get_onboarding_status(token: str):
 
         tenant = result.data[0]
 
-        # Determine connection status
+        # Determine connection status. whatsapp_connected_at is set by a webhook,
+        # which GOWA only sends on the first inbound MESSAGE — not when the QR is
+        # scanned. So if it isn't set yet, ask the bridge directly: it flips the
+        # device to 'logged_in' the instant the QR is scanned. Without this the
+        # page sits on "waiting for scan" forever with the phone already linked.
         whatsapp_connected = bool(tenant.get("whatsapp_connected_at"))
+        if not whatsapp_connected:
+            state, jid = await _bridge_device_state(
+                _resolve_device_id(supabase, tenant["id"])
+            )
+            if state == "logged_in":
+                whatsapp_connected = True
+                new_jid = jid or tenant.get("whatsapp_jid")
+                tenant["whatsapp_jid"] = new_jid
+                # Persist so /complete succeeds and we stop re-polling the bridge.
+                try:
+                    supabase.table("tenants").update(
+                        {
+                            "whatsapp_connected_at": datetime.utcnow().isoformat(),
+                            "whatsapp_jid": new_jid,
+                            "status": "active",
+                        }
+                    ).eq("id", tenant["id"]).execute()
+                except Exception as persist_err:
+                    logger.warning(
+                        f"⚠️ Could not persist whatsapp_connected_at for "
+                        f"{tenant['id']}: {persist_err}"
+                    )
 
         # Determine onboarding status for UI
         if whatsapp_connected:
@@ -516,6 +585,43 @@ async def get_onboarding_status(token: str):
     except Exception as e:
         logger.error(f"❌ Status check failed: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
+
+
+def _normalise_qr_link(qr_link: Optional[str], bridge_url: str) -> Optional[str]:
+    """Point the QR image URL at the bridge we are actually configured to use.
+
+    Two problems this solves, both seen against a real GOWA bridge.
+
+    1. The scheme. This used to be `qr_link.replace("http://", "https://")` with
+       the comment "Force HTTPS so an http->https redirect can't drop the auth
+       header". That upgrade is unconditional, so on a plain-HTTP bridge — an
+       internal Docker network, which is how an internal-only bridge SHOULD be
+       reached — the fetch spoke TLS to a plaintext port and died with
+       `[SSL: WRONG_VERSION_NUMBER]`. The scheme must follow the configured
+       bridge, not a hardcoded assumption about the deployment.
+
+    2. The host. GOWA builds qr_link from the Host header it saw, so it can
+       hand back `http://localhost:3000/...`. Resolved by the BACKEND, that
+       means the backend itself, never the bridge.
+
+    Keeping only the path (and query) from qr_link and taking scheme+host from
+    the configured bridge URL fixes both. Returns None when there is no link,
+    and returns the link untouched when no bridge URL is configured — trying
+    the original beats inventing one.
+    """
+    if not qr_link:
+        return None
+    if not bridge_url:
+        return qr_link
+
+    from urllib.parse import urlsplit, urlunsplit
+
+    base = urlsplit(bridge_url.rstrip("/"))
+    link = urlsplit(qr_link)
+    if not base.scheme or not base.netloc:
+        return qr_link
+
+    return urlunsplit((base.scheme, base.netloc, link.path, link.query, ""))
 
 
 @router.get("/qr/{token}")
@@ -665,9 +771,12 @@ async def get_qr_code(token: str):
                         status_code=503,
                         detail="WhatsApp session is still starting. Please wait a moment.",
                     )
-                # Force HTTPS so an http->https redirect can't drop the auth header.
+                # Follow the configured bridge for scheme AND host. See
+                # _normalise_qr_link — the old unconditional http->https
+                # rewrite broke every plain-HTTP bridge with
+                # [SSL: WRONG_VERSION_NUMBER].
                 img_response = await client.get(
-                    qr_link.replace("http://", "https://"), headers=bridge_headers
+                    _normalise_qr_link(qr_link, bridge_url), headers=bridge_headers
                 )
                 img_response.raise_for_status()
                 png_bytes = img_response.content

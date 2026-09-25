@@ -77,11 +77,11 @@ export const CalBooking: React.FC<CalBookingProps> = ({
         </motion.div>
         
         <h3 className="text-2xl font-bold text-white mb-4">
-          Swee! Demo Booked! 🎉
+          Demo Booked! 🎉
         </h3>
-        
+
         <p className="text-gray-300 mb-6 leading-relaxed">
-          Terima kasih! Your demo is confirmed. We'll send you a calendar invite and preparation materials via email.
+          Thank you! Your demo is confirmed. We'll send you a calendar invite and preparation materials via email.
         </p>
         
         <div className="grid md:grid-cols-3 gap-4 text-sm text-gray-400">
@@ -132,7 +132,7 @@ export const CalBooking: React.FC<CalBookingProps> = ({
         </h3>
         
         <p className="text-gray-300 max-w-2xl mx-auto leading-relaxed">
-          30-minute live demo where you'll watch Bijou handle actual Malaysian customer inquiries in Manglish. 
+          30-minute live demo where you'll watch Bijou handle real customer inquiries in your brand voice.
           No sales pitch, just results.
         </p>
       </div>
@@ -203,7 +203,7 @@ export const CalBooking: React.FC<CalBookingProps> = ({
           </div>
           <div className="flex items-center gap-2">
             <CheckCircle className="w-4 h-4 text-emerald-400" />
-            <span>PDPA compliant</span>
+            <span>GDPR &amp; CCPA compliant</span>
           </div>
           <div className="flex items-center gap-2">
             <CheckCircle className="w-4 h-4 text-emerald-400" />

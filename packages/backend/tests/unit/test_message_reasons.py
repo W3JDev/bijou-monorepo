@@ -10,9 +10,8 @@ Covers:
 - A request with no session is rejected before any DB call
 - confidence is clamped to 0.0..1.0 by Pydantic
 
-Tests use unittest.mock to stub the Supabase client. They will run when
-the user installs pytest in the venv (pip install -r requirements-dev.txt
-from their terminal).
+Supabase is stubbed with unittest.mock; the session is supplied through
+FastAPI's dependency_overrides (see the authed_client fixture).
 """
 from __future__ import annotations
 
@@ -33,7 +32,7 @@ def fake_tenant_id() -> str:
 
 
 @pytest.fixture
-def app(fake_tenant_id):
+def app():
     from src.core.message_reasons_api import router
 
     a = FastAPI()
@@ -43,7 +42,25 @@ def app(fake_tenant_id):
 
 @pytest.fixture
 def client(app):
+    """Unauthenticated client — the real verify_session runs."""
     return TestClient(app, raise_server_exceptions=False)
+
+
+@pytest.fixture
+def authed_client(app, fake_tenant_id):
+    """Client whose requests resolve verify_session to a fixed tenant.
+
+    Depends() captures the dependency function object when the route is
+    declared, so patching src.core.message_reasons_api.verify_session after
+    import has no effect — the override registry is the only seam. The real
+    verify_session fails closed under the default DASHBOARD_MODE=strict,
+    which is why every authenticated test needs this.
+    """
+    from src.core.dashboard_api_simple import verify_session
+
+    app.dependency_overrides[verify_session] = lambda: fake_tenant_id
+    yield TestClient(app, raise_server_exceptions=False)
+    app.dependency_overrides.clear()
 
 
 @pytest.fixture
@@ -71,9 +88,12 @@ def fake_supabase():
         "created_at": "2026-08-23T06:00:00+00:00",
     }])
 
-    # select().eq().eq().limit() chain (for GET by message_id)
+    # select() chain, shared by GET-by-message_id (eq().eq().limit()) and the
+    # list endpoint (eq().gte().order().limit()) — every link returns itself.
     select_eq_chain = sb.table.return_value.select.return_value
     select_eq_chain.eq.return_value = select_eq_chain
+    select_eq_chain.gte.return_value = select_eq_chain
+    select_eq_chain.order.return_value = select_eq_chain
     select_eq_chain.limit.return_value = select_eq_chain
     select_eq_chain.execute.return_value = MagicMock(data=[{
         "id": "00000000-0000-0000-0000-000000000001",
@@ -96,11 +116,10 @@ def fake_supabase():
 # ── POST /reasons ────────────────────────────────────────────────────────
 
 
-def test_post_records_reason(app, client, fake_tenant_id, fake_supabase):
+def test_post_records_reason(app, authed_client, fake_tenant_id, fake_supabase):
     """POST /reasons with a valid body writes via the upsert chain."""
-    with patch("src.core.message_reasons_api._supabase", return_value=fake_supabase), \
-         patch("src.core.message_reasons_api.verify_session", return_value=fake_tenant_id):
-        r = client.post(
+    with patch("src.core.message_reasons_api._supabase", return_value=fake_supabase):
+        r = authed_client.post(
             "/api/dashboard/messages/reasons",
             json={
                 "message_id": "msg_abc",
@@ -123,11 +142,10 @@ def test_post_records_reason(app, client, fake_tenant_id, fake_supabase):
     fake_supabase.table.return_value.upsert.assert_called_once()
 
 
-def test_post_rejects_confidence_above_one(app, client, fake_tenant_id, fake_supabase):
+def test_post_rejects_confidence_above_one(app, authed_client, fake_tenant_id, fake_supabase):
     """Pydantic should reject confidence > 1.0 (Field ge=0.0 le=1.0)."""
-    with patch("src.core.message_reasons_api._supabase", return_value=fake_supabase), \
-         patch("src.core.message_reasons_api.verify_session", return_value=fake_tenant_id):
-        r = client.post(
+    with patch("src.core.message_reasons_api._supabase", return_value=fake_supabase):
+        r = authed_client.post(
             "/api/dashboard/messages/reasons",
             json={
                 "message_id": "msg_abc",
@@ -138,11 +156,10 @@ def test_post_rejects_confidence_above_one(app, client, fake_tenant_id, fake_sup
     assert r.status_code == 422  # Pydantic validation error
 
 
-def test_post_rejects_negative_confidence(app, client, fake_tenant_id, fake_supabase):
+def test_post_rejects_negative_confidence(app, authed_client, fake_tenant_id, fake_supabase):
     """Pydantic should reject confidence < 0.0."""
-    with patch("src.core.message_reasons_api._supabase", return_value=fake_supabase), \
-         patch("src.core.message_reasons_api.verify_session", return_value=fake_tenant_id):
-        r = client.post(
+    with patch("src.core.message_reasons_api._supabase", return_value=fake_supabase):
+        r = authed_client.post(
             "/api/dashboard/messages/reasons",
             json={
                 "message_id": "msg_abc",
@@ -156,27 +173,25 @@ def test_post_rejects_negative_confidence(app, client, fake_tenant_id, fake_supa
 # ── GET /{message_id}/reason ─────────────────────────────────────────────
 
 
-def test_get_returns_reason(app, client, fake_tenant_id, fake_supabase):
+def test_get_returns_reason(app, authed_client, fake_tenant_id, fake_supabase):
     """GET on a known message_id returns the row."""
-    with patch("src.core.message_reasons_api._supabase", return_value=fake_supabase), \
-         patch("src.core.message_reasons_api.verify_session", return_value=fake_tenant_id):
-        r = client.get("/api/dashboard/messages/msg_abc/reason")
+    with patch("src.core.message_reasons_api._supabase", return_value=fake_supabase):
+        r = authed_client.get("/api/dashboard/messages/msg_abc/reason")
     assert r.status_code == 200
     body = r.json()
     assert body["message_id"] == "msg_abc"
     assert body["confidence"] == 0.81
 
 
-def test_get_returns_404_when_no_row(app, client, fake_tenant_id):
+def test_get_returns_404_when_no_row(app, authed_client, fake_tenant_id):
     """GET on an unknown message_id returns 404, not 500."""
     empty_sb = MagicMock()
     chain = empty_sb.table.return_value.select.return_value
     chain.eq.return_value = chain
     chain.limit.return_value = chain
     chain.execute.return_value = MagicMock(data=[])
-    with patch("src.core.message_reasons_api._supabase", return_value=empty_sb), \
-         patch("src.core.message_reasons_api.verify_session", return_value=fake_tenant_id):
-        r = client.get("/api/dashboard/messages/msg_unknown/reason")
+    with patch("src.core.message_reasons_api._supabase", return_value=empty_sb):
+        r = authed_client.get("/api/dashboard/messages/msg_unknown/reason")
     assert r.status_code == 404
     assert "pre-date" in r.json()["detail"].lower() or "no reasoning" in r.json()["detail"].lower()
 
@@ -184,11 +199,10 @@ def test_get_returns_404_when_no_row(app, client, fake_tenant_id):
 # ── GET /reasons (list) ─────────────────────────────────────────────────
 
 
-def test_list_returns_rows(app, client, fake_tenant_id, fake_supabase):
+def test_list_returns_rows(app, authed_client, fake_tenant_id, fake_supabase):
     """GET /reasons returns recent rows for the tenant."""
-    with patch("src.core.message_reasons_api._supabase", return_value=fake_supabase), \
-         patch("src.core.message_reasons_api.verify_session", return_value=fake_tenant_id):
-        r = client.get("/api/dashboard/messages/reasons")
+    with patch("src.core.message_reasons_api._supabase", return_value=fake_supabase):
+        r = authed_client.get("/api/dashboard/messages/reasons")
     assert r.status_code == 200
     body = r.json()
     assert "reasons" in body
@@ -202,6 +216,8 @@ def test_list_returns_rows(app, client, fake_tenant_id, fake_supabase):
 def test_unauthenticated_post_is_rejected(app, client):
     """A POST with no session should not touch Supabase and should not 200."""
     sb_sentinel = MagicMock()
+    # `client`, not `authed_client`: no dependency override, so the real
+    # verify_session runs and denies the session-less request.
     with patch("src.core.message_reasons_api._supabase", return_value=sb_sentinel):
         r = client.post(
             "/api/dashboard/messages/reasons",
@@ -211,6 +227,7 @@ def test_unauthenticated_post_is_rejected(app, client):
             },
         )
     assert r.status_code != 200
+    assert 400 <= r.status_code < 500
     sb_sentinel.table.return_value.upsert.assert_not_called()
 
 

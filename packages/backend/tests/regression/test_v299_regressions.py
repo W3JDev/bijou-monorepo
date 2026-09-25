@@ -195,7 +195,12 @@ class TestNotificationRegressions:
         
         # Check if notification types are defined as singular
         source_code = notification_groups.__file__
-        with open(source_code, 'r') as f:
+        # encoding is explicit on purpose: without it Python uses the platform
+        # default, which is cp1252 on Windows, and every source file in this
+        # repo contains emoji. This raised
+        #   UnicodeDecodeError: 'charmap' codec can't decode byte 0x8f
+        # and the failure had nothing to do with what the test asserts.
+        with open(source_code, 'r', encoding='utf-8') as f:
             content = f.read()
         
         # Should have singular forms in group_type mapping

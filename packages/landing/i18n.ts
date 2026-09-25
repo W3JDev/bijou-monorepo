@@ -1,5 +1,4 @@
 import i18n from "i18next";
-import LanguageDetector from "i18next-browser-languagedetector";
 import { initReactI18next } from "react-i18next";
 
 // Translation resources
@@ -9,53 +8,53 @@ const resources = {
       // Navbar
 
       // Hero Section
-      "hero.badge": "🚀 RM0 to start — no credit card, no WABA needed",
-      "hero.title.part1": "Your WhatsApp goes",
+      "hero.badge": "🚀 Done-for-you AI agents — we build, deploy & run them for you",
+      "hero.title.part1": "Your support goes",
       "hero.title.savingsAmount": "offline at 10pm.",
       "hero.title.part2": "Your competitors'",
       "hero.title.priceAmount": "doesn't.",
       "hero.subtitle.part1":
-        "Bijou is a Malaysian AI for WhatsApp & Telegram. Replies instantly in Manglish, books Cal.com appointments, qualifies leads automatically —",
+        "Done-for-you AI agents for US & EU businesses — we build, deploy, and manage them for you. Your agent replies instantly on WhatsApp & Telegram, books Cal.com appointments, and qualifies leads automatically —",
       "hero.subtitle.roi": "while you sleep.",
       "hero.subtitle.part2": "",
-      "hero.cta.trial": "Start Free — RM0",
+      "hero.cta.trial": "Book a Free Strategy Call",
       "hero.cta.demo": "Book Demo",
       "hero.trustFooter":
-        "✅ 30-day money-back · ✅ No WABA needed · ✅ Cancel anytime",
-      "hero.trust.pdpa": "PDPA Compliant",
+        "✅ We build & run it for you · ✅ Live in days, not months · ✅ Cancel anytime",
+      "hero.trust.pdpa": "GDPR & CCPA Ready",
       "hero.chatDemo.assistant": "Bijou Assistant",
       "hero.chatDemo.status": "Active • 02:45 AM",
       "hero.chatDemo.msg1":
-        "Boss, can check property viewing? 2am liao but I excited.",
+        "Hi — can I still book a property viewing? It's 2am but I'm keen.",
       "hero.chatDemo.msg2":
-        "No prob boss! I still awake. Which area you looking? KLCC or Mont Kiara? 🏙️",
-      "hero.chatDemo.msg3": "MK. Got balcony one.",
+        "Absolutely! I'm available 24/7. Which area are you looking at — downtown or the waterfront? 🏙️",
+      "hero.chatDemo.msg3": "Downtown. With a balcony.",
       "hero.chatDemo.msg4":
-        "Got! Residensi 22, High Floor. I send you video brochure now. 📹",
+        "Great pick! Unit 22, high floor. Sending you the video brochure now. 📹",
       "hero.roiCard.title": "Monthly Savings",
-      "hero.roiCard.amount": "RM2,700+",
-      "hero.roiCard.comparison": "vs part-time WhatsApp staff (PayScale)",
-      "hero.roiCard.roi": "~900% ROI",
+      "hero.roiCard.amount": "$3,000+",
+      "hero.roiCard.comparison": "vs a part-time support hire",
+      "hero.roiCard.roi": "Strong ROI",
 
-      // Pricing Section — Single PRO Tier (RM 299/month, updated 2026-07-30 per pricing-drift-2026-07-30.md)
+      // Pricing Section — Done-for-you managed tier ($499/month + $2,500 one-time setup, pivot 2026-09-21)
       "pricing.badge": "💎 Honest, Simple Pricing",
-      "pricing.title": "One Plan. Everything That's Live.",
+      "pricing.title": "One Plan. Fully Managed.",
       "pricing.subtitle.part1": "Backed by a",
       "pricing.subtitle.trial": "30-day money-back guarantee",
       "pricing.subtitle.part2": ". No contract. Cancel anytime.",
 
-      // PRO Plan — Single Tier
-      "pricing.pro.name": "PRO",
-      "pricing.pro.price": "299",
-      "pricing.pro.yearlyPrice": "2,990",
-      "pricing.pro.yearlySaving": "Save RM598 — 2 months free",
-      "pricing.pro.description": "Everything you need to never miss a lead",
+      // PRO Plan — Single Tier (done-for-you managed retainer)
+      "pricing.pro.name": "DONE-FOR-YOU",
+      "pricing.pro.price": "499",
+      "pricing.pro.yearlyPrice": "2,500",
+      "pricing.pro.yearlySaving": "Build, deployment & full onboarding included",
+      "pricing.pro.description": "We build, deploy, and run your AI agent for you",
       "pricing.pro.badge": "THE ONLY PLAN",
-      "pricing.pro.features.0": "WhatsApp AI Agent — no WABA, no Meta fees",
-      "pricing.pro.features.1": "Telegram AI Agent — same brain, same Manglish",
+      "pricing.pro.features.0": "WhatsApp AI Agent — built & managed for you",
+      "pricing.pro.features.1": "Telegram AI Agent — same brain, fully managed",
       "pricing.pro.features.2": "3,000 Conversations/month (~100/day)",
       "pricing.pro.features.3": "Full TRACE AI — 4-agent empathy pipeline",
-      "pricing.pro.features.4": "Manglish + EN / BM / Mandarin / Tamil",
+      "pricing.pro.features.4": "English + multilingual support",
       "pricing.pro.features.5":
         "Cal.com Booking — create, check, cancel appointments",
       "pricing.pro.features.6": "Auto email confirmations to customers",
@@ -67,8 +66,10 @@ const resources = {
       "pricing.pro.earlyAccessNote":
         "Pro customers get early access FREE when new features ship — multi-user seats, extra channels, SMS reminders & more.",
 
-      // 2026-08-23: Competitor comparison (English copy on all 4 locales
-      // for speed; localize the brand-sensitive parts in a follow-up).
+      // 2026-08-23: Competitor comparison. The note here used to say the
+      // English copy was "on all 4 locales for speed" — it was not; the keys
+      // existed only in EN, so ms/zh/ta rendered the raw key strings to real
+      // users. Localised 2026-09-06.
       "pricing.compare.badge": "Bijou vs the alternatives",
       "pricing.compare.title": "How Bijou stacks up",
       "pricing.compare.subtitle":
@@ -80,7 +81,7 @@ const resources = {
         "Every feature that ships = a revenue event. Pro customers get early access free.",
 
       // CTA + Enterprise footnote
-      "pricing.cta.trial": "Start 30-Day Trial",
+      "pricing.cta.trial": "Book a Free Strategy Call",
       "pricing.cta.enterprise": "Contact us →",
       "pricing.cta.enterprisePrompt":
         "Need multi-team, multi-number, or a custom setup?",
@@ -96,15 +97,15 @@ const resources = {
       "cases.title": "Pilot Examples",
       "cases.subtitle": "Sample outcomes we're targeting with early pilots. Real case studies ship after our first 10 customers.",
 
-      // Real Estate Case Study
-      "cases.realEstate.company": "Property Agency (Pilot Example)",
-      "cases.realEstate.industry": "Real Estate Agency",
-      "cases.realEstate.stat1.value": "0%",
-      "cases.realEstate.stat1.label": "Missed Calls",
-      "cases.realEstate.stat2.value": "+40%",
-      "cases.realEstate.stat2.label": "Leads Qualified",
+      // Confidential US Client Case Study
+      "cases.realEstate.company": "Confidential US Client",
+      "cases.realEstate.industry": "Done-for-You AI Agent Client",
+      "cases.realEstate.stat1.value": "24/7",
+      "cases.realEstate.stat1.label": "Inbound Coverage",
+      "cases.realEstate.stat2.value": "Zero",
+      "cases.realEstate.stat2.label": "Client Build Effort",
       "cases.realEstate.quote":
-        "Before Bijou, we lost leads every time we were in a viewing. Now, Bijou answers instantly, sends the brochure, and books the next viewing. It's like having a super-agent.",
+        "Bijou built and deployed our AI agent end to end — we didn't lift a finger. It now handles inbound inquiries around the clock, qualifies leads, and hands off to our team only when it matters.",
       "cases.realEstate.cta": "Read Full Case Study",
 
       // Healthcare Case Study
@@ -155,21 +156,21 @@ const resources = {
       "features.stats.convos": "Conversations/mo",
       "features.stats.convos.sub": "~100 per day",
       "features.stats.langs": "Languages Supported",
-      "features.stats.langs.sub": "EN · BM · 中文 · தமிழ்",
+      "features.stats.langs.sub": "English + multilingual",
       "features.badge.live": "Live Now",
       "features.badge.unique": "Unique to Bijou",
       "features.badge.enterprise": "Enterprise-Grade",
       "features.wa.title": "WhatsApp AI Agent",
-      "features.wa.subtitle": "No WABA. No Meta fees. No markups.",
+      "features.wa.subtitle": "Built and managed for you.",
       "features.wa.desc":
-        "Connect your existing WhatsApp number in minutes via QR scan. No Facebook Business Manager, no WABA application, no RM0.05/message Meta fees. Bijou handles inbound queries flat at RM299/mo.",
-      "features.wa.b1": "Scan QR → live in 15 min",
+        "We connect your existing WhatsApp number and handle everything — setup, deployment, and ongoing management. No technical work on your side. Flat $499/month, fully managed, plus a one-time $2,500 setup.",
+      "features.wa.b1": "Live in days — set up for you",
       "features.wa.b2": "No per-conversation charges",
-      "features.wa.b3": "No Meta markup ever",
+      "features.wa.b3": "No hidden markups ever",
       "features.tg.title": "Telegram AI Agent",
       "features.tg.subtitle": "Same brain. Second channel. Included free.",
       "features.tg.desc":
-        "The same AI, knowledge base and Manglish personality runs simultaneously on Telegram at no extra cost. Reach customers on whichever app they prefer.",
+        "The same AI, knowledge base and brand personality runs simultaneously on Telegram at no extra cost. Reach customers on whichever app they prefer.",
       "features.tg.b1": "Included in Pro — no extra fee",
       "features.tg.b2": "Same TRACE engine and knowledge base",
       "features.tg.b3": "Independent channel, unified setup",
@@ -177,16 +178,16 @@ const resources = {
       "features.trace.title": "Gemini 2.5 Flash with smart context. Plus automatic handover when AI hits its limit.",
       "features.trace.subtitle": "Fast LLM. Smart escalation. No fake pipeline.",
       "features.trace.desc":
-        "Every message goes through Gemini 2.5 Flash with per-tenant context, your knowledge base, and Manglish tone. If the conversation gets too complex or emotionally charged, the handover system flags it and a human takes over. No fake pipeline — just a fast LLM and a smart escalation layer that actually works.",
+        "Every message goes through Gemini 2.5 Flash with per-tenant context, your knowledge base, and your brand tone. If the conversation gets too complex or emotionally charged, the handover system flags it and a human takes over. No fake pipeline — just a fast LLM and a smart escalation layer that actually works.",
       "features.trace.b1": "Detects frustration before it escalates",
       "features.trace.b2": "Understands context, not just keywords",
       "features.trace.b3": "Answers only from your data — no hallucination",
-      "features.manglish.title": "Manglish Engine",
-      "features.manglish.subtitle": "Can lah. Got or not? Sorted.",
+      "features.manglish.title": "Multilingual Engine",
+      "features.manglish.subtitle": "Speaks your customers' language, in your brand voice.",
       "features.manglish.desc":
-        "20+ regex patterns handle Malaysian code-switching natively — BM, English, Mandarin, Tamil and Manglish blended naturally. Adjust tone from full corporate to full pasar malam.",
-      "features.manglish.b1": "English, Malay, Mandarin, Tamil",
-      "features.manglish.b2": "Tone slider: formal to full Manglish",
+        "Your agent handles multiple languages natively and mirrors the customer's tone. We tune the voice to your brand — from polished corporate to warm and casual — so it never sounds like a robot.",
+      "features.manglish.b1": "English + major world languages",
+      "features.manglish.b2": "Tone tuned to your brand",
       "features.manglish.b3": "No robotic 'Certainly, I can assist you'",
       "features.cal.title": "Cal.com Booking",
       "features.cal.subtitle": "Book, check, cancel — all via WhatsApp chat.",
@@ -217,13 +218,13 @@ const resources = {
       "features.leads.b1": "Budget + timeline detection",
       "features.leads.b2": "Hot / warm / cold tagging",
       "features.leads.b3": "Included in escalation alert summary",
-      "features.security.title": "PDPA-Ready Security",
+      "features.security.title": "Enterprise-Grade Security",
       "features.security.subtitle": "Your data. Fully isolated. Always.",
       "features.security.desc":
-        "Row-Level Security means your customer data is 100% isolated from every other Bijou tenant. AES-256 encryption at rest. PDPA and GDPR compliant. Hosted on Fly.io Singapore region.",
+        "Row-Level Security means your customer data is 100% isolated from every other Bijou tenant. AES-256 encryption at rest. GDPR and CCPA compliant. Hosted on reliable US & EU cloud infrastructure.",
       "features.security.b1": "Row-level multi-tenant data isolation",
-      "features.security.b2": "AES-256 + PDPA + GDPR ready",
-      "features.security.b3": "99.9% uptime — Singapore region",
+      "features.security.b2": "AES-256 + GDPR + CCPA ready",
+      "features.security.b3": "99.9% uptime — US & EU regions",
 
       // Comparison Table
       "comparison.badge": "Honest Comparison",
@@ -232,7 +233,7 @@ const resources = {
       "comparison.subtitle":
         "No cherry-picked metrics. Every row is verifiable. We included the ones where competitors beat us too.",
       "comparison.disclaimer":
-        "* ChatDaddy advertises RM75/mo but requires a WABA account (+RM150–400/mo in Meta fees). Real total: RM280–500+/mo.",
+        "* Self-serve chatbot tools advertise low monthly fees but require you to build, configure, and maintain everything yourself. Bijou is fully done-for-you.",
       "comparison.filter.all": "All",
       "comparison.cat.pricing": "Pricing",
       "comparison.cat.channels": "Channels",
@@ -242,18 +243,18 @@ const resources = {
       "comparison.best": "★ Best Value",
       "comparison.cta.title": "You have seen the numbers. Judge for yourself.",
       "comparison.cta.body":
-        "RM299/mo. No WABA. No hidden Meta fees. No annual trap. WhatsApp direct to the founder if you have any questions.",
-      "comparison.cta.wa": "Ask Jewel on WhatsApp",
+        "$2,500 one-time setup + $499/mo, fully managed. We build and run it for you. No hidden fees. No annual trap. Talk directly to the founder if you have any questions.",
+      "comparison.cta.wa": "Ask us on WhatsApp",
       "comparison.cta.email": "jewel@mybijou.xyz",
 
       // Waitlist Strip
-      "waitlist.headline": "Only 7 Early Adopter Spots Left — RM299/mo Forever",
+      "waitlist.headline": "Only 7 Early Adopter Spots Left — $499/mo Managed",
       "waitlist.pill1": "Done for you",
-      "waitlist.pill2": "Live in 15 min",
+      "waitlist.pill2": "Live in days",
       "waitlist.pill3": "Zero setup hassle",
-      "waitlist.social": "Built in KL. Made for Malaysian SMEs.",
+      "waitlist.social": "Built for US & EU businesses.",
       "waitlist.mobileSub":
-        "✅ Done for you · ⚡ Live in 15 min · 🚫 Zero hassle",
+        "✅ Done for you · ⚡ Live in days · 🚫 Zero hassle",
       "waitlist.cta": "Claim My Spot",
 
       // Early Adopter block (Pricing)
@@ -261,8 +262,8 @@ const resources = {
       "pricing.ea.badge": "🔥 Closing Soon",
       "pricing.ea.claimed": "of {{total}} founding spots claimed",
       "pricing.ea.left": "left",
-      "pricing.ea.b1": "RM299 rate locked forever",
-      "pricing.ea.b2": "New customers pay RM399+",
+      "pricing.ea.b1": "$499 rate locked forever",
+      "pricing.ea.b2": "New customers pay more",
       "pricing.ea.b3": "Cancel anytime, no trap",
       "pricing.ea.b4": "Free add-ons when they ship",
     },
@@ -333,6 +334,13 @@ const resources = {
         "Pelanggan Pro mendapat akses awal PERCUMA apabila ciri baharu dilancarkan — tempat berbilang pengguna, saluran tambahan & lebih.",
 
       // Bahagian Tambahan
+      // Competitor comparison. Localised 2026-09-06 — these three keys were
+      // only ever added to EN, so ms/zh/ta rendered the raw key strings.
+      "pricing.compare.badge": "Bijou berbanding alternatif",
+      "pricing.compare.title": "Bagaimana Bijou setanding",
+      "pricing.compare.subtitle":
+        "Kerja yang sama, pertimbangan berbeza. Disahkan pada 2026-08 berdasarkan halaman harga awam setiap pesaing.",
+
       "pricing.addons.title": "Akan Datang Q2–Q4 2026 (Tambahan Berbayar)",
       "pricing.addons.subtitle":
         "Setiap ciri baharu = peluang hasil. Pelanggan Pro dapat akses awal percuma.",
@@ -587,6 +595,13 @@ const resources = {
         "Pro客户可在新功能上线时免费获得早期访问权限 — 多用户席位、额外渠道等。",
 
       // 插件路线图
+      // Competitor comparison. Localised 2026-09-06 — these three keys were
+      // only ever added to EN, so ms/zh/ta rendered the raw key strings.
+      "pricing.compare.badge": "Bijou 与其他方案对比",
+      "pricing.compare.title": "Bijou 的优势在哪里",
+      "pricing.compare.subtitle":
+        "同样的工作，不同的取舍。已于 2026-08 对照各竞争对手的公开定价页面核实。",
+
       "pricing.addons.title": "2026年Q2–Q4即将推出（付费插件）",
       "pricing.addons.subtitle":
         "每项新功能 = 一次收入机会。Pro客户优先免费体验。",
@@ -683,7 +698,7 @@ const resources = {
       "features.trace.title": "Gemini 2.5 Flash with smart context. Plus automatic handover when AI hits its limit.",
       "features.trace.subtitle": "Fast LLM. Smart escalation. No fake pipeline.",
       "features.trace.desc":
-        "Every message goes through Gemini 2.5 Flash with per-tenant context, your knowledge base, and Manglish tone. If the conversation gets too complex or emotionally charged, the handover system flags it and a human takes over. No fake pipeline — just a fast LLM and a smart escalation layer that actually works.",
+        "Every message goes through Gemini 2.5 Flash with per-tenant context, your knowledge base, and your brand tone. If the conversation gets too complex or emotionally charged, the handover system flags it and a human takes over. No fake pipeline — just a fast LLM and a smart escalation layer that actually works.",
       "features.trace.b1": "在升级前检测挫败感",
       "features.trace.b2": "理解上下文，不只是关键词",
       "features.trace.b3": "只从您的数据回答 — 无幻觉",
@@ -840,6 +855,13 @@ const resources = {
         "Pro வாடிக்கையாளர்கள் புதிய அம்சங்கள் வெளியிடப்படும்போது இலவச ஆரம்ப அணுகல் பெறுவார்கள்.",
 
       // சேர்க்கை வரைபடம்
+      // Competitor comparison. Localised 2026-09-06 — these three keys were
+      // only ever added to EN, so ms/zh/ta rendered the raw key strings.
+      "pricing.compare.badge": "Bijou vs மாற்றுகள்",
+      "pricing.compare.title": "Bijou எப்படி நிற்கிறது",
+      "pricing.compare.subtitle":
+        "ஒரே வேலை, வெவ்வேறு சமரசங்கள். ஒவ்வொரு போட்டியாளரின் பொது விலைப் பக்கத்துடன் 2026-08-இல் சரிபார்க்கப்பட்டது.",
+
       "pricing.addons.title": "Q2–Q4 2026-இல் வரவிருக்கும் (கட்டண சேர்க்கைகள்)",
       "pricing.addons.subtitle":
         "ஒவ்வொரு புதிய அம்சமும் = வருவாய் நிகழ்வு. Pro வாடிக்கையாளர்கள் முதலில் இலவசமாக பெறுவார்கள்.",
@@ -945,7 +967,7 @@ const resources = {
       "features.trace.title": "Gemini 2.5 Flash with smart context. Plus automatic handover when AI hits its limit.",
       "features.trace.subtitle": "Fast LLM. Smart escalation. No fake pipeline.",
       "features.trace.desc":
-        "Every message goes through Gemini 2.5 Flash with per-tenant context, your knowledge base, and Manglish tone. If the conversation gets too complex or emotionally charged, the handover system flags it and a human takes over. No fake pipeline — just a fast LLM and a smart escalation layer that actually works.",
+        "Every message goes through Gemini 2.5 Flash with per-tenant context, your knowledge base, and your brand tone. If the conversation gets too complex or emotionally charged, the handover system flags it and a human takes over. No fake pipeline — just a fast LLM and a smart escalation layer that actually works.",
       "features.trace.b1": "அதிகரிக்கும் முன் விரக்தியை கண்டறிகிறது",
       "features.trace.b2": "சூழலை புரிகிறது, வெறும் சொற்களை மட்டுமல்ல",
       "features.trace.b3": "உங்கள் தரவிலிருந்து மட்டுமே பதில் — மாயை இல்லை",
@@ -1043,14 +1065,14 @@ const resources = {
 };
 
 i18n
-  .use(LanguageDetector) // Detect user language
   .use(initReactI18next) // Pass i18n to react-i18next
   .init({
+    // US/EU pivot: English only. SEA-language blocks (ms/zh/ta) remain in the
+    // resource object for history but are never selected — no detector, locked lng.
     resources,
-    fallbackLng: "en", // Fallback to English if language not found
-    supportedLngs: ["en", "ms", "zh", "ta"],
-    detection: {
-    },
+    lng: "en",
+    fallbackLng: "en",
+    supportedLngs: ["en"],
     interpolation: {
     },
   });

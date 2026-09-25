@@ -27,7 +27,8 @@ export const CaseStudies: React.FC<CaseStudiesProps> = ({ onOpenModal }) => {
         </motion.div>
 
         <div className="grid lg:grid-cols-2 gap-10">
-          {/* Real Estate Case Study */}
+          {/* Qualitative tiles until the client signs off on real figures — do not invent numbers. */}
+          {/* Confidential US client case study (cases.realEstate.* keys, adapted) */}
           <motion.div
             initial={{ opacity: 0, x: -30 }}
             whileInView={{ opacity: 1, x: 0 }}
@@ -35,10 +36,10 @@ export const CaseStudies: React.FC<CaseStudiesProps> = ({ onOpenModal }) => {
             transition={{ duration: 0.6, delay: 0.1 }}
             className="glass-panel-3d p-10 rounded-3xl group relative"
           >
-            <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/10 rounded-full blur-[80px] group-hover:bg-blue-500/20 transition-colors" />
+            <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/10 rounded-full blur-[80px] group-hover:bg-emerald-500/20 transition-colors" />
 
             <div className="flex items-center gap-5 mb-10 relative z-10">
-              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-500/20 to-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 shadow-[0_0_20px_rgba(59,130,246,0.15)]">
+              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500/20 to-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 shadow-[0_0_20px_rgba(16,185,129,0.15)]">
                 <Building2 className="w-7 h-7" />
               </div>
               <div>
@@ -60,11 +61,11 @@ export const CaseStudies: React.FC<CaseStudiesProps> = ({ onOpenModal }) => {
                   {t("cases.realEstate.stat1.label")}
                 </div>
               </div>
-              <div className="bg-gold-900/20 p-5 rounded-2xl border border-gold-400/20 shadow-[0_4px_20px_rgba(212,175,55,0.1)]">
+              <div className="bg-gold-600/20 p-5 rounded-2xl border border-gold-400/20 shadow-[0_4px_20px_rgba(212,175,55,0.1)]">
                 <div className="text-4xl font-bold text-gold-400 mb-2">
                   {t("cases.realEstate.stat2.value")}
                 </div>
-                <div className="text-xs text-gold-200/70 uppercase tracking-widest font-semibold">
+                <div className="text-xs text-gold-300/70 uppercase tracking-widest font-semibold">
                   {t("cases.realEstate.stat2.label")}
                 </div>
               </div>
@@ -76,7 +77,7 @@ export const CaseStudies: React.FC<CaseStudiesProps> = ({ onOpenModal }) => {
               </p>
               <button
                 onClick={onOpenModal}
-                className="flex items-center gap-2 text-sm text-blue-400 font-bold hover:gap-3 transition-all group/btn"
+                className="flex items-center gap-2 text-sm text-emerald-400 font-bold hover:gap-3 transition-all group/btn"
               >
                 {t("cases.realEstate.cta")}{" "}
                 <ArrowUpRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
@@ -92,10 +93,10 @@ export const CaseStudies: React.FC<CaseStudiesProps> = ({ onOpenModal }) => {
             transition={{ duration: 0.6, delay: 0.2 }}
             className="glass-panel-3d p-10 rounded-3xl group relative"
           >
-            <div className="absolute top-0 right-0 w-64 h-64 bg-orange-500/10 rounded-full blur-[80px] group-hover:bg-orange-500/20 transition-colors" />
+            <div className="absolute top-0 right-0 w-64 h-64 bg-gold-500/10 rounded-full blur-[80px] group-hover:bg-gold-500/20 transition-colors" />
 
             <div className="flex items-center gap-5 mb-10 relative z-10">
-              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-orange-500/20 to-orange-500/10 border border-orange-500/20 flex items-center justify-center text-orange-400 shadow-[0_0_20px_rgba(249,115,22,0.15)]">
+              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-gold-500/20 to-gold-500/10 border border-gold-500/20 flex items-center justify-center text-gold-400 shadow-[0_0_20px_rgba(227,180,87,0.15)]">
                 <Stethoscope className="w-7 h-7" />
               </div>
               <div>
@@ -117,11 +118,11 @@ export const CaseStudies: React.FC<CaseStudiesProps> = ({ onOpenModal }) => {
                   {t("cases.healthcare.stat1.label")}
                 </div>
               </div>
-              <div className="bg-orange-900/20 p-5 rounded-2xl border border-orange-500/20 shadow-[0_4px_20px_rgba(249,115,22,0.1)]">
-                <div className="text-4xl font-bold text-orange-400 mb-2">
+              <div className="bg-gold-600/20 p-5 rounded-2xl border border-gold-500/20 shadow-[0_4px_20px_rgba(249,115,22,0.1)]">
+                <div className="text-4xl font-bold text-gold-400 mb-2">
                   {t("cases.healthcare.stat2.value")}
                 </div>
-                <div className="text-xs text-orange-200/70 uppercase tracking-widest font-semibold">
+                <div className="text-xs text-gold-300/70 uppercase tracking-widest font-semibold">
                   {t("cases.healthcare.stat2.label")}
                 </div>
               </div>
@@ -133,7 +134,7 @@ export const CaseStudies: React.FC<CaseStudiesProps> = ({ onOpenModal }) => {
               </p>
               <button
                 onClick={onOpenModal}
-                className="flex items-center gap-2 text-sm text-orange-400 font-bold hover:gap-3 transition-all group/btn"
+                className="flex items-center gap-2 text-sm text-gold-400 font-bold hover:gap-3 transition-all group/btn"
               >
                 {t("cases.healthcare.cta")}{" "}
                 <ArrowUpRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />

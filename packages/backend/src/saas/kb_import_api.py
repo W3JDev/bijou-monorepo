@@ -132,24 +132,21 @@ Raw listing text:
 Output only the formatted article, no preamble."""
 
 
-async def _call_gemini(raw_text: str, note: str = "") -> str:
-    """Call Gemini REST API to format raw listing text into a KB article."""
-    api_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
-    if not api_key:
-        raise ValueError("GEMINI_API_KEY not configured")
+async def _format_listing_with_ai(raw_text: str, note: str = "") -> str:
+    """Format raw listing text into a KB article via the AI Gateway (was Gemini-direct)."""
+    from src.core.llm_gateway_v2 import llm
 
     prompt = GEMINI_PROMPT_TEMPLATE.format(
         raw_text=raw_text[:10000], note=note or "None provided"
     )
-
-    async with httpx.AsyncClient(timeout=30) as client:
-        res = await client.post(
-            f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={api_key}",
-            json={"contents": [{"parts": [{"text": prompt}]}]},
-        )
-        res.raise_for_status()
-        data = res.json()
-        return data["candidates"][0]["content"]["parts"][0]["text"].strip()
+    result = await llm.complete(
+        "ai://fast",
+        [{"role": "user", "content": prompt}],
+        max_output_tokens=2048,  # a full article, not a chat reply
+    )
+    if not (result.text or "").strip():
+        raise ValueError("AI returned an empty article")
+    return result.text.strip()
 
 
 # ---------------------------------------------------------------------------
@@ -255,7 +252,7 @@ async def import_listing_url(
 
     # --- Step 3: Gemini formats the text ---
     try:
-        formatted = await _call_gemini(raw_text, note=req.note or "")
+        formatted = await _format_listing_with_ai(raw_text, note=req.note or "")
     except Exception as e:
         logger.error(f"[KB Import] Gemini error: {e}")
         raise HTTPException(status_code=500, detail="AI formatting failed. Please try again.")
@@ -309,7 +306,7 @@ async def import_listing_text(
 
     # Gemini formats the raw pasted text
     try:
-        formatted = await _call_gemini(text[:10000], note=req.note or "")
+        formatted = await _format_listing_with_ai(text[:10000], note=req.note or "")
     except Exception as e:
         logger.error(f"[KB Import Text] Gemini error: {e}")
         raise HTTPException(status_code=500, detail="AI formatting failed. Please try again.")

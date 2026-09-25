@@ -1,0 +1,56 @@
+# Local-dev backend image. Build context: repo root.
+#
+# Differs from Dockerfile.backend in exactly one meaningful way: it strips the
+# torch / torchaudio / chatterbox-tts block out of requirements.txt before
+# installing.
+#
+# Those three pull 3+ GB and add many minutes to every build. Nothing under
+# packages/backend/src imports any of them:
+#
+#     $ grep -rn "import torch\|import torchaudio\|chatterbox" packages/backend/src/
+#     (no matches)
+#
+# The strip is done with sed against the real requirements.txt rather than by
+# keeping a separate pinned list, so a dependency added upstream shows up here
+# automatically instead of silently drifting. If TTS is ever actually wired up,
+# delete the sed and this comment.
+
+FROM python:3.12-slim
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    libpq-dev \
+    poppler-utils \
+    tesseract-ocr \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+COPY packages/backend/requirements.txt /app/requirements.raw.txt
+RUN sed -E '/^(torch|torchaudio|chatterbox-tts)([<>=!~ ]|$)/d' \
+        /app/requirements.raw.txt > /app/requirements.txt \
+    && echo "--- installing (torch stack stripped) ---" \
+    && pip install --no-cache-dir -r /app/requirements.txt
+
+COPY packages/backend/src            /app/src
+COPY packages/backend/static         /app/static
+COPY packages/backend/migrations-py  /app/migrations-py
+COPY packages/backend/scripts        /app/scripts/
+COPY packages/backend/llm_gateway.yaml /app/llm_gateway.yaml
+
+# Writable upload target before dropping privileges.
+RUN mkdir -p /app/uploads \
+    && useradd --create-home --shell /bin/bash bijou \
+    && chown -R bijou:bijou /app
+USER bijou
+
+EXPOSE 8080
+
+# /health/database, not /health. /health returns 200 even when Supabase is
+# completely unreachable (verified 2026-09-05 against a bogus SUPABASE_URL),
+# which makes it useless as a liveness signal and defeats auto-rollback.
+HEALTHCHECK --interval=15s --timeout=10s --start-period=45s --retries=5 \
+    CMD curl -fsS http://localhost:8080/health/database || exit 1
+
+CMD ["sh", "-c", "uvicorn src.core.bijou:app --host 0.0.0.0 --port ${PORT:-8080} --workers ${WEB_CONCURRENCY:-1}"]

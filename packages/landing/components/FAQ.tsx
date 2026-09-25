@@ -15,19 +15,20 @@ const faqs: FAQItem[] = [
     q: "What exactly is Bijou?",
     a: (
       <>
-        Bijou is a Malaysian-built WhatsApp and Telegram AI assistant that
-        replies to customers in Manglish, books appointments via Cal.com, and
-        escalates complex issues to you via email/WhatsApp. Think of it as a
-        24/7 staff member who never sleeps, never forgets, and costs{" "}
-        <strong className="text-gold-400">RM299/month</strong> instead of
-        RM2,500+/month for a human receptionist.
+        Bijou is a done-for-you WhatsApp and Telegram AI assistant that
+        replies to customers in your brand voice, books appointments via Cal.com, and
+        escalates complex issues to you via email/WhatsApp. We build, deploy, and
+        manage it for you. Think of it as a 24/7 staff member who never sleeps, never
+        forgets, and costs{" "}
+        <strong className="text-gold-400">$499/month managed</strong> (plus a one-time
+        $2,500 setup) instead of thousands per month for a human receptionist.
       </>
     ),
   },
   {
     category: "About Bijou",
     q: "Why did you build Bijou?",
-    a: "Founder's story: My mother's life was saved by AI-powered cancer research in 2023. I saw firsthand how AI can change lives — so I built Bijou to help Malaysian SMEs compete with bigger businesses without hiring full-time staff they can't afford.",
+    a: "Founder's story: My mother's life was saved by AI-powered cancer research in 2023. I saw firsthand how AI can change lives — so I built Bijou to help US & EU businesses compete with bigger companies without hiring full-time staff they can't afford.",
   },
   {
     category: "About Bijou",
@@ -35,29 +36,28 @@ const faqs: FAQItem[] = [
     a: "Real AI powered by GPT-4 — but constrained to ONLY answer from YOUR knowledge base (no hallucination). It doesn't generate random answers. If it doesn't know, it escalates to you.",
   },
 
-  // Malaysian-Specific
+  // Languages & Reach
   {
-    category: "Malaysian Market",
-    q: 'Does it understand Manglish? Like "Got or not?", "Can lah", "Tomorrow free ah?"',
+    category: "Languages & Reach",
+    q: "Can it handle multiple languages and match my brand's tone?",
     a: (
       <>
         <p className="mb-3">
-          YES. Bijou has a custom Manglish engine trained on 20+ Malaysian
-          speech patterns. It detects code-switching between BM/English/
-          Mandarin/Tamil and replies naturally.
+          YES. Bijou handles English and major world languages natively, detects the
+          customer's language, and mirrors their tone — all tuned to your brand voice.
         </p>
         <div className="bg-black/30 rounded-xl p-4 border border-white/10 text-sm font-mono space-y-2">
           <div className="text-gray-400">
             Customer:{" "}
             <span className="text-white">
-              "Tmr morning got slot or not? Near LRT can ah?"
+              "Any openings tomorrow morning? Somewhere near downtown?"
             </span>
           </div>
           <div className="text-emerald-400">
             Bijou:{" "}
             <span className="text-white">
-              "Got lah! 10am free. Walking distance from LRT station, 5 min
-              only."
+              "Yes! 10am is open, right downtown — just a 5-minute walk from the
+              station."
             </span>
           </div>
         </div>
@@ -65,54 +65,53 @@ const faqs: FAQItem[] = [
     ),
   },
   {
-    category: "Malaysian Market",
-    q: "Will it work for my industry? (Property agents / F&B / clinics / salons)",
-    a: "Yes — we've tested with property agents (most popular), restaurants, medical clinics, and beauty salons. You upload your own FAQs, property listings, menu, or service catalog. The AI learns YOUR business, not generic templates.",
+    category: "Languages & Reach",
+    q: "Will it work for my industry? (Real estate / services / clinics / agencies)",
+    a: "Yes — we've deployed for real estate, professional services, medical clinics, and agencies. You provide your own FAQs, listings, or service catalog. The AI learns YOUR business, not generic templates.",
   },
   {
-    category: "Malaysian Market",
-    q: "My customers speak BM, some speak English, some mix. Will Bijou get confused?",
-    a: 'No — it auto-detects language and mirrors the customer. If they speak BM, it replies in BM. If they mix ("Booking untuk esok boleh tak?"), it mixes back naturally.',
+    category: "Languages & Reach",
+    q: "My customers speak different languages, some mix. Will Bijou get confused?",
+    a: "No — it auto-detects language and mirrors the customer. If they write in Spanish, it replies in Spanish. If they mix languages, it follows along naturally.",
   },
 
   // Pricing
   {
     category: "Pricing & Fees",
-    q: "Is RM299/month really all I pay? No conversation fees like other platforms?",
-    a: "RM299/month. Period. No per-message fees. No WhatsApp conversation markup (competitors charge 20% on top of Meta fees). No surprise annual lock-in. Cancel anytime.",
+    q: "What does it cost? Any hidden conversation fees like other platforms?",
+    a: "$2,500 one-time setup + $499/month managed. That's it. No per-message fees. No conversation markup. No surprise annual lock-in. Cancel anytime.",
   },
   {
     category: "Pricing & Fees",
-    q: "What about WhatsApp Business API (WABA) fees? I heard it's expensive.",
+    q: "Do I have to build or maintain anything myself?",
     a: (
       <>
         <p className="mb-3">
-          Bijou uses the GOWA bridge — you don't need WABA at all. No
-          RM280/month Meta subscription. No conversation markups. Zero WABA
-          costs.
+          No — Bijou is fully done-for-you. We build, deploy, and manage the agent for
+          you. No DIY setup, no flow builders, no ongoing maintenance on your end.
         </p>
         <p className="mb-2 text-sm text-gray-400 font-semibold">
-          Here's what others actually charge:
+          How self-serve tools compare:
         </p>
         <div className="space-y-1.5 text-sm">
           <div className="flex justify-between items-center bg-red-500/5 border border-red-500/10 rounded-lg px-3 py-2">
-            <span className="text-gray-300">ChatDaddy (advertised ~RM75)</span>
-            <span className="text-red-400 font-bold">~RM280–500/mo actual</span>
+            <span className="text-gray-300">Self-serve chatbot tools</span>
+            <span className="text-red-400 font-bold">You build &amp; maintain it</span>
           </div>
           <div className="flex justify-between items-center bg-red-500/5 border border-red-500/10 rounded-lg px-3 py-2">
-            <span className="text-gray-300">Wati</span>
+            <span className="text-gray-300">Per-seat platforms</span>
             <span className="text-red-400 font-bold">
-              20% markup on Meta fees
+              Agent-seat fees add up
             </span>
           </div>
           <div className="flex justify-between items-center bg-red-500/5 border border-red-500/10 rounded-lg px-3 py-2">
-            <span className="text-gray-300">DahReply</span>
-            <span className="text-red-400 font-bold">~RM700+/mo total</span>
+            <span className="text-gray-300">Hiring in-house</span>
+            <span className="text-red-400 font-bold">Thousands/mo + time</span>
           </div>
           <div className="flex justify-between items-center bg-emerald-500/10 border border-emerald-500/30 rounded-lg px-3 py-2">
             <span className="text-white font-bold">Bijou</span>
             <span className="text-emerald-400 font-bold">
-              RM299/mo flat. Always.
+              $499/mo, fully managed.
             </span>
           </div>
         </div>
@@ -122,7 +121,7 @@ const faqs: FAQItem[] = [
   {
     category: "Pricing & Fees",
     q: "Do I get locked into an annual contract?",
-    a: "NO. Monthly plans cancel anytime. Annual plan (RM2,990 — saves RM598) is optional, and if you cancel early, we refund the unused months. No annual trap.",
+    a: "NO. The $499/month managed plan cancels anytime. The one-time $2,500 covers build, deployment, and full onboarding. No annual trap.",
   },
   {
     category: "Pricing & Fees",
@@ -169,7 +168,7 @@ const faqs: FAQItem[] = [
           ))}
         </ol>
         <p className="mt-3 text-sm text-gray-400">
-          No developer needed. No consultants charging RM5,000 for setup.
+          No developer needed on your side — we handle the entire build for you.
         </p>
       </>
     ),
@@ -177,7 +176,7 @@ const faqs: FAQItem[] = [
   {
     category: "Setup & Technical",
     q: "Do I need to install anything or learn complicated flow builders?",
-    a: "No. Bijou runs in the cloud (Singapore servers). You don't install anything. There's no flow builder — the AI handles conversations naturally based on your FAQs, not rigid scripts.",
+    a: "No. Bijou runs in the cloud on US & EU infrastructure. You don't install anything. There's no flow builder — the AI handles conversations naturally based on your FAQs, not rigid scripts.",
   },
   {
     category: "Setup & Technical",
@@ -195,30 +194,30 @@ const categories = [...new Set(faqs.map((f) => f.category))];
 
 const categoryActiveClasses: Record<string, string> = {
   All: "bg-white/15 border-white/30 text-white",
-  "About Bijou": "bg-yellow-500/15 border-yellow-400/40 text-yellow-300",
-  "Malaysian Market":
+  "About Bijou": "bg-gold-500/15 border-gold-400/40 text-gold-300",
+  "Languages & Reach":
     "bg-emerald-500/15 border-emerald-400/40 text-emerald-300",
-  "Pricing & Fees": "bg-blue-500/15 border-blue-400/40 text-blue-300",
-  "Setup & Technical": "bg-purple-500/15 border-purple-400/40 text-purple-300",
+  "Pricing & Fees": "bg-emerald-500/15 border-emerald-400/40 text-emerald-300",
+  "Setup & Technical": "bg-gold-500/15 border-gold-400/40 text-gold-300",
 };
 
 const categoryInactiveClasses: Record<string, string> = {
   All: "bg-white/5 border-white/10 text-gray-400 hover:bg-white/10 hover:text-white",
   "About Bijou":
-    "bg-white/5 border-white/10 text-gray-400 hover:bg-yellow-500/10 hover:border-yellow-400/20 hover:text-yellow-300",
-  "Malaysian Market":
+    "bg-white/5 border-white/10 text-gray-400 hover:bg-gold-500/10 hover:border-gold-400/20 hover:text-gold-300",
+  "Languages & Reach":
     "bg-white/5 border-white/10 text-gray-400 hover:bg-emerald-500/10 hover:border-emerald-400/20 hover:text-emerald-300",
   "Pricing & Fees":
-    "bg-white/5 border-white/10 text-gray-400 hover:bg-blue-500/10 hover:border-blue-400/20 hover:text-blue-300",
+    "bg-white/5 border-white/10 text-gray-400 hover:bg-emerald-500/10 hover:border-emerald-400/20 hover:text-emerald-300",
   "Setup & Technical":
-    "bg-white/5 border-white/10 text-gray-400 hover:bg-purple-500/10 hover:border-purple-400/20 hover:text-purple-300",
+    "bg-white/5 border-white/10 text-gray-400 hover:bg-gold-500/10 hover:border-gold-400/20 hover:text-gold-300",
 };
 
 const categoryDotClasses: Record<string, string> = {
-  "About Bijou": "bg-yellow-400",
-  "Malaysian Market": "bg-emerald-400",
-  "Pricing & Fees": "bg-blue-400",
-  "Setup & Technical": "bg-purple-400",
+  "About Bijou": "bg-gold-400",
+  "Languages & Reach": "bg-emerald-400",
+  "Pricing & Fees": "bg-emerald-400",
+  "Setup & Technical": "bg-gold-400",
 };
 
 export const FAQ: React.FC = () => {
@@ -239,7 +238,7 @@ export const FAQ: React.FC = () => {
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-1/4 left-0 w-[500px] h-[500px] bg-gold-500/6 rounded-full blur-[150px]" />
         <div className="absolute bottom-1/4 right-0 w-[400px] h-[400px] bg-emerald-500/6 rounded-full blur-[130px]" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[300px] bg-gold-900/8 rounded-full blur-[120px]" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[300px] bg-gold-600/8 rounded-full blur-[120px]" />
       </div>
 
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">

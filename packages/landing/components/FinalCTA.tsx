@@ -23,21 +23,21 @@ export const FinalCTA: React.FC<FinalCTAProps> = ({
   const [showModal, setShowModal] = useState(false);
   return (
     <section className="py-24 relative overflow-hidden border-t border-white/5 bg-dark-900">
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gold-900/20 rounded-full blur-[120px] pointer-events-none" />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gold-600/20 rounded-full blur-[120px] pointer-events-none" />
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
         <h2 className="text-4xl md:text-6xl font-display font-extrabold mb-6 tracking-tight">
           Ready to Stop Losing Leads?
         </h2>
         <p className="text-xl text-gray-300 mb-10 font-light">
-          Start free — RM0. 30-day money-back. No credit card. Cancel anytime.
+          Done-for-you AI agents. 30-day money-back. No credit card. Cancel anytime.
         </p>
 
         <button
           onClick={() => { trackPostHog("hero_cta_clicked", { cta: "start_free_trial_final" }); setShowModal(true); }}
           className="inline-flex items-center gap-3 bg-gradient-to-r from-gold-500 to-gold-300 hover:from-gold-400 hover:to-gold-300 text-black font-bold py-5 px-12 rounded-xl shadow-[0_0_30px_rgba(212,175,55,0.4)] hover:shadow-[0_0_50px_rgba(212,175,55,0.6)] transition-all transform hover:scale-[1.02] text-xl mb-4"
         >
-          Start Free Trial
+          Book a Free Strategy Call
           <ArrowRight className="w-6 h-6" />
         </button>
 
@@ -59,8 +59,8 @@ export const FinalCTA: React.FC<FinalCTAProps> = ({
               What happens after the trial?
             </h4>
             <p className="text-sm text-gray-400 leading-relaxed">
-              It's RM299/month (or RM2,990/year). You can cancel anytime with
-              one click. No long-term contracts.
+              It's $499/month managed (plus a one-time $2,500 setup). You can
+              cancel anytime. No long-term contracts.
             </p>
           </div>
           <div>
@@ -126,7 +126,7 @@ export const FinalCTA: React.FC<FinalCTAProps> = ({
                   {/* Direct Trial Option */}
                   <motion.div
                     whileHover={{ scale: 1.02 }}
-                    className="glass-panel-3d p-8 rounded-2xl border border-gold-400/30 bg-gold-900/10 relative group"
+                    className="glass-panel-3d p-8 rounded-2xl border border-gold-400/30 bg-gold-600/10 relative group"
                   >
                     <div className="flex items-center gap-3 mb-4">
                       <div className="w-12 h-12 rounded-full bg-gold-500/20 flex items-center justify-center">
@@ -143,9 +143,9 @@ export const FinalCTA: React.FC<FinalCTAProps> = ({
                     </div>
 
                     <p className="text-gray-300 mb-6 leading-relaxed">
-                      Start free at RM0 — no credit card, no WABA required. Get
-                      set up in minutes and test Bijou with your leads
-                      immediately.
+                      Book a free strategy call — no credit card required. We
+                      build, deploy, and manage your AI agent for you, live in
+                      days.
                     </p>
 
                     <div className="space-y-2 text-sm text-gray-400 mb-6">
@@ -176,17 +176,17 @@ export const FinalCTA: React.FC<FinalCTAProps> = ({
                   {/* Guided Onboarding Option */}
                   <motion.div
                     whileHover={{ scale: 1.02 }}
-                    className="glass-panel-3d p-8 rounded-2xl border border-blue-500/30 bg-blue-900/10 relative group"
+                    className="glass-panel-3d p-8 rounded-2xl border border-emerald-500/30 bg-emerald-900/10 relative group"
                   >
                     <div className="flex items-center gap-3 mb-4">
-                      <div className="w-12 h-12 rounded-full bg-blue-500/20 flex items-center justify-center">
-                        <Calendar className="w-6 h-6 text-blue-400" />
+                      <div className="w-12 h-12 rounded-full bg-emerald-500/20 flex items-center justify-center">
+                        <Calendar className="w-6 h-6 text-emerald-400" />
                       </div>
                       <div>
                         <h4 className="text-xl font-bold text-white">
                           Guided Onboarding
                         </h4>
-                        <p className="text-blue-400 text-sm">
+                        <p className="text-emerald-400 text-sm">
                           Personalized setup
                         </p>
                       </div>
@@ -199,15 +199,15 @@ export const FinalCTA: React.FC<FinalCTAProps> = ({
 
                     <div className="space-y-2 text-sm text-gray-400 mb-6">
                       <div className="flex items-center gap-2">
-                        <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                         Free business analysis
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                         Custom lead optimization
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                         Advanced playbook setup
                       </div>
                     </div>
@@ -217,7 +217,7 @@ export const FinalCTA: React.FC<FinalCTAProps> = ({
                       target="_blank"
                       rel="noopener noreferrer"
                       onClick={() => setShowModal(false)}
-                      className="w-full bg-blue-500 hover:bg-blue-400 text-white font-bold py-4 px-6 rounded-xl transition-all flex items-center justify-center gap-2 group-hover:scale-105"
+                      className="w-full bg-emerald-500 hover:bg-emerald-400 text-white font-bold py-4 px-6 rounded-xl transition-all flex items-center justify-center gap-2 group-hover:scale-105"
                     >
                       <User className="w-5 h-5" />
                       Book Your Demo Call

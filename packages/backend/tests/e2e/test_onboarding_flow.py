@@ -12,7 +12,8 @@ Usage:
     pytest tests/e2e/test_onboarding_flow.py -v
     
 Environment:
-    Requires BIJOU_API_URL env var or defaults to staging
+    Requires BIJOU_API_URL env var; defaults to the local docker stack
+    (docker-compose.local.yml publishes the backend on 8080).
 """
 
 import os
@@ -22,8 +23,10 @@ import pytest
 from typing import Dict, Any
 
 
-# Test configuration
-BASE_URL = os.getenv("BIJOU_API_URL", "https://bijou-staging.fly.dev")
+# Test configuration.
+# The old default (bijou-staging.fly.dev) no longer resolves -- that Fly app is
+# gone, so every test in this file errored on DNS instead of on the product.
+BASE_URL = os.getenv("BIJOU_API_URL", "http://localhost:8080")
 TEST_EMAIL_PREFIX = "e2e-test"
 
 
@@ -93,8 +96,8 @@ class TestOnboardingFlow:
         # Verify token in URL
         assert onboarding_session["onboarding_token"] in data["onboarding_url"]
         
-        print(f"\n✅ Tenant created: {data['tenant_id']}")
-        print(f"✅ Onboarding URL: {data['onboarding_url']}")
+        print(f"\nOK: Tenant created: {data['tenant_id']}")
+        print(f"OK: Onboarding URL: {data['onboarding_url']}")
     
     
     def test_02_status_returns_qr_ready(self, onboarding_session):
@@ -128,8 +131,8 @@ class TestOnboardingFlow:
         assert data["business_name"] == onboarding_session["business_name"]
         assert data["email"] == onboarding_session["email"]
         
-        print(f"\n✅ Status: {data['status']}")
-        print(f"✅ WhatsApp connected: {data['whatsapp_connected']}")
+        print(f"\nOK: Status: {data['status']}")
+        print(f"OK: WhatsApp connected: {data['whatsapp_connected']}")
     
     
     def test_03_qr_code_returns_valid_png(self, onboarding_session):
@@ -163,8 +166,8 @@ class TestOnboardingFlow:
         expected_header = b'\x89PNG\r\n\x1a\n'
         assert png_header == expected_header, f"Invalid PNG header: {png_header.hex()}"
         
-        print(f"\n✅ QR code size: {len(content)} bytes")
-        print(f"✅ Content-Type: {response.headers['Content-Type']}")
+        print(f"\nOK: QR code size: {len(content)} bytes")
+        print(f"OK: Content-Type: {response.headers['Content-Type']}")
     
     
     def test_04_complete_fails_without_whatsapp(self, onboarding_session):
@@ -192,8 +195,8 @@ class TestOnboardingFlow:
         assert "detail" in data
         assert "WhatsApp not connected" in data["detail"] or "scan QR" in data["detail"].lower()
         
-        print(f"\n✅ Correctly rejected completion (WhatsApp not connected)")
-        print(f"✅ Error message: {data['detail']}")
+        print(f"\nOK: Correctly rejected completion (WhatsApp not connected)")
+        print(f"OK: Error message: {data['detail']}")
 
 
 class TestOnboardingEdgeCases:
@@ -207,7 +210,7 @@ class TestOnboardingEdgeCases:
         )
         
         assert response.status_code == 404
-        print(f"\n✅ Invalid token correctly returns 404")
+        print(f"\nOK: Invalid token correctly returns 404")
     
     
     def test_qr_with_invalid_token_returns_404(self):
@@ -218,7 +221,7 @@ class TestOnboardingEdgeCases:
         )
         
         assert response.status_code == 404
-        print(f"\n✅ Invalid QR token correctly returns 404")
+        print(f"\nOK: Invalid QR token correctly returns 404")
     
     
     def test_signup_with_missing_fields_returns_422(self):
@@ -230,7 +233,7 @@ class TestOnboardingEdgeCases:
         )
         
         assert response.status_code == 422, f"Expected 422, got {response.status_code}"
-        print(f"\n✅ Missing fields correctly returns 422 (validation error)")
+        print(f"\nOK: Missing fields correctly returns 422 (validation error)")
 
 
 # Pytest configuration

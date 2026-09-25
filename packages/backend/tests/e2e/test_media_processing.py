@@ -18,17 +18,33 @@ import os
 import tempfile
 from pathlib import Path
 from typing import Dict
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import httpx
 import pytest
-from PIL import Image
+from PIL import Image, UnidentifiedImageError
 
-# Test configuration
+# Test configuration.
+#
+# Defaults target the local docker stack (docker-compose.local.yml), which
+# publishes the bridge on 8081 with the basic-auth pair below. The previous
+# default, bijou-bridge-staging-v2.fly.dev, no longer resolves, so every
+# download test in this file died on DNS instead of exercising the bridge.
+#
+# These read E2E_BRIDGE_* rather than BRIDGE_*: tests/conftest.py's autouse
+# setup_test_env fixture points BRIDGE_URL at a mock host for unit tests, and
+# these are the tests that want the real one.
 FIXTURES_DIR = Path(__file__).parent.parent / "fixtures" / "media"
-TEST_BRIDGE_URL = os.getenv("BRIDGE_URL", "https://bijou-bridge-staging-v2.fly.dev")
-TEST_BRIDGE_USER = os.getenv("BRIDGE_USER", "bijou")
-TEST_BRIDGE_PASSWORD = os.getenv("BRIDGE_PASSWORD", "")
+TEST_BRIDGE_URL = os.getenv("E2E_BRIDGE_URL", "http://localhost:8081")
+TEST_BRIDGE_USER = os.getenv("E2E_BRIDGE_USER", "bijou")
+TEST_BRIDGE_PASSWORD = os.getenv("E2E_BRIDGE_PASSWORD", "bijou-local-dev")
+
+# The bridge is multi-tenant: /statics/** is routed per device and answers
+# 400 DEVICE_ID_REQUIRED without this header, which would mask the auth
+# result these tests are actually checking. An unknown device id still gets
+# past basic auth and 404s, so a placeholder is enough here.
+TEST_BRIDGE_DEVICE_ID = os.getenv("E2E_BRIDGE_DEVICE_ID", "e2e-test-device")
+BRIDGE_HEADERS = {"X-Device-Id": TEST_BRIDGE_DEVICE_ID}
 
 
 @pytest.fixture
@@ -144,6 +160,7 @@ class TestImageProcessing:
             response = await client.get(
                 test_image_url,
                 auth=(TEST_BRIDGE_USER, TEST_BRIDGE_PASSWORD),
+                headers=BRIDGE_HEADERS,
                 timeout=10,
             )
 
@@ -151,7 +168,7 @@ class TestImageProcessing:
             assert response.status_code in [200, 404], (
                 f"Image download auth failed: {response.status_code}"
             )
-            print(f"✅ Image download auth works (status: {response.status_code})")
+            print(f"OK: Image download auth works (status: {response.status_code})")
 
     async def test_image_format_validation(self, sample_image_with_text):
         """Test image format validation (JPEG, PNG, WebP)"""
@@ -163,9 +180,11 @@ class TestImageProcessing:
             temp_path = f.name
 
         try:
-            img = Image.open(temp_path)
-            assert img.format in valid_formats
-            print(f"✅ Image format valid: {img.format}")
+            # Context-managed: on Windows an open PIL handle keeps the file
+            # locked and the unlink below fails with WinError 32.
+            with Image.open(temp_path) as img:
+                assert img.format in valid_formats
+                print(f"OK: Image format valid: {img.format}")
         finally:
             Path(temp_path).unlink()
 
@@ -197,7 +216,7 @@ class TestImageProcessing:
             
             extracted_text = response.text
             assert extracted_text, "Gemini returned empty response"
-            print(f"✅ OCR result: {extracted_text[:100]}...")
+            print(f"OK: OCR result: {extracted_text[:100]}...")
 
         finally:
             Path(temp_path).unlink()
@@ -218,9 +237,9 @@ class TestImageProcessing:
             
             # In production, this should be rejected
             if file_size > MAX_SIZE:
-                print(f"✅ Large image detected ({file_size / 1024 / 1024:.2f}MB) - would be rejected")
+                print(f"OK: Large image detected ({file_size / 1024 / 1024:.2f}MB) - would be rejected")
             else:
-                print(f"⚠️ Image smaller than expected ({file_size / 1024 / 1024:.2f}MB)")
+                print(f"WARN: Image smaller than expected ({file_size / 1024 / 1024:.2f}MB)")
 
         finally:
             Path(temp_path).unlink()
@@ -228,13 +247,23 @@ class TestImageProcessing:
     async def test_image_webhook_processing_mock(self, webhook_image_payload):
         """Test image webhook processing with mocked dependencies"""
         mock_download = AsyncMock(return_value=b"fake_image_data")
-        mock_gemini = AsyncMock(return_value="Invoice total: $1,234.56")
+        mock_gemini = MagicMock(return_value="Invoice total: $1,234.56")
 
+        # google-generativeai was dropped from requirements.txt (deprecated
+        # Dec 2025); the image branch in src/core/bijou.py uses google.genai's
+        # Client instead, so that is what a mocked run has to stand in for.
         with patch("httpx.AsyncClient.get", mock_download), \
-             patch("google.generativeai.GenerativeModel.generate_content", mock_gemini):
+             patch("google.genai.models.Models.generate_content", mock_gemini):
 
-            # Simulate webhook processing
-            print("✅ Image webhook processing flow verified (mocked)")
+            from google.genai import models as genai_models
+
+            assert genai_models.Models.generate_content is mock_gemini, (
+                "Gemini vision call site is not the one this test mocks"
+            )
+            assert webhook_image_payload["messages"][0]["image"]["id"], (
+                "webhook image payload must carry a media id to download"
+            )
+            print("OK: Image webhook processing flow verified (mocked)")
 
 
 @pytest.mark.e2e
@@ -254,7 +283,7 @@ class TestDocumentProcessing:
                 header = f.read(8)
                 assert header.startswith(b"%PDF"), "Invalid PDF header"
             
-            print("✅ PDF format valid")
+            print("OK: PDF format valid")
         finally:
             Path(temp_path).unlink()
 
@@ -266,11 +295,12 @@ class TestDocumentProcessing:
             response = await client.get(
                 test_doc_url,
                 auth=(TEST_BRIDGE_USER, TEST_BRIDGE_PASSWORD),
+                headers=BRIDGE_HEADERS,
                 timeout=10,
             )
 
             assert response.status_code in [200, 404]
-            print(f"✅ Document download auth works (status: {response.status_code})")
+            print(f"OK: Document download auth works (status: {response.status_code})")
 
     @pytest.mark.skipif(
         not os.getenv("GEMINI_API_KEY") or os.getenv("GEMINI_API_KEY").startswith("mock"),
@@ -299,7 +329,7 @@ class TestDocumentProcessing:
             
             extracted_text = response.text
             assert "Test Document" in extracted_text or extracted_text
-            print(f"✅ PDF text extracted: {extracted_text[:100]}...")
+            print(f"OK: PDF text extracted: {extracted_text[:100]}...")
 
         finally:
             Path(temp_path).unlink()
@@ -320,7 +350,7 @@ class TestMediaErrorHandling:
 
         for mime_type in unsupported_types:
             # In production, these should be rejected or handled gracefully
-            print(f"✅ Unsupported type detected: {mime_type}")
+            print(f"OK: Unsupported type detected: {mime_type}")
 
     async def test_corrupt_image_handling(self):
         """Test handling of corrupt image files"""
@@ -331,13 +361,16 @@ class TestMediaErrorHandling:
             temp_path = f.name
 
         try:
-            # PIL should reject this
+            # PIL should reject this. The rejection must be a decode error --
+            # a bare `except Exception` here would also swallow the failure
+            # assertion and pass the test when PIL accepts the garbage.
             try:
-                img = Image.open(temp_path)
-                img.verify()
-                assert False, "Corrupt image should have been rejected"
-            except Exception as e:
-                print(f"✅ Corrupt image rejected: {type(e).__name__}")
+                with Image.open(temp_path) as img:
+                    img.verify()
+            except (UnidentifiedImageError, OSError, SyntaxError, ValueError) as e:
+                print(f"OK: Corrupt image rejected: {type(e).__name__}")
+            else:
+                pytest.fail("Corrupt image should have been rejected")
         finally:
             Path(temp_path).unlink()
 
@@ -349,13 +382,14 @@ class TestMediaErrorHandling:
                 response = await client.get(
                     f"{TEST_BRIDGE_URL}/statics/media/large_file.jpg",
                     auth=(TEST_BRIDGE_USER, TEST_BRIDGE_PASSWORD),
+                    headers=BRIDGE_HEADERS,
                 )
                 # If it succeeds, that's also OK (bridge is very fast)
-                print(f"✅ Fast download (status: {response.status_code})")
+                print(f"OK: Fast download (status: {response.status_code})")
             except httpx.TimeoutException:
-                print("✅ Timeout exception handled correctly")
+                print("OK: Timeout exception handled correctly")
             except Exception as e:
-                print(f"✅ Exception handled: {type(e).__name__}")
+                print(f"OK: Exception handled: {type(e).__name__}")
 
     async def test_missing_media_id(self):
         """Test handling when media ID is missing from webhook"""
@@ -373,7 +407,7 @@ class TestMediaErrorHandling:
         }
 
         # Should be handled gracefully (return error message to user)
-        print("✅ Missing media ID handling verified")
+        print("OK: Missing media ID handling verified")
 
 
 @pytest.mark.e2e
@@ -393,12 +427,12 @@ class TestMediaPerformance:
             temp_path = f.name
 
         try:
-            img = Image.open(temp_path)
-            img.verify()
+            with Image.open(temp_path) as img:
+                img.verify()
             duration = time.time() - start_time
 
             assert duration < 5, f"Image processing too slow: {duration:.2f}s"
-            print(f"✅ Image processed in {duration:.3f}s")
+            print(f"OK: Image processed in {duration:.3f}s")
 
         finally:
             Path(temp_path).unlink()
@@ -413,7 +447,12 @@ class TestMediaPerformance:
 
         async with httpx.AsyncClient() as client:
             tasks = [
-                client.get(url, auth=(TEST_BRIDGE_USER, TEST_BRIDGE_PASSWORD), timeout=10)
+                client.get(
+                    url,
+                    auth=(TEST_BRIDGE_USER, TEST_BRIDGE_PASSWORD),
+                    headers=BRIDGE_HEADERS,
+                    timeout=10,
+                )
                 for url in test_urls
             ]
             
@@ -422,9 +461,9 @@ class TestMediaPerformance:
             # All should complete without crashing
             for i, response in enumerate(responses):
                 if isinstance(response, Exception):
-                    print(f"✅ Download {i+1} handled exception: {type(response).__name__}")
+                    print(f"OK: Download {i+1} handled exception: {type(response).__name__}")
                 else:
-                    print(f"✅ Download {i+1} completed: {response.status_code}")
+                    print(f"OK: Download {i+1} completed: {response.status_code}")
 
 
 # Pytest configuration

@@ -18,7 +18,7 @@ const competitorPains = [
     suffix: "— Real Capterra review",
   },
   {
-    brand: "Wati / WABA",
+    brand: "Wati",
     color: "#128C7E",
     quote:
       "They still charged a full year subscription fee. The bot won't let me talk to a real person. And there's a 20% markup on every conversation.",
@@ -29,22 +29,22 @@ const competitorPains = [
 const bijouFlips = [
   {
     emoji: "🗣️",
-    title: "Sounds Malaysian, not robotic",
+    title: "Sounds human, not robotic",
     chatDaddy: '"Certainly! I can assist you with scheduling a viewing."',
     bijou:
-      '"Sure thing! Morning or evening better for you? Can do Saturday lah."',
+      '"Sure thing! Would morning or evening work better for you? Saturday is open."',
   },
   {
     emoji: "💸",
-    title: "No WABA. No markups. No surprises.",
-    chatDaddy: "Hidden WABA fees + 20% conversation markup + annual lock-in",
-    bijou: "Flat RM299/month. Zero conversation fees. Cancel anytime.",
+    title: "Fully managed. No markups. No surprises.",
+    chatDaddy: "Hidden fees + 20% conversation markup + annual lock-in",
+    bijou: "$499/month managed. Zero conversation fees. Cancel anytime.",
   },
   {
     emoji: "⚡",
-    title: "Live in 15 minutes, not 15 days",
-    chatDaddy: "Flow builders → Developers → Consultants → RM5,000 setup",
-    bijou: "Scan QR → Upload FAQs → Go live. No dev needed.",
+    title: "Live in days, not weeks",
+    chatDaddy: "Flow builders → Developers → Consultants → DIY setup",
+    bijou: "We build, deploy, and run it for you. No dev needed.",
   },
 ];
 
@@ -74,8 +74,8 @@ export const PainSection: React.FC = () => {
             <span className="text-red-400">Here&apos;s why it failed.</span>
           </h2>
           <p className="text-gray-500 text-sm max-w-lg mx-auto">
-            These are real reviews from real Malaysian businesses who tried
-            other tools first.
+            These are real reviews from real businesses who tried other tools
+            first.
           </p>
         </motion.div>
 

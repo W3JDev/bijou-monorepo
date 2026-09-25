@@ -11,8 +11,16 @@
 #   privacy:           "standard" (any provider OK) | "strict" (no OpenRouter /
 #                      free pools — PDPA-sensitive prompts only hit paid/private
 #                      providers we control)
-#   daily_budget_usd:  soft cap. Once daily spend exceeds this, the alias starts
-#                      returning 429 BudgetExceeded with Retry-After.
+#   daily_budget_usd:  platform-wide soft cap, summed across ALL tenants. Once
+#                      daily spend exceeds this, the alias starts returning 429
+#                      BudgetExceeded (scope="alias") with Retry-After.
+#   per_tenant_daily_budget_usd:
+#                      soft cap for a SINGLE tenant within the platform cap.
+#                      Stops one runaway tenant eating everyone else's AI —
+#                      that tenant gets 429 BudgetExceeded (scope="tenant")
+#                      while every other tenant keeps working. Omit it and the
+#                      gateway derives one (budget_defaults.per_tenant_fraction
+#                      of the platform cap); set it to 0 to explicitly opt out.
 #   description:       human-readable purpose (shown in /api/llm/aliases)
 #
 # Privacy levels:
@@ -38,6 +46,85 @@
 #   messages)`. No code changes needed in the gateway — it's data-driven.
 # =============================================================================
 
+# =============================================================================
+# Budget defaults — applied to any alias that does not name its own value.
+# =============================================================================
+budget_defaults:
+  # Share of an alias's platform-wide cap a single tenant may spend per day when
+  # the alias declares no per_tenant_daily_budget_usd. 0.2 means the fifth
+  # concurrent runaway tenant is the first that can exhaust the platform cap.
+  per_tenant_fraction: 0.2
+
+# MODEL PINS — read before changing one (2026-09-07)
+#
+# Every alias pinned `gemini-2.5-flash` and every call 404'd:
+#
+#   "This model models/gemini-2.5-flash is no longer available to new users.
+#    Please update your code to use models/gemini-3.6-flash"
+#
+# 2.5-flash is still LISTED on ai.google.dev/gemini-api/docs/models with no
+# deprecation notice, which is misleading: it remains available to projects
+# that already used it, and is closed to new ones. This project is new, so it
+# is closed to us. Confirmed it is not a wrong-endpoint mistake — it 404s on
+# BOTH v1beta and v1, against this project's own key:
+#
+#   gemini-2.5-flash        404 v1beta   404 v1
+#   gemini-3.8-flash        200          200
+#   gemini-3.7-flash        200          200
+#   gemini-3.6-flash        200          200
+#   gemini-3.5-flash        200          200
+#   gemini-3.5-flash-lite   200          200
+#   gemini-3.1-flash-lite   200          200
+#   gemini-flash-latest     200          404   (alias exists on v1beta only)
+#
+# WHY THE ALIASES NOW USE DIFFERENT MODELS
+# They all used to name one model, so the alias split bought nothing. Measured
+# on 2026-09-07, same prompt (a real SME delivery question), same key:
+#
+#   model                    latency    $/1k messages
+#   gemini-3.8-flash          3434ms    0.188
+#   gemini-3.6-flash          3032ms    0.136
+#   gemini-3.5-flash-lite      794ms    0.093
+#   gemini-3.1-flash-lite     1152ms    0.086
+#
+# flash-lite answered a routine question in a QUARTER of the time for HALF the
+# money. On WhatsApp that gap is the difference between a reply that feels
+# instant and one that feels broken, and routine replies are almost all of the
+# traffic. So the chatty, high-volume aliases take flash-lite, and the ones
+# that actually need headroom — tool-calling, PDPA-sensitive work, images —
+# take 3.8 Flash:
+#
+#   ai://fast       flash-lite   short replies, the bulk of all traffic
+#   ai://extract    flash-lite   structured JSON, no prose judgement needed
+#   ai://helpdesk   flash-lite   in-product support widget
+#   ai://reasoning  3.8 Flash    agent loop + tool calling
+#   ai://private    3.8 Flash    PDPA-sensitive
+#   ai://vision     3.8 Flash    multimodal; lite is NOT verified for images
+#
+# Quality caveat, stated because it is a real trade: in the measured run
+# gemini-3.5-flash-lite produced "we delivery to PJ" — a grammar slip 3.8 Flash
+# did not make. For Manglish product voice that is close to harmless, but if
+# reply quality regresses, ai://fast is the first line to move back.
+#
+# RETIREMENT IS A HARD 404, not a degradation, and pytest does not run in CI —
+# so the first thing to notice is a customer getting silence. If you pin a
+# dated model, put a calendar reminder against it. `gemini-flash-latest` never
+# retires but drifts across versions with different pricing, which makes the
+# cost table below wrong instead; that is the trade, pick deliberately.
+#
+# The OpenRouter fallbacks still say "google/gemini-2.5-flash". NOT VERIFIED —
+# no OpenRouter key was available to test whether it still serves that model.
+#
+# GEMINI IS DEAD (2026-09-26, owner decision): every Gemini key is revoked. The
+# notes above are history. Every STANDARD alias now leads with MiniMax-M3 and the
+# native `gemini` entries were removed from their chains, so a dead key costs no
+# round-trip. `google_openai` entries remain but only help if a SEPARATE
+# GOOGLE_AI_STUDIO_KEY is set (by default it reuses the dead Gemini key).
+# ai://private is deliberately UNCHANGED: MiniMax is not strict-privacy, so that
+# alias has NO working provider until OPENAI_API_KEY (or another strict provider)
+# is configured — it refuses rather than leaks. To bring Gemini back, re-add a
+# `provider: gemini` entry; no code change needed.
+#
 aliases:
 
   # ---------------------------------------------------------------------------
@@ -47,13 +134,26 @@ aliases:
   ai://fast:
     description: "Default chat replies — short, friendly, low-latency."
     primary:
-      provider: gemini
-      model: gemini-2.5-flash
+      provider: minimax
+      model: "MiniMax-M3"
       max_output_tokens: 512
       temperature: 0.7
     fallbacks:
-      - provider: openrouter
+      - provider: vercel
         model: "google/gemini-2.5-flash"
+        max_output_tokens: 512
+        temperature: 0.7
+      - provider: google_openai
+        model: "gemini-2.5-flash"
+        max_output_tokens: 512
+        temperature: 0.7
+      - provider: openrouter
+        # :free roster is volatile — verify live via GET /api/v1/models (pricing.prompt==0)
+        model: "openrouter/free"   # OpenRouter free router (owner: free only); old :free ids retired 2026-09
+        max_output_tokens: 512
+        temperature: 0.7
+      - provider: cloudflare
+        model: "@cf/meta/llama-3.3-70b-instruct-fp8-fast"
         max_output_tokens: 512
         temperature: 0.7
       - provider: openai_compatible
@@ -62,6 +162,7 @@ aliases:
         temperature: 0.7
     privacy: standard
     daily_budget_usd: 25.00
+    per_tenant_daily_budget_usd: 5.00
 
   # ---------------------------------------------------------------------------
   # ai://reasoning — for tool-calling (agent loop, calendar booking, escalation)
@@ -71,13 +172,23 @@ aliases:
   ai://reasoning:
     description: "Agent loop + tool-calling + complex KB retrieval."
     primary:
-      provider: gemini
-      model: gemini-2.5-flash
+      # Tool-calling chain — every entry supports the OpenAI `tools` format.
+      # MiniMax-M3 is purpose-built for agentic tool use, so it leads.
+      provider: minimax
+      model: "MiniMax-M3"
       max_output_tokens: 2048
       temperature: 0.7
     fallbacks:
+      - provider: vercel
+        model: "openai/gpt-4o-mini"
+        max_output_tokens: 2048
+        temperature: 0.7
       - provider: openrouter
-        model: "google/gemini-2.5-flash"
+        model: "openrouter/free"   # OpenRouter free router (owner: free only); old :free ids retired 2026-09
+        max_output_tokens: 2048
+        temperature: 0.7
+      - provider: cloudflare
+        model: "@cf/meta/llama-3.3-70b-instruct-fp8-fast"   # supports function calling
         max_output_tokens: 2048
         temperature: 0.7
       - provider: openai_compatible
@@ -86,6 +197,7 @@ aliases:
         temperature: 0.7
     privacy: standard
     daily_budget_usd: 50.00
+    per_tenant_daily_budget_usd: 10.00
 
   # ---------------------------------------------------------------------------
   # ai://extract — for structured JSON extraction (handover detection, lead
@@ -95,13 +207,20 @@ aliases:
   ai://extract:
     description: "Structured JSON extraction — handover, leads, emotion."
     primary:
-      provider: gemini
-      model: gemini-2.5-flash
+      # Structured JSON — MiniMax-M3 supports response_format/JSON schema.
+      # (Vercel's Jev decision-model is a future pilot for THIS alias — it does
+      #  classify/route/score far cheaper, but is TS-SDK-only today; see AI_GATEWAY docs.)
+      provider: minimax
+      model: "MiniMax-M3"
       max_output_tokens: 256
       temperature: 0.2
     fallbacks:
+      - provider: google_openai
+        model: "gemini-2.5-flash-lite"
+        max_output_tokens: 256
+        temperature: 0.2
       - provider: openrouter
-        model: "google/gemini-2.5-flash"
+        model: "openrouter/free"   # OpenRouter free router (owner: free only); old :free ids retired 2026-09
         max_output_tokens: 256
         temperature: 0.2
       - provider: openai_compatible
@@ -110,6 +229,7 @@ aliases:
         temperature: 0.2
     privacy: standard
     daily_budget_usd: 10.00
+    per_tenant_daily_budget_usd: 2.00
 
   # ---------------------------------------------------------------------------
   # ai://private — PDPA-sensitive. Customer PII, account numbers, contact
@@ -122,7 +242,7 @@ aliases:
     description: "PDPA-sensitive — customer PII. Strict-only providers."
     primary:
       provider: gemini
-      model: gemini-2.5-flash
+      model: gemini-3.8-flash
       max_output_tokens: 1024
       temperature: 0.3
     fallbacks:
@@ -132,6 +252,7 @@ aliases:
         temperature: 0.3
     privacy: strict
     daily_budget_usd: 20.00
+    per_tenant_daily_budget_usd: 4.00
 
   # ---------------------------------------------------------------------------
   # ai://helpdesk — for /api/help/chat (in-product support widget). Low
@@ -141,13 +262,17 @@ aliases:
   ai://helpdesk:
     description: "In-product /api/help/chat support widget."
     primary:
-      provider: gemini
-      model: gemini-2.5-flash
+      provider: minimax
+      model: "MiniMax-M3"
       max_output_tokens: 512
       temperature: 0.4
     fallbacks:
+      - provider: google_openai
+        model: "gemini-2.5-flash"
+        max_output_tokens: 512
+        temperature: 0.4
       - provider: openrouter
-        model: "google/gemini-2.5-flash"
+        model: "openrouter/free"   # OpenRouter free router (owner: free only); old :free ids retired 2026-09
         max_output_tokens: 512
         temperature: 0.4
       - provider: openai_compatible
@@ -156,6 +281,7 @@ aliases:
         temperature: 0.4
     privacy: standard
     daily_budget_usd: 5.00
+    per_tenant_daily_budget_usd: 1.00
 
   # ---------------------------------------------------------------------------
   # ai://vision — for image / document understanding (vision + multimodal).
@@ -165,17 +291,28 @@ aliases:
   ai://vision:
     description: "Vision + multimodal — image / document understanding."
     primary:
-      provider: gemini
-      model: gemini-2.5-flash
+      # Vision-capable only — every fallback accepts image input.
+      # MiniMax-M3 is natively multimodal (image + video).
+      provider: minimax
+      model: "MiniMax-M3"
       max_output_tokens: 1024
       temperature: 0.3
     fallbacks:
+      - provider: google_openai
+        model: "gemini-2.5-flash"
+        max_output_tokens: 1024
+        temperature: 0.3
       - provider: openrouter
-        model: "google/gemini-2.5-flash"
+        model: "openrouter/free"   # OpenRouter free router (owner: free only); old :free ids retired 2026-09
+        max_output_tokens: 1024
+        temperature: 0.3
+      - provider: cloudflare
+        model: "@cf/meta/llama-3.2-11b-vision-instruct"
         max_output_tokens: 1024
         temperature: 0.3
     privacy: standard
     daily_budget_usd: 10.00
+    per_tenant_daily_budget_usd: 2.00
 
 # =============================================================================
 # Provider configuration
@@ -206,11 +343,46 @@ providers:
     # "no fallback available" and the alias skips them.
 
   minimax:
-    # MiniMax (also serves Claude via Anthropic-compatible base URL).
-    # NOT in strict-privacy allow-list — we treat it like OpenRouter.
+    # MiniMax — MiniMax-M3 flagship: 1M context, agentic tool-calling, native
+    # multimodal (image+video) input, OpenAI-compatible at /v1 (standard `openai`
+    # SDK works; no /models discovery; Bearer auth). Verified against
+    # platform.minimax.io docs 2026-09-21. GLOBAL host below; the mainland host
+    # is https://api.minimaxi.com/v1 (note the extra "i") and keys are NOT
+    # interchangeable across regions. Also serves an Anthropic-compatible base at
+    # https://api.minimax.io/anthropic. NOT strict-privacy (China-HQ third party).
     type: openai_compatible
     env_keys: "MINIMAX_API_KEY"
     base_url: "https://api.minimax.io/v1"
+
+  google_openai:
+    # Google AI Studio via its OpenAI-COMPATIBLE endpoint (distinct shape from the
+    # native `gemini` provider above). FREE tier exists but free-tier prompts CAN
+    # be used by Google for training — so this is NOT strict-privacy safe. By
+    # default it reuses GEMINI_API_KEY, which means it does NOT help when that key
+    # is *suspended* (same key → same 403). Set a SEPARATE free key in
+    # GOOGLE_AI_STUDIO_KEY for this to add real rotation value. (docs 2026-09-21)
+    type: openai_compatible
+    env_keys: "GOOGLE_AI_STUDIO_KEY|GEMINI_API_KEY_FREE|GEMINI_API_KEY"
+    base_url: "https://generativelanguage.googleapis.com/v1beta/openai"
+
+  cloudflare:
+    # Cloudflare Workers AI, OpenAI-compatible. 10,000 neurons/day free. The
+    # account id is baked into the URL path, so base_url uses ${CLOUDFLARE_ACCOUNT_ID}
+    # (expanded from env at call time). Requires BOTH CLOUDFLARE_API_TOKEN and
+    # CLOUDFLARE_ACCOUNT_ID. Free, rate-limited — a safety-net fallback, not primary.
+    type: openai_compatible
+    env_keys: "CLOUDFLARE_API_TOKEN"
+    base_url: "https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/ai/v1"
+
+  vercel:
+    # Vercel AI Gateway — itself a hosted multi-provider rotator (zero markup on
+    # provider prices, BYOK). One key fronts 200+ models; it does its OWN internal
+    # failover, so as a single entry in our chain it is a strong catch-all. Model
+    # slugs are "creator/model" (e.g. openai/gpt-4o-mini, google/gemini-2.5-flash).
+    # NOT strict-privacy (external gateway logs/observability). (docs 2026-09-21)
+    type: openai_compatible
+    env_keys: "AI_GATEWAY_API_KEY|VERCEL_AI_GATEWAY_KEY"
+    base_url: "https://ai-gateway.vercel.sh/v1"
 
 # =============================================================================
 # Cost observability — kept inline for transparency.
@@ -219,9 +391,39 @@ providers:
 # Update quarterly or when a provider changes pricing.
 # =============================================================================
 cost_per_1k:
+  # Verified against https://ai.google.dev/gemini-api/docs/pricing on 2026-09-07.
+  #
+  # gemini-2.5-flash is RETIRED for new projects — see the note on the aliases
+  # above. Its entry is kept because the OpenRouter fallback may still serve it
+  # and because old llm_usage rows reference it. Its numbers were ALSO WRONG:
+  # they said $0.075/$0.30 per 1M when the real rate is $0.30/$2.50, so every
+  # cost_usd this gateway has ever recorded for it understates input by 4x and
+  # output by 8.3x — and the daily budget caps were enforcing against that.
   gemini/gemini-2.5-flash:
-    input_usd: 0.000075
-    output_usd: 0.0003
+    input_usd: 0.0003     # $0.30 / 1M
+    output_usd: 0.0025    # $2.50 / 1M
+  # Introductory pricing THROUGH 2026-12-31. On 2027-01-01 it doubles to
+  # $1.50 / $7.50 per 1M — update these two numbers then, or the caps silently
+  # allow twice the spend they are meant to.
+  gemini/gemini-3.6-flash:
+    input_usd: 0.00075    # $0.75 / 1M
+    output_usd: 0.00375   # $3.75 / 1M
+  # Same published price as 3.6 Flash. Used by ai://reasoning, ai://private,
+  # ai://vision.
+  gemini/gemini-3.8-flash:
+    input_usd: 0.00075    # $0.75 / 1M  (introductory, doubles 2027-01-01)
+    output_usd: 0.00375   # $3.75 / 1M  (introductory, doubles 2027-01-01)
+  # Used by ai://fast, ai://extract, ai://helpdesk — the high-volume aliases.
+  gemini/gemini-3.5-flash-lite:
+    input_usd: 0.0003     # $0.30 / 1M
+    output_usd: 0.0025    # $2.50 / 1M
+  gemini/gemini-3.1-flash-lite:
+    input_usd: 0.0003     # $0.30 / 1M
+    output_usd: 0.0025    # $2.50 / 1M
+  # Not routed to; kept so switching an alias to it is a one-line change.
+  gemini/gemini-flash-lite-latest:
+    input_usd: 0.0003     # $0.30 / 1M
+    output_usd: 0.0025    # $2.50 / 1M
   openai_compatible/gpt-4o-mini:
     input_usd: 0.00015
     output_usd: 0.0006

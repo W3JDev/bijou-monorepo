@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import React, { useEffect, useState } from "react";
 import { track as trackPostHog, identifyUser } from "../services/posthog";
+import { normalizePhone } from "../utils/phone.js";
 
 interface OnboardingModalProps {
   isOpen: boolean;
@@ -70,20 +71,6 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
     return; // explicit void when not loading, so useEffect return type is consistent
   }, [status]);
 
-  const validatePhone = (phone: string): string => {
-    if (!phone) return "";
-
-    // Strip all non-digits
-    let cleaned = phone.replace(/\D/g, "");
-
-    // If starts with 0, replace with 60 (Malaysian format)
-    if (cleaned.startsWith("0")) {
-      cleaned = "60" + cleaned.substring(1);
-    }
-
-    return cleaned;
-  };
-
   const createErrorState = (apiError: any): ErrorState => {
     // 2026-08-22 FIX: api/leads.js and api/demo.js return {error, message,
     // code}, never {detail, message: "...already registered..."} — so
@@ -125,6 +112,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
       code === "INVALID_EMAIL" ||
       code === "MISSING_NAME" ||
       code === "MISSING_DEMO_TIME" ||
+      code === "INVALID_PHONE" ||
       errorMessage.includes("invalid") ||
       errorMessage.includes("required")
     ) {
@@ -262,15 +250,15 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
     }
 
     if (formData.phone && formData.phone.trim()) {
-      const cleanedPhone = validatePhone(formData.phone);
-      if (cleanedPhone.length < 10) {
+      const cleanedPhone = normalizePhone(formData.phone);
+      if (!cleanedPhone) {
         setErrorState({
           type: "validation",
           title: "WhatsApp Number Format",
           message:
-            "We need a valid Malaysian WhatsApp number to send you updates.",
+            "We need a valid WhatsApp number to send you updates.",
           solution:
-            "Enter your WhatsApp number (e.g., 0123456789 or 60123456789)",
+            "Enter your WhatsApp number with country code (e.g., +1 555 123 4567)",
           actionLabel: "Fix Number",
           actionHandler: () => {
             setStatus("idle");
@@ -507,7 +495,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
   const getModalSubtitle = () => {
     switch (mode) {
       case "waitlist":
-        return "Be first to access exclusive Malaysian SME features + insider tips";
+        return "Be first to access exclusive done-for-you features + insider tips";
       case "demo":
         return "15-minute personalized demo + free business automation analysis";
       default:
@@ -522,7 +510,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
           icon: "🎉",
           title: "You're on the VIP list!",
           message:
-            "We'll WhatsApp you first when new features drop, plus exclusive Malaysian SME automation tips.",
+            "We'll WhatsApp you first when new features drop, plus exclusive business automation tips.",
           subMessage: "Expect your first insider tip within 24 hours!",
         };
       case "demo":
@@ -532,12 +520,12 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
           message:
             "We'll WhatsApp you within 2 hours to confirm your preferred time slot.",
           subMessage:
-            "Get ready to see how Bijou handles real customer inquiries in Manglish!",
+            "Get ready to see how Bijou handles real customer inquiries in your brand voice!",
         };
       default:
         return {
           icon: "🚀",
-          title: "We got your details, boss!",
+          title: "We've got your details!",
           message:
             "Check your email — we've sent a confirmation with your onboarding link to get started.",
           subMessage: "Ready to jump in now? Go to app.mybijou.xyz/signup",
@@ -776,7 +764,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
                   <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                   <input
                     type="tel"
-                    placeholder="WhatsApp number (optional)"
+                    placeholder="WhatsApp number with country code (optional)"
                     value={formData.phone}
                     onChange={(e) => handleInputChange("phone", e.target.value)}
                     className="w-full pl-12 pr-4 py-4 rounded-xl glass-panel-3d border border-white/10 focus:border-emerald-500/50 focus:outline-none text-white placeholder-gray-400 transition-all"
@@ -864,17 +852,17 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
                 <div className="flex items-center justify-center gap-4 pt-2 text-xs text-gray-400">
                   <div className="flex items-center gap-1">
                     <Shield className="w-3 h-3" />
-                    <span>PDPA Compliant</span>
+                    <span>GDPR & CCPA Ready</span>
                   </div>
                   <div className="flex items-center gap-1">
                     <Users className="w-3 h-3" />
-                    <span>500+ Malaysian SMEs</span>
+                    <span>US & EU businesses</span>
                   </div>
                 </div>
 
                 <div className="mt-6 pt-4 border-t border-white/10 text-center">
                   <p className="text-sm text-gray-400 mb-3">
-                    Questions? Our Malaysian team is standing by
+                    Questions? Our team is standing by
                   </p>
                   <a
                     href="https://wa.me/60174106981?text=Hi! I'm interested in Bijou AI. Can we chat about how it can help my business?"

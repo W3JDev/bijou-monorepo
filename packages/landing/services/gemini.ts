@@ -21,19 +21,19 @@ export const sendMessageToBijou = async (
     }
 
     const data = await response.json();
-    return data.response || "Sorry boss, line breaking up a bit. Say again?";
+    return data.response || "Sorry, my connection dropped for a second there. Could you say that again?";
 
   } catch (error) {
     console.error("Error talking to Bijou:", error);
     
-    // Graceful fallback with cultural context
-    const manglishFallbacks = [
-      "Sorry boss, connection a bit slow. Can try again?",
-      "Alamak! Server having issue. Give me a moment?", 
-      "Aiyo, my brain lagging. Try again in a while boss?",
-      "Technical problem on our side. WhatsApp us instead: wa.me/60174106981"
+    // Graceful fallback — same US-English voice as api/chat.js.
+    const fallbacks = [
+      "Sorry, my connection is a bit slow right now. Could you try again?",
+      "Hmm, our server hit a snag. Give me a moment and try again?",
+      "Sorry, I ran into a technical issue on my end. Could you try that again?",
+      "Technical problem on our side. You can also message us on WhatsApp: wa.me/60174106981"
     ];
     
-    return manglishFallbacks[Math.floor(Math.random() * manglishFallbacks.length)] ?? manglishFallbacks[0]!;
+    return fallbacks[Math.floor(Math.random() * fallbacks.length)] ?? fallbacks[0]!;
   }
 };

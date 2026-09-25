@@ -1,0 +1,49 @@
+# Local-dev bridge image. Build context: repo root.
+#
+# Based on Dockerfile.bridge.coolify (alpine + uid 1000) rather than
+# Dockerfile.bridge (distroless + uid 65532), because the distroless variant
+# cannot write to a mounted /data — that was the bug chain fixed by commits
+# 7aea6ec / a8241c1 / 12e481f, and docker-compose.coolify.yml still builds the
+# broken one.
+#
+# IMPORTANT, and the reason this file carries an entrypoint script:
+# `chown /data` at BUILD time is masked the moment a volume or bind mount is
+# attached at RUN time. It works for a fresh empty NAMED volume (Docker copies
+# image content and ownership into it) and does NOT work for a bind mount to a
+# host path — which is what Dokploy and Coolify normally use. So the build-time
+# chown is kept as a fast path, and the entrypoint fixes ownership at runtime
+# when it is actually needed. See ops/DOKPLOY_DEPLOY.md § Persistence.
+
+FROM golang:1.24-alpine AS builder
+
+WORKDIR /src
+
+COPY packages/bridge/go.mod packages/bridge/go.sum ./
+RUN go mod download
+
+COPY packages/bridge/ ./
+RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o /out/bridge .
+
+FROM alpine:3.20
+
+RUN apk add --no-cache ca-certificates tzdata su-exec wget \
+    && adduser -D -u 1000 -G root bridge \
+    && mkdir -p /data/store /data/logs \
+    && chown -R 1000:1000 /data
+
+COPY --from=builder /out/bridge /app/bridge
+RUN chmod 0755 /app/bridge
+
+COPY ops/local/bridge-entrypoint.sh /app/entrypoint.sh
+RUN chmod 0755 /app/entrypoint.sh
+
+WORKDIR /data
+VOLUME ["/data"]
+ENV DB_PATH=/data/bridge.db
+
+EXPOSE 8080
+
+# Starts as root ONLY long enough to chown the mounted volume, then drops to
+# uid 1000 via su-exec. Running the bridge itself as root would be the easy
+# fix and the wrong one.
+ENTRYPOINT ["/app/entrypoint.sh"]

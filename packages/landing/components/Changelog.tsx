@@ -24,10 +24,10 @@ const recentEntries: Array<{
     date: "2026-05-15",
     title: "Honest + Viral Copy Redesign",
     highlights: [
-      "Replaced 'RM9,201 savings' with honest baseline: 'Save RM2,700+/mo vs part-time staff'",
-      "ROI restated as ~900% at RM299/mo (verifiable against PayScale market rates)",
+      "Replaced inflated savings with honest baseline: 'Save thousands/mo vs part-time staff'",
+      "Pricing restated as $499/mo managed + $2,500 one-time setup",
       "TRACE steps renamed to match real component names: ASI, Humanizer, ERS, Routing",
-      "New ENTERPRISE tier (RM999/mo, waitlist) — addresses the 3,000/mo cap objection",
+      "New ENTERPRISE tier (custom pricing, waitlist) — addresses the 3,000/mo cap objection",
       "Three viral hooks added: 2am Property, Lunch Rush Clinic, Voice Coming Soon",
     ],
   },
@@ -46,7 +46,7 @@ const recentEntries: Array<{
     date: "2026-03",
     title: "Multilingual + PWA",
     highlights: [
-      "Full i18n: en, ms (Bahasa Melayu), zh (中文), ta (தமிழ்)",
+      "Full multilingual support with real-time language switching",
       "PWA installable — add to home screen on iOS / Android",
       "Signal Gem audio cues (idle, listening, thinking, speaking)",
     ],
@@ -54,9 +54,9 @@ const recentEntries: Array<{
   {
     version: "2.x",
     date: "2026-01",
-    title: "Manglish voice + Cal.com booking",
+    title: "Brand-voice AI + Cal.com booking",
     highlights: [
-      "Real Manglish voice — 'boss', 'aiyo', 'leh', 'lor' all native",
+      "Natural, brand-tuned conversational voice",
       "Cal.com booking integration: create, check, cancel appointments",
       "Telegram channel added alongside WhatsApp",
     ],
@@ -66,8 +66,8 @@ const recentEntries: Array<{
     date: "2025-11",
     title: "Initial public launch",
     highlights: [
-      "WhatsApp AI agent for Malaysian SMEs",
-      "Single PRO plan at RM299/month",
+      "Done-for-you WhatsApp AI agent",
+      "Single managed plan at $499/month",
       "30-day money-back guarantee",
     ],
   },

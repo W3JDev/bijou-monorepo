@@ -19,19 +19,19 @@ import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 
 // --- Interactive Widgets ---
-const ManglishDialWidget = () => {
+const ToneDialWidget = () => {
   const [level, setLevel] = useState(50);
   const responses = [
     "Good morning. How may I assist you today?",
-    "Hi boss, can I help you find something?",
-    "Walao boss! What you need? I settle for you fast fast lah!",
+    "Hi there! Happy to help you find what you need.",
+    "Hey! What are you after? I'll sort it out for you fast.",
   ];
   const tier = level < 33 ? 0 : level < 66 ? 1 : 2;
   return (
     <div className="w-full flex flex-col gap-3 px-1">
       <div className="flex justify-between text-[10px] font-bold uppercase tracking-wider text-gray-500">
         <span>Corporate</span>
-        <span>Full Manglish</span>
+        <span>Casual</span>
       </div>
       <input
         type="range"
@@ -66,9 +66,9 @@ const TraceWidget = () => {
   const steps = [
     {
       label: "Gemini 2.5 Flash",
-      bg: "bg-purple-500/10 border-purple-500/20",
-      dot: "bg-purple-400",
-      color: "text-purple-400",
+      bg: "bg-gold-500/10 border-gold-500/20",
+      dot: "bg-gold-400",
+      color: "text-gold-400",
     },
     {
       label: "Handover System",
@@ -111,7 +111,7 @@ const CalWidget = () => (
       {
         time: "Fri 2pm",
         status: "Available",
-        color: "text-blue-400",
+        color: "text-emerald-400",
         icon: "📅",
       },
       { time: "Sat 11am", status: "Taken", color: "text-red-400", icon: "❌" },
@@ -138,17 +138,17 @@ const SecurityWidget = () => (
       {
         icon: <Server className="w-4 h-4" />,
         label: "Row-Level Security",
-        color: "text-blue-400",
+        color: "text-emerald-400",
       },
       {
         icon: <ShieldCheck className="w-4 h-4" />,
-        label: "PDPA Ready",
+        label: "GDPR Ready",
         color: "text-emerald-400",
       },
       {
         icon: <EyeOff className="w-4 h-4" />,
         label: "Data Isolation",
-        color: "text-purple-400",
+        color: "text-gold-400",
       },
       {
         icon: <FileKey className="w-4 h-4" />,
@@ -185,7 +185,7 @@ const EscalationWidget = () => {
             Bijou:
           </span>
           <span className="text-xs text-gray-300 italic">
-            &quot;I am escalating you to our team right now boss.&quot;
+            &quot;I&apos;m escalating you to our team right now.&quot;
           </span>
         </div>
       </div>
@@ -206,13 +206,13 @@ const features = [
     color: "emerald",
     badge: "Live Now",
     title: "WhatsApp AI Agent",
-    subtitle: "No WABA. No Meta fees. No markups.",
+    subtitle: "Built and managed for you.",
     description:
-      "Connect your existing WhatsApp number in minutes via QR scan. No Facebook Business Manager, no WABA application, no RM0.05/message Meta fees. Bijou handles inbound queries flat at RM299/mo.",
+      "We connect your existing WhatsApp number and handle everything — setup, deployment, and ongoing management. No technical work on your side. Flat $499/month, fully managed, plus a one-time $2,500 setup.",
     bullets: [
-      "Scan QR → live in 15 min",
+      "Live in days — set up for you",
       "No per-conversation charges",
-      "No Meta markup ever",
+      "No hidden markups ever",
     ],
     widget: null,
   },
@@ -223,7 +223,7 @@ const features = [
     title: "Telegram AI Agent",
     subtitle: "Same brain. Second channel. Included free.",
     description:
-      "The same AI, knowledge base and Manglish personality runs simultaneously on Telegram at no extra cost. Reach customers on whichever app they prefer.",
+      "The same AI, knowledge base and brand personality runs simultaneously on Telegram at no extra cost. Reach customers on whichever app they prefer.",
     bullets: [
       "Included in Pro — no extra fee",
       "Same TRACE engine and knowledge base",
@@ -238,7 +238,7 @@ const features = [
     title: "Gemini 2.5 Flash with smart context. Plus automatic handover when AI hits its limit.",
     subtitle: "Fast LLM. Smart escalation. No fake pipeline.",
     description:
-      "Every message goes through Gemini 2.5 Flash with per-tenant context, your knowledge base, and Manglish tone. If the conversation gets too complex or emotionally charged, the handover system flags it and a human takes over. No fake pipeline — just a fast LLM and a smart escalation layer that actually works.",
+      "Every message goes through Gemini 2.5 Flash with per-tenant context, your knowledge base, and your brand tone. If the conversation gets too complex or emotionally charged, the handover system flags it and a human takes over. No fake pipeline — just a fast LLM and a smart escalation layer that actually works.",
     bullets: [
       "Detects frustration before it escalates",
       "Understands context, not just keywords",
@@ -250,16 +250,16 @@ const features = [
     icon: <Languages className="w-5 h-5" />,
     color: "gold",
     badge: "Unique to Bijou",
-    title: "Manglish Engine",
-    subtitle: "Can lah. Got or not? Sorted.",
+    title: "Multilingual Engine",
+    subtitle: "Speaks your customers' language, in your brand voice.",
     description:
-      "20+ regex patterns handle Malaysian code-switching natively — BM, English, Mandarin, Tamil and Manglish blended naturally. Adjust tone from full corporate to full pasar malam.",
+      "Your agent handles multiple languages natively and mirrors the customer's tone. We tune the voice to your brand — from polished corporate to warm and casual — so it never sounds like a robot.",
     bullets: [
-      "English, Malay, Mandarin, Tamil",
-      "Tone slider: formal to full Manglish",
+      "English + major world languages",
+      "Tone tuned to your brand",
       "No robotic 'Certainly, I can assist you'",
     ],
-    widget: <ManglishDialWidget />,
+    widget: <ToneDialWidget />,
   },
   {
     icon: <CalendarCheck className="w-5 h-5" />,
@@ -325,14 +325,14 @@ const features = [
     icon: <Shield className="w-5 h-5" />,
     color: "blue",
     badge: "Enterprise-Grade",
-    title: "PDPA-Ready Security",
+    title: "Enterprise-Grade Security",
     subtitle: "Your data. Fully isolated. Always.",
     description:
-      "Row-Level Security means your customer data is 100% isolated from every other Bijou tenant. AES-256 encryption at rest. PDPA and GDPR compliant. Hosted on Fly.io Singapore region.",
+      "Row-Level Security means your customer data is 100% isolated from every other Bijou tenant. AES-256 encryption at rest. GDPR and CCPA compliant. Hosted on reliable US & EU cloud infrastructure.",
     bullets: [
       "Row-level multi-tenant data isolation",
-      "AES-256 + PDPA + GDPR ready",
-      "99.9% uptime — Singapore region",
+      "AES-256 + GDPR + CCPA ready",
+      "99.9% uptime — US & EU regions",
     ],
     widget: <SecurityWidget />,
   },
@@ -351,32 +351,32 @@ const colorMap: Record<
     bullet: "bg-emerald-400",
   },
   blue: {
-    icon: "text-blue-400",
-    badge: "text-blue-400",
-    badgeBg: "bg-blue-500/10 border-blue-500/20",
-    glow: "bg-blue-500/8",
-    bullet: "bg-blue-400",
+    icon: "text-emerald-400",
+    badge: "text-emerald-400",
+    badgeBg: "bg-emerald-500/10 border-emerald-500/20",
+    glow: "bg-emerald-500/8",
+    bullet: "bg-emerald-400",
   },
   purple: {
-    icon: "text-purple-400",
-    badge: "text-purple-400",
-    badgeBg: "bg-purple-500/10 border-purple-500/20",
-    glow: "bg-purple-500/8",
-    bullet: "bg-purple-400",
+    icon: "text-gold-400",
+    badge: "text-gold-400",
+    badgeBg: "bg-gold-500/10 border-gold-500/20",
+    glow: "bg-gold-500/8",
+    bullet: "bg-gold-400",
   },
   gold: {
-    icon: "text-yellow-400",
-    badge: "text-yellow-400",
-    badgeBg: "bg-yellow-500/10 border-yellow-500/20",
-    glow: "bg-yellow-500/8",
-    bullet: "bg-yellow-400",
+    icon: "text-gold-400",
+    badge: "text-gold-400",
+    badgeBg: "bg-gold-500/10 border-gold-500/20",
+    glow: "bg-gold-500/8",
+    bullet: "bg-gold-400",
   },
   cyan: {
-    icon: "text-cyan-400",
-    badge: "text-cyan-400",
-    badgeBg: "bg-cyan-500/10 border-cyan-500/20",
-    glow: "bg-cyan-500/8",
-    bullet: "bg-cyan-400",
+    icon: "text-emerald-400",
+    badge: "text-emerald-400",
+    badgeBg: "bg-emerald-500/10 border-emerald-500/20",
+    glow: "bg-emerald-500/8",
+    bullet: "bg-emerald-400",
   },
   amber: {
     icon: "text-amber-400",
@@ -386,11 +386,11 @@ const colorMap: Record<
     bullet: "bg-amber-400",
   },
   rose: {
-    icon: "text-rose-400",
-    badge: "text-rose-400",
-    badgeBg: "bg-rose-500/10 border-rose-500/20",
-    glow: "bg-rose-500/8",
-    bullet: "bg-rose-400",
+    icon: "text-gold-400",
+    badge: "text-gold-400",
+    badgeBg: "bg-gold-500/10 border-gold-500/20",
+    glow: "bg-gold-500/8",
+    bullet: "bg-gold-400",
   },
 };
 
@@ -546,7 +546,7 @@ export const Features: React.FC = () => {
         t("features.manglish.b2"),
         t("features.manglish.b3"),
       ],
-      widget: <ManglishDialWidget />,
+      widget: <ToneDialWidget />,
     },
     {
       icon: <CalendarCheck className="w-5 h-5" />,
@@ -620,7 +620,7 @@ export const Features: React.FC = () => {
     <section id="features" className="py-24 relative">
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-1/3 left-1/4 w-[500px] h-[500px] bg-emerald-900/6 rounded-full blur-[140px]" />
-        <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] bg-purple-900/5 rounded-full blur-[120px]" />
+        <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] bg-emerald-900/6 rounded-full blur-[120px]" />
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
@@ -636,7 +636,7 @@ export const Features: React.FC = () => {
           </div>
           <h2 className="text-3xl md:text-5xl font-bold mb-4">
             {t("features.title.part1")}{" "}
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-400">
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-gold-300">
              {t("features.title.highlight")}
             </span>
           </h2>
@@ -691,7 +691,7 @@ export const Features: React.FC = () => {
             },
           ].map((stat, i) => (
             <div key={i}>
-              <div className="text-2xl md:text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-400">
+              <div className="text-2xl md:text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-gold-300">
                 {stat.value}
               </div>
               <div className="text-white text-sm font-bold mt-1">

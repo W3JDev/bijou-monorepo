@@ -802,6 +802,7 @@
         const [selected, setSelected] = useState(null);
         const [loading, setLoading] = useState(true);
         const [takeover, setTakeover] = useState({});
+        const [aiPaused, setAiPaused] = useState({});  // #3: per-contact AI mute (optimistic)
         const [reply, setReply] = useState("");
         const [sending, setSending] = useState(false);
         const [loadingMessages, setLoadingMessages] = useState(false);
@@ -1114,6 +1115,23 @@
             setTakeover((p) => ({ ...p, [chatJid]: false }));
           } catch (e) {
             showToast("Return to AI failed: " + e.message);
+          }
+        }
+
+        // #3: stop / resume the AI auto-replying to this specific contact. The
+        // customer still reaches us and their messages still land in the inbox —
+        // the AI just stays quiet until toggled back on.
+        async function handleToggleAIPause(chatJid) {
+          const next = !aiPaused[chatJid];
+          try {
+            await api("/api/dashboard/contact/ai-pause", {
+              method: "POST",
+              body: JSON.stringify({ jid: chatJid, paused: next }),
+            });
+            setAiPaused((p) => ({ ...p, [chatJid]: next }));
+            showToast(next ? "AI paused for this contact" : "AI resumed for this contact");
+          } catch (e) {
+            showToast("Couldn't update AI pause: " + e.message);
           }
         }
 
@@ -1585,6 +1603,18 @@
                           Take Over
                         </button>
                       )}
+                      <button
+                        onClick={() => handleToggleAIPause(sel.chat_jid)}
+                        className="px-3 py-1.5 rounded-lg text-xs font-medium"
+                        title="Stop the AI auto-replying to this contact — you still receive their messages"
+                        style={
+                          aiPaused[sel.chat_jid]
+                            ? { background: "#7c2d12", color: "#fdba74", border: "1px solid #f59e0b40" }
+                            : { background: "#233033", color: "#9aa7a4", border: "1px solid #ffffff14" }
+                        }
+                      >
+                        {aiPaused[sel.chat_jid] ? "🔇 AI Off" : "🔊 AI On"}
+                      </button>
                     </div>
                   </div>
 
@@ -9434,7 +9464,10 @@
          MP3s live in /static/ (this app's static dir), so override the
          controller's default `audio-identity/` base BEFORE the script loads. -->
     <script>window.BJ_AUDIO_BASE = '/static/';</script>
-    <script src="/static/signal-gem-audio.js"></script>
+    <!-- signal-gem-audio.js disabled 2026-09-21: it autoplayed bj-intro.mp3 on
+         first interaction after login ("singing on login"), which users found
+         irritating. Re-enable deliberately behind a user setting if wanted. -->
+    <!-- <script src="/static/signal-gem-audio.js"></script> -->
     <script>
       // Per-event wiring (defensive — wrapped in try/catch so a missing/unloaded
       // BjAudio is a silent no-op, not a console error during the first second

@@ -120,8 +120,7 @@ export const WhatsAppCTA: React.FC<WhatsAppCTAProps> = ({
             </div>
 
             <p className="text-gray-300 text-xs sm:text-sm mb-4 leading-relaxed">
-              Get instant answers from our Malaysian team. We speak your
-              language! 🇲🇾
+              Get instant answers from our team. We're here to help! 💬
             </p>
 
             <motion.button

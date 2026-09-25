@@ -1,0 +1,71 @@
+# gitleaks config for the Bijou monorepo.
+#
+# Extends the default ruleset rather than replacing it, then adds the shapes
+# that actually leaked here and the allowlists that stop this repo's
+# placeholders from creating noise.
+
+[extend]
+useDefault = true
+
+# ── Rules the default set does not cover ───────────────────────────────────
+
+[[rules]]
+id = "coolify-sanctum-token"
+description = "Coolify / Laravel Sanctum API token (1|<40+ chars>)"
+# This exact shape reached origin/main on 2026-08-29 and sat there until
+# 2026-09-06. The pre-commit guard of the day matched none of its patterns.
+regex = '''\b[0-9]+\|[A-Za-z0-9]{40,}\b'''
+keywords = ["|"]
+
+[[rules]]
+id = "supabase-management-pat"
+description = "Supabase Management API personal access token"
+# ops/_fix_rls_*.js hold one of these in plaintext. Untracked today, but those
+# scripts DROP RLS policies on the production database, so a future `git add`
+# would be very expensive.
+regex = '''\bsbp_[a-f0-9]{40,}\b'''
+keywords = ["sbp_"]
+
+[[rules]]
+id = "fly-api-token"
+description = "Fly.io API token"
+regex = '''\bfm[12]_[A-Za-z0-9+/=_-]{40,}\b'''
+keywords = ["fm1_", "fm2_"]
+
+[[rules]]
+id = "vercel-token"
+description = "Vercel access token"
+regex = '''\bvcp_[A-Za-z0-9]{20,}\b'''
+keywords = ["vcp_"]
+
+# ── Allowlist ──────────────────────────────────────────────────────────────
+
+[allowlist]
+description = "Placeholders, templates and this repo's own security docs"
+
+paths = [
+  # Templates hold names and empty values by design.
+  '''.*\.env\.example$''',
+  '''ops/dokploy/dokploy\.env\.example''',
+  '''ops/coolify/coolify\.env\.example''',
+  # The security alerts quote token SHAPES and commit SHAs while deliberately
+  # never reproducing a value. Scanning them re-reports the incident forever.
+  '''docs/SECURITY_ALERT_.*\.md''',
+  '''docs/AUDIT-.*\.md''',
+  '''docs/FIXLOG-.*\.md''',
+  # Fixture file: it exists to contain fake credential shapes.
+  '''ops/githooks/test-secret-guard\.sh''',
+  '''ops/githooks/secret-patterns\.sh''',
+]
+
+regexes = [
+  # Compose / shell interpolation is a reference, not a value.
+  '''\$\{[A-Z_]+(:[?-][^}]*)?\}''',
+  # Obvious placeholders.
+  '''<your-[a-z-]+>''',
+  '''(?i)(placeholder|example|dummy|changeme|not-a-real|local-dev-only)''',
+  # The local stack's JWTs are signed with a publicly documented secret and
+  # grant nothing off the developer's own machine. Generated, never committed
+  # (ops/local/.env.local is gitignored) — this is belt and braces.
+  '''supabase-local''',
+]

@@ -67,14 +67,28 @@ class TestGroupChatWebhook:
                 headers={"content-type": "application/json"},
             )
 
-            # Should return 200 (accepted but skipped)
+            # The webhook ACCEPTS and queues; it does not decide.
+            #
+            # 2026-09-06 — this test previously asserted that the webhook
+            # marked the message processed and never called process_message.
+            # Neither could ever hold: the group-chat skip lives INSIDE
+            # BijouAI.process_message (src/core/bijou.py, "GROUP CHAT
+            # DETECTION"), and `mock_bijou_instance` replaces that method with
+            # a MagicMock. The test mocked away the code it was asserting on,
+            # so it failed with `assert 'test-msg-001' in set()` — the empty
+            # set of a mock that had never run the real logic.
+            #
+            # Split in two rather than deleted. The webhook's real contract is
+            # asserted here; the skip DECISION is asserted directly in
+            # tests/unit/test_group_chat_support_flag.py, which is also the
+            # first coverage that behaviour has ever had.
             assert response.status_code == 200
-            
-            # Message should be marked as processed (to prevent re-processing)
-            assert "test-msg-001" in mock_bijou_instance.processed_message_ids
-            
-            # process_message should NOT be called
-            mock_bijou_instance.process_message.assert_not_called()
+            assert response.json()["status"] == "accepted"
+
+            # It reached the queue — filtering is downstream, by design: the
+            # decision needs the tenant's config, which the handler has not
+            # loaded at this point.
+            mock_bijou_instance.process_message.assert_called_once()
 
     def test_group_chat_processed_when_enabled(self, test_client, mock_bijou_instance):
         """Test that group chat messages are processed when support is enabled"""
@@ -150,11 +164,12 @@ class TestGroupChatWebhook:
                 headers={"content-type": "application/json"},
             )
 
-            # Should return 200 (accepted but skipped)
+            # Same correction as test_group_chat_ignored_when_disabled: the
+            # webhook accepts and queues, and the broadcast skip happens
+            # downstream inside process_message, which is mocked here.
             assert response.status_code == 200
-            
-            # Message should be marked as processed
-            assert "test-msg-004" in mock_bijou_instance.processed_message_ids
+            assert response.json()["status"] == "accepted"
+            mock_bijou_instance.process_message.assert_called_once()
 
     def test_lid_jid_always_processed(self, test_client, mock_bijou_instance):
         """Test that linked device (LID) JIDs are processed as direct messages"""

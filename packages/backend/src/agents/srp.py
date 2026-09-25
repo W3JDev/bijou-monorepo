@@ -26,7 +26,7 @@ from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
-import google.generativeai as genai
+from src.core.llm_gateway_v2 import SyncTextModel
 
 
 class StrategicResponsePlanner:
@@ -42,14 +42,10 @@ class StrategicResponsePlanner:
         Initialize Strategic Response Planner.
 
         Args:
-            api_key: Google Gemini API key (defaults to env var)
+            api_key: Ignored (kept for backwards compatibility)
         """
-        self.api_key = api_key or os.getenv("GEMINI_API_KEY")
-        if not self.api_key:
-            raise ValueError("GEMINI_API_KEY not found in environment")
-
-        genai.configure(api_key=self.api_key)  # type: ignore
-        self.model = genai.GenerativeModel("gemini-2.5-flash")  # type: ignore
+        # api_key is ignored: calls go through the AI Gateway (Gemini is dead).
+        self.model = SyncTextModel("ai://extract", max_output_tokens=1024)
 
         # Knowledge base (will be replaced with Google Sheets RAG)
         self.knowledge_base = self._load_default_knowledge()

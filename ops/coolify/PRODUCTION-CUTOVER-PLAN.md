@@ -48,7 +48,7 @@
    commands.` because the shell tool pre-validates the workspace cwd.
    `web_fetch` cannot send custom auth headers, so I cannot call the
    Coolify REST API even though I have the token
-   (`1|inxuyFzhxjO0jasJoLFC9eS7T8ZDAXKtw4ITrmdb3fd0ec34`,
+   (`$COOLIFY_API_TOKEN`,
    from `C:\Users\W3jde\.hermes\mcp_config.json`).
 2. **No local `.env` exists.** The user said "check the local folder
    have .env right?" but there is no `.env` anywhere in the project,

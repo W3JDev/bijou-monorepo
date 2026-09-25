@@ -73,10 +73,10 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
             !
           </div>
           <h1 className="text-2xl font-bold text-white mb-3">
-            Something broke boss.
+            Something went wrong.
           </h1>
           <p className="text-gray-400 mb-8 leading-relaxed">
-            The page hit a runtime error. Reload usually fixes it. If it keeps happening, drop us a line on WhatsApp and we&apos;ll jump on it.
+            The page hit a runtime error. A reload usually fixes it. If it keeps happening, reach out and our team will jump on it right away.
           </p>
 
           {isDev && this.state.error && (

@@ -1,0 +1,488 @@
+# docker-compose.local.yml — the ONE command local stack for Bijou AI.
+#
+#   docker compose -f docker-compose.local.yml up
+#
+# This is NOT docker-compose.coolify.yml. That file targets a hosted
+# deploy and depends on a real cloud Supabase project. This one brings
+# the whole system up on a laptop with no cloud accounts:
+#
+#   supabase-db        Postgres 15 (the supabase/postgres image, which
+#                      ships the roles + extensions GoTrue/PostgREST need)
+#   supabase-auth      GoTrue — real signup/login/JWT, not a stub
+#   supabase-rest      PostgREST — the /rest/v1 surface supabase-py calls
+#   supabase-gateway   nginx, joins auth+rest under ONE origin so that a
+#                      single SUPABASE_URL works exactly like the cloud one
+#   backend            FastAPI (packages/backend)
+#   landing            React build behind nginx (packages/landing)
+#   bridge             Go WhatsApp bridge (packages/bridge)
+#   voice              Telnyx voice concierge (packages/voice)   [profile: voice]
+#   posthog + deps     product analytics                          [profile: analytics]
+#
+# Host ports are deliberately in the 543xx/808x range because ports 5432
+# and 6379 are commonly already taken by other projects on a dev machine.
+#
+# SCHEMA: packages/backend/migrations-py/0000_baseline.sql is the real thing,
+# extracted from the live Supabase project on 2026-09-06 and verified by
+# rebuilding an empty database from it (154 tables / 1797 columns / 521
+# indexes, exact matches to production). Signup, email confirmation, login and
+# onboarding routing all work against it.
+
+name: bijou-local
+
+x-backend-env: &backend-env
+  # Points at the local gateway, not the cloud project.
+  SUPABASE_URL: "http://supabase-gateway:8000"
+  # SUPABASE_ANON_KEY / SUPABASE_SERVICE_KEY come from ops/local/.env.local
+  # via env_file below. They are minted by ops/local/gen-local-keys.sh because
+  # PostgREST must validate them against the local JWT secret, so a dummy
+  # string will not do — and a committed JWT-shaped literal trips the repo's
+  # pre-commit secret guard, correctly.
+  PUBLIC_URL: "http://localhost:8080"
+  # REQUIRED. BijouAI._init_database (src/core/bijou.py:2035) calls
+  # _init_supabase() only when DB_TYPE == "supabase"; anything else — including
+  # unset, whose default is "sqlite" — falls through to _init_sqlite() and
+  # persists to BIJOU_DB_PATH (/data/bijou.db), which is not a mounted volume.
+  # The dashboard would still read Supabase via get_supabase(), so you get a
+  # split brain plus data that vanishes on redeploy. It appears in NO
+  # .env.example and NO compose file in this repo.
+  DB_TYPE: "supabase"
+  ENVIRONMENT: "local"
+  LOG_LEVEL: "${LOCAL_LOG_LEVEL:-INFO}"
+  # The root .env's GEMINI_API_KEY WINS. LOCAL_GEMINI_API_KEY is only a
+  # fallback for a machine that has no key in root .env at all.
+  #
+  # The precedence used to be the other way round, and it cost hours. A stale
+  # LOCAL_GEMINI_API_KEY sitting in ops/local/.env.local silently shadowed the
+  # correct key the owner had just pasted into .env, and the only symptom was
+  # Google answering "API key not valid" — which reads as "your key is wrong"
+  # when the key was fine and the plumbing was wrong. Measured 2026-09-06:
+  #
+  #   root .env  GEMINI_API_KEY      len 39, starts 'AIza'   <- correct
+  #   container  GEMINI_API_KEY      len 54, starts '=AQ.'   <- the override
+  #
+  # An override you have to remember about is a trap. Root .env is the one
+  # place the owner edits, so root .env decides.
+  #
+  # This fall-through is DELIBERATE and is limited to Gemini. Everything
+  # Supabase stays strictly LOCAL_-namespaced, because the hazard there is
+  # different in kind: docker compose auto-loads the root .env, and without the
+  # namespacing local containers would silently read and WRITE the production
+  # database. Sharing a Gemini key costs money; sharing Supabase costs data.
+  #
+  # Cost note: with a real key, tests that call the LLM bill your account on
+  # every run. To opt out, comment GEMINI_API_KEY out of root .env, or set
+  # LOCAL_GEMINI_API_KEY=local-placeholder-key AND clear the root one.
+  GEMINI_API_KEY: "${GEMINI_API_KEY:-${LOCAL_GEMINI_API_KEY:-local-placeholder-key}}"
+  # The v1 key-rotator (src/core/llm_gateway.py RoundRobinRotator) spreads load
+  # across several Gemini keys to dodge per-key rate limits. Root .env has three
+  # of them; this compose never passed them, so locally the rotator had exactly
+  # one key and no rotation. Same precedence rule as above.
+  GEMINI_API_KEYS: "${GEMINI_API_KEYS:-${LOCAL_GEMINI_API_KEYS:-}}"
+  # AI-gateway rotator provider keys (2026-09-21). Same precedence rule as Gemini:
+  # root .env wins, LOCAL_ is the fallback. These MUST be passed here or they never
+  # reach the container — env_file (.env.local) alone is shadowed by this
+  # `environment:` block, and MINIMAX_API_KEY was previously not wired at all
+  # (symptom: backend logs `mm_key_set=False` even after you set the key).
+  # Like Gemini these are cost-only (no data-contamination risk), so root-.env
+  # sharing is safe — unlike the LOCAL_-namespaced Supabase keys above.
+  MINIMAX_API_KEY: "${MINIMAX_API_KEY:-${LOCAL_MINIMAX_API_KEY:-}}"
+  # Honor the EXACT endpoint / model / group set in root .env (do NOT hardcode a
+  # default host here — the code's own default applies only when this is unset).
+  MINIMAX_API_ENDPOINT: "${MINIMAX_API_ENDPOINT:-${LOCAL_MINIMAX_API_ENDPOINT:-}}"
+  MINIMAX_MODELS: "${MINIMAX_MODELS:-${LOCAL_MINIMAX_MODELS:-}}"
+  MINIMAX_GROUP_ID: "${MINIMAX_GROUP_ID:-${LOCAL_MINIMAX_GROUP_ID:-}}"
+  AI_GATEWAY_API_KEY: "${AI_GATEWAY_API_KEY:-${LOCAL_AI_GATEWAY_API_KEY:-}}"
+  OPENROUTER_API_KEY: "${OPENROUTER_API_KEY:-${LOCAL_OPENROUTER_API_KEY:-}}"
+  GOOGLE_AI_STUDIO_KEY: "${GOOGLE_AI_STUDIO_KEY:-${LOCAL_GOOGLE_AI_STUDIO_KEY:-}}"
+  CLOUDFLARE_API_TOKEN: "${CLOUDFLARE_API_TOKEN:-${LOCAL_CLOUDFLARE_API_TOKEN:-}}"
+  CLOUDFLARE_ACCOUNT_ID: "${CLOUDFLARE_ACCOUNT_ID:-${LOCAL_CLOUDFLARE_ACCOUNT_ID:-}}"
+  # Everything below is optional; empty means the feature stays off.
+  STRIPE_SECRET_KEY: "${LOCAL_STRIPE_SECRET_KEY:-}"
+  STRIPE_WEBHOOK_SECRET: "${LOCAL_STRIPE_WEBHOOK_SECRET:-}"
+  RESEND_API_KEY: "${LOCAL_RESEND_API_KEY:-}"
+  ADMIN_API_KEY: "${LOCAL_ADMIN_API_KEY:-local-dev-admin-key}"
+  DATA_REQUEST_SIGNING_KEY: "${LOCAL_DATA_REQUEST_SIGNING_KEY:-local-dev-signing-key}"
+  # Shared secret for the bridge -> backend /webhook/* calls. Must match the
+  # bridge service's value below. Unset, the backend logs CRITICAL and accepts
+  # anyone — see _verify_webhook_secret in src/core/bijou.py.
+  BIJOU_WEBHOOK_SECRET: "${LOCAL_WEBHOOK_SECRET:-local-dev-webhook-secret}"
+  ENABLE_COMPOSIO: "false"
+  LANGFUSE_ENABLED: "false"
+
+services:
+  # ────────────────────────── Supabase-compatible core ──────────────────────
+  supabase-db:
+    image: supabase/postgres:15.8.1.049
+    container_name: bijou-local-db
+    restart: unless-stopped
+    command:
+      - postgres
+      - -c
+      - config_file=/etc/postgresql/postgresql.conf
+    environment:
+      POSTGRES_PASSWORD: "${LOCAL_DB_PASSWORD:-postgres}"
+      POSTGRES_DB: postgres
+      JWT_SECRET: "${LOCAL_JWT_SECRET:-super-secret-jwt-token-with-at-least-32-characters}"
+      JWT_EXP: "3600"
+    ports:
+      # NOT 5432 (usually taken on a dev box) and NOT 54322 either: on Windows,
+      # 54272-54371 sits inside WinNAT's reserved exclusion range, so Docker
+      # fails with "bind: An attempt was made to access a socket in a way
+      # forbidden by its access permissions". Check yours with
+      #   netsh int ipv4 show excludedportrange protocol=tcp
+      - "${LOCAL_DB_PORT:-9432}:5432"
+    volumes:
+      - supabase-db-data:/var/lib/postgresql/data
+      # Mounted as FILES, not directories. The postgres entrypoint does not
+      # recurse — it logs "ignoring /docker-entrypoint-initdb.d/<dir>" — so a
+      # directory mount here silently never runs, which is how GoTrue and
+      # PostgREST ended up crash-looping on password authentication.
+      # The zz- prefix puts these AFTER the supabase/postgres image's own
+      # migrate.sh, which creates the Supabase roles this then aligns.
+      - ./ops/local/initdb/00-roles.sql:/docker-entrypoint-initdb.d/zz-01-roles.sql:ro
+      # The REAL baseline, extracted from the live Supabase project on
+      # 2026-09-06 and verified by rebuilding an empty database from it:
+      # 154 tables / 1797 columns / 521 indexes, all exact matches to
+      # production. This replaced an inferred scaffold whose column types were
+      # guessed from column names (and got several wrong — see git history).
+      - ./packages/backend/migrations-py/0000_baseline.sql:/docker-entrypoint-initdb.d/zz-015-baseline.sql:ro
+      - ./ops/local/initdb/apply-bijou-migrations.sh:/docker-entrypoint-initdb.d/zz-02-migrations.sh:ro
+      # Outside initdb.d on purpose; zz-02 iterates over it.
+      - ./packages/backend/migrations-py:/bijou-migrations:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 20s
+
+  supabase-auth:
+    image: supabase/gotrue:v2.170.0
+    container_name: bijou-local-auth
+    restart: unless-stopped
+    depends_on:
+      supabase-db:
+        condition: service_healthy
+    environment:
+      GOTRUE_API_HOST: "0.0.0.0"
+      GOTRUE_API_PORT: "9999"
+      # NOTE: GoTrue uses only the ORIGIN of this value when building email
+      # links — it drops the path. A confirmation link is therefore always
+      # <origin>/verify, never /auth/v1/verify, no matter what is set here.
+      # The gateway serves a root-level /verify route for exactly that reason
+      # (ops/local/supabase-gateway.conf). The /auth/v1 suffix is kept because
+      # it is what the hosted project uses and it costs nothing.
+      API_EXTERNAL_URL: "http://localhost:${LOCAL_SUPABASE_PORT:-9321}/auth/v1"
+      GOTRUE_DB_DRIVER: postgres
+      GOTRUE_DB_DATABASE_URL: "postgres://supabase_auth_admin:${LOCAL_DB_PASSWORD:-postgres}@supabase-db:5432/postgres?search_path=auth&sslmode=disable"
+      GOTRUE_SITE_URL: "http://localhost:8080"
+      GOTRUE_URI_ALLOW_LIST: "http://localhost:8080/*,http://localhost:3001/*"
+      GOTRUE_JWT_SECRET: "${LOCAL_JWT_SECRET:-super-secret-jwt-token-with-at-least-32-characters}"
+      GOTRUE_JWT_EXP: "3600"
+      GOTRUE_JWT_DEFAULT_GROUP_NAME: authenticated
+      GOTRUE_DISABLE_SIGNUP: "false"
+      # Production has mailer_autoconfirm=false (see CLAUDE.md § Auth
+      # invariants: a successful signup returns session=None). Keep local
+      # identical or you will "fix" a bug that only exists locally.
+      GOTRUE_MAILER_AUTOCONFIRM: "${LOCAL_MAILER_AUTOCONFIRM:-false}"
+      GOTRUE_SMTP_HOST: mailpit
+      GOTRUE_SMTP_PORT: "1025"
+      # NO SMTP_USER / SMTP_PASS on purpose. GoTrue attempts PLAIN auth when
+      # credentials are present, and its mail library refuses PLAIN over an
+      # unencrypted connection — signup then fails with
+      #   "500: Error sending confirmation email"  error="unencrypted connection"
+      # while having already created the user, which is a confusing half-state.
+      # Mailpit accepts anonymous mail, so omitting them is both correct and
+      # simpler. Never do this against a real SMTP server.
+      GOTRUE_SMTP_ADMIN_EMAIL: "local@bijoudemo.com"
+      GOTRUE_SMTP_SENDER_NAME: "Bijou Local"
+      GOTRUE_SMTP_MAX_FREQUENCY: "1s"
+      GOTRUE_LOG_LEVEL: warn
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:9999/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+  supabase-rest:
+    image: postgrest/postgrest:v12.2.3
+    container_name: bijou-local-rest
+    restart: unless-stopped
+    depends_on:
+      supabase-db:
+        condition: service_healthy
+    environment:
+      PGRST_DB_URI: "postgres://authenticator:${LOCAL_DB_PASSWORD:-postgres}@supabase-db:5432/postgres"
+      PGRST_DB_SCHEMAS: "public,storage"
+      PGRST_DB_ANON_ROLE: anon
+      PGRST_JWT_SECRET: "${LOCAL_JWT_SECRET:-super-secret-jwt-token-with-at-least-32-characters}"
+      PGRST_DB_USE_LEGACY_GUCS: "false"
+      PGRST_ADMIN_SERVER_PORT: "3001"
+    # No healthcheck: postgrest/postgrest is distroless — no /bin/sh and no
+    # wget, so any CMD/CMD-SHELL probe fails with
+    #   OCI runtime exec failed: exec: "/bin/sh": no such file or directory
+    # and the container can never report healthy. The gateway below proxies
+    # /rest/v1 to it and probes that path instead, which checks the same thing
+    # from a container that actually has a shell.
+
+  # Joins GoTrue + PostgREST under one origin, the way the cloud project
+  # does. This is what makes a single SUPABASE_URL work unmodified.
+  supabase-gateway:
+    image: nginx:1.27-alpine
+    container_name: bijou-local-gateway
+    restart: unless-stopped
+    depends_on:
+      supabase-auth:
+        condition: service_healthy
+      supabase-rest:
+        condition: service_started
+    ports:
+      # 54321 is the Supabase CLI convention but falls in the same Windows
+      # reserved range as the DB port above. Override if you want the
+      # conventional number on Linux/macOS.
+      - "${LOCAL_SUPABASE_PORT:-9321}:8000"
+    volumes:
+      - ./ops/local/supabase-gateway.conf:/etc/nginx/conf.d/default.conf:ro
+    healthcheck:
+      # 127.0.0.1, not localhost: nginx here listens IPv4-only, and localhost
+      # resolves to ::1 first, which yields "connection refused" against a
+      # perfectly healthy server. Probing /rest/v1/ rather than /health also
+      # makes this a real chain check — postgrest has no shell of its own, so
+      # this is where its reachability is verified.
+      test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1:8000/health && wget -q --spider http://127.0.0.1:8000/rest/v1/ || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  # Catches the confirmation emails GoTrue sends. UI on http://localhost:8025
+  mailpit:
+    image: axllent/mailpit:v1.21
+    container_name: bijou-local-mail
+    restart: unless-stopped
+    ports:
+      - "8025:8025"
+    environment:
+      MP_SMTP_AUTH_ACCEPT_ANY: "1"
+      MP_SMTP_AUTH_ALLOW_INSECURE: "1"
+    healthcheck:
+      test: ["CMD", "/mailpit", "readyz"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  # ────────────────────────────── Application ───────────────────────────────
+  backend:
+    env_file:
+      - ops/local/.env.local
+    build:
+      context: .
+      dockerfile: ops/local/Dockerfile.backend.local
+    image: bijou-backend:local
+    container_name: bijou-local-backend
+    restart: unless-stopped
+    depends_on:
+      supabase-gateway:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+    environment:
+      <<: *backend-env
+      PORT: "8080"
+      # 1 worker locally: 4 workers means 4 schedulers and 4 copies of every
+      # log line, which makes local debugging much harder than it needs to be.
+      WEB_CONCURRENCY: "1"
+      WHATSAPP_BRIDGE_URL: "http://bridge:3000"
+      BRIDGE_USER: "${LOCAL_BRIDGE_USER:-bijou}"
+      BRIDGE_PASSWORD: "${LOCAL_BRIDGE_PASSWORD:-bijou-local-dev}"
+    volumes:
+      - backend-uploads:/app/uploads
+    healthcheck:
+      # /health only proves the process is listening. /health/database is the
+      # one that actually fails when the DB is unreachable — which is the
+      # whole point of a healthcheck. (docker-compose.coolify.yml uses
+      # /api/self-test/summary, which times out; see docs/AUDIT-2026-09-05.md)
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:8080/health/database || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 45s
+
+  landing:
+    build:
+      context: .
+      dockerfile: Dockerfile.landing
+    image: bijou-landing:local
+    container_name: bijou-local-landing
+    restart: unless-stopped
+    ports:
+      # 3001, not 3000 — 3000 collides with Langfuse and half of npm.
+      - "3001:3000"
+    healthcheck:
+      # 127.0.0.1, not localhost — Dockerfile.landing has `listen 3000;`
+      # (IPv4 only) and localhost resolves to ::1 first, so this probe failed
+      # with "connection refused" while nginx was serving fine on 0.0.0.0:3000.
+      test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1:3000/ || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+  # GOWA — the bridge the backend ACTUALLY speaks to.
+  #
+  # packages/bridge (Go + whatsmeow) is NOT the production bridge. Its own
+  # source says so: src/saas/onboarding_api.py:576 records that "/api/init
+  # belongs to the older Go bridge in packages/bridge/main.go, which is not
+  # what runs in production", and packages/bridge/fly.bridge-production.toml:5
+  # deploys THIS image instead. The two speak different APIs — packages/bridge
+  # exposes /qr and /api/init, the backend calls /devices and /app/login — so
+  # shipping it means the QR step can never work.
+  #
+  # Verified against the real image (v3.4.0):
+  #   POST /devices                  -> {"results":{"id":"e5cb…","state":"disconnected"}}
+  #   GET  /app/login?device_id=…    -> {"results":{"qr_link":"…/scan-qr-*.png","qr_duration":30}}
+  # which is exactly what src/saas/onboarding_api.py:604-659 already does. The
+  # backend was always correct; the compose was pointed at the wrong bridge.
+  bridge:
+    # Pinned by digest, not :latest. This is an unofficial WhatsApp Web client
+    # and an unattended upgrade can break every tenant's session at once.
+    image: aldinokemal2104/go-whatsapp-web-multidevice@sha256:2b942792de76be3940e507507f24b50012e4b4048f31a2eb2380f1d01ca3a9f0
+    container_name: bijou-local-bridge
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "8081:3000"
+    command:
+      - rest
+      - --port=3000
+      # GOWA POSTs inbound events here and signs the BODY with
+      # X-Hub-Signature-256: sha256=<hmac(body, secret)>. It does NOT send the
+      # secret in a header — _verify_webhook_secret in src/core/bijou.py
+      # handles both forms.
+      - --webhook=http://backend:8080/webhook/message
+      - --webhook-secret=${LOCAL_WEBHOOK_SECRET:-local-dev-webhook-secret}
+      # Matches BRIDGE_USER / BRIDGE_PASSWORD on the backend, which
+      # get_bridge_auth_headers() (onboarding_api.py:176) turns into Basic auth.
+      - --basic-auth=${LOCAL_BRIDGE_USER:-bijou}:${LOCAL_BRIDGE_PASSWORD:-bijou-local-dev}
+      - --db-uri=file:/app/storages/whatsapp.db?_foreign_keys=on
+      # Off locally: account validation calls out to WhatsApp and slows every
+      # send while you are only clicking through the UI.
+      - --account-validation=false
+    volumes:
+      - bridge-data:/app/storages
+    healthcheck:
+      # /devices needs no device context and 200s as soon as REST is serving.
+      # (/app/login 400s with DEVICE_ID_REQUIRED, so it is not a liveness probe.)
+      # Credentials in the URL, not --user/--password: this image ships busybox
+      # wget, which does not implement those flags ("wget: unrecognized option:
+      # password=..."). /devices needs no device context and 200s as soon as
+      # REST is serving; /app/login 400s with DEVICE_ID_REQUIRED so it is not a
+      # liveness probe.
+      test: ["CMD-SHELL", "wget -q --spider http://${LOCAL_BRIDGE_USER:-bijou}:${LOCAL_BRIDGE_PASSWORD:-bijou-local-dev}@127.0.0.1:3000/devices || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 25s
+
+  voice:
+    env_file:
+      - ops/local/.env.local
+    build:
+      context: .
+      # The path in docker-compose.coolify.yml (./Dockerfile.voice) does not
+      # exist; the file lives under packages/voice/.
+      dockerfile: packages/voice/Dockerfile.voice
+    image: bijou-voice:local
+    container_name: bijou-local-voice
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "8100:8100"
+    environment:
+      <<: *backend-env
+      PORT: "8100"
+      WEB_CONCURRENCY: "1"
+      BIJOU_BACKEND_URL: "http://backend:8080"
+      TELNYX_API_KEY: "${LOCAL_TELNYX_API_KEY:-}"
+      TELNYX_PUBLIC_KEY: "${LOCAL_TELNYX_PUBLIC_KEY:-}"
+      TELNYX_WEBHOOK_SECRET: "${LOCAL_TELNYX_WEBHOOK_SECRET:-}"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:8100/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    profiles: ["voice", "full"]
+
+  # ─────────────────────────── Analytics (opt-in) ───────────────────────────
+  # `docker compose -f docker-compose.local.yml --profile analytics up`
+  posthog-db:
+    image: postgres:16-alpine
+    container_name: bijou-local-posthog-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: posthog
+      POSTGRES_PASSWORD: posthog
+      POSTGRES_DB: posthog
+    volumes:
+      - posthog-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U posthog"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    profiles: ["analytics", "full"]
+
+  posthog-redis:
+    image: redis:7-alpine
+    container_name: bijou-local-posthog-redis
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - posthog-redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    profiles: ["analytics", "full"]
+
+  posthog:
+    image: posthog/posthog:release-1.43.0
+    container_name: bijou-local-posthog
+    restart: unless-stopped
+    depends_on:
+      posthog-db:
+        condition: service_healthy
+      posthog-redis:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: "postgres://posthog:posthog@posthog-db:5432/posthog"
+      REDIS_URL: "redis://posthog-redis:6379/"
+      SECRET_KEY: "${LOCAL_POSTHOG_SECRET_KEY:-local-dev-posthog-secret-not-for-production}"
+      SITE_URL: "http://localhost:8000"
+      DISABLE_SECURE_SSL_REDIRECT: "1"
+      IS_BEHIND_PROXY: "1"
+      OPT_OUT_CAPTURE: "1"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8000/_health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 90s
+    profiles: ["analytics", "full"]
+
+volumes:
+  supabase-db-data:
+  backend-uploads:
+  bridge-data:
+  posthog-db-data:
+  posthog-redis-data:

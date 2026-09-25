@@ -29,7 +29,7 @@ export const IntegrationForm: React.FC<IntegrationFormProps> = ({ onClose }) => 
         shopify: 'Shopify E-commerce',
         woocommerce: 'WooCommerce',
         calendly: 'Calendly / Google Calendar',
-        clinicpro: 'ClinicPro / Klinik Manager',
+        clinicpro: 'ClinicPro / Practice Manager',
         hubspot: 'HubSpot CRM',
         salesforce: 'Salesforce',
         zapier: 'Zapier Automation',
@@ -52,7 +52,7 @@ Integration Details:
 
 CURRENT SUPPORTED INTEGRATIONS:
 ✅ WhatsApp Business API (Native)
-✅ ClinicPro / Klinik Manager (Healthcare CMS)
+✅ ClinicPro / Practice Manager (Healthcare CMS)
 ✅ Google Calendar / Calendly (Appointments)
 ✅ Shopify / WooCommerce (E-commerce)
 ✅ Zapier (1000+ apps)
@@ -143,7 +143,7 @@ Sent from Bijou AI Integration Request Form
               <h3 className="text-gold-400 font-semibold mb-2">Currently Supported:</h3>
               <ul className="text-sm text-white space-y-1">
                 <li>✅ Shopify & WooCommerce (E-commerce)</li>
-                <li>✅ ClinicPro & Klinik Manager (Healthcare)</li>
+                <li>✅ ClinicPro & Practice Manager (Healthcare)</li>
                 <li>✅ Google Calendar & Calendly (Scheduling)</li>
                 <li>✅ Zapier (1000+ apps)</li>
               </ul>
@@ -165,7 +165,7 @@ Sent from Bijou AI Integration Request Form
                     border: '2px solid #2EF19D',
                     backdropFilter: 'blur(10px)'
                   }}
-                  className="w-full px-4 py-3 rounded-lg text-white focus:border-cyan-400 focus:outline-none transition-colors focus:shadow-[0_0_15px_rgba(46,241,157,0.3)]"
+                  className="w-full px-4 py-3 rounded-lg text-white focus:border-emerald-400 focus:outline-none transition-colors focus:shadow-[0_0_15px_rgba(46,241,157,0.3)]"
                   placeholder="John Doe"
                 />
               </div>
@@ -185,7 +185,7 @@ Sent from Bijou AI Integration Request Form
                     border: '2px solid #2EF19D',
                     backdropFilter: 'blur(10px)'
                   }}
-                  className="w-full px-4 py-3 rounded-lg text-white focus:border-cyan-400 focus:outline-none transition-colors focus:shadow-[0_0_15px_rgba(46,241,157,0.3)]"
+                  className="w-full px-4 py-3 rounded-lg text-white focus:border-emerald-400 focus:outline-none transition-colors focus:shadow-[0_0_15px_rgba(46,241,157,0.3)]"
                   placeholder="john@company.com"
                 />
               </div>
@@ -207,7 +207,7 @@ Sent from Bijou AI Integration Request Form
                     border: '2px solid #2EF19D',
                     backdropFilter: 'blur(10px)'
                   }}
-                  className="w-full px-4 py-3 rounded-lg text-white focus:border-cyan-400 focus:outline-none transition-colors focus:shadow-[0_0_15px_rgba(46,241,157,0.3)]"
+                  className="w-full px-4 py-3 rounded-lg text-white focus:border-emerald-400 focus:outline-none transition-colors focus:shadow-[0_0_15px_rgba(46,241,157,0.3)]"
                   placeholder="ABC Clinic / XYZ Shop"
                 />
               </div>
@@ -226,8 +226,8 @@ Sent from Bijou AI Integration Request Form
                     border: '2px solid #2EF19D',
                     backdropFilter: 'blur(10px)'
                   }}
-                  className="w-full px-4 py-3 rounded-lg text-white focus:border-cyan-400 focus:outline-none transition-colors focus:shadow-[0_0_15px_rgba(46,241,157,0.3)]"
-                  placeholder="+60 17-410 6981"
+                  className="w-full px-4 py-3 rounded-lg text-white focus:border-emerald-400 focus:outline-none transition-colors focus:shadow-[0_0_15px_rgba(46,241,157,0.3)]"
+                  placeholder="+1 (555) 000-0000"
                 />
               </div>
             </div>
@@ -246,12 +246,12 @@ Sent from Bijou AI Integration Request Form
                   border: '2px solid #2EF19D',
                   backdropFilter: 'blur(10px)'
                 }}
-                className="w-full px-4 py-3 rounded-lg text-white focus:border-cyan-400 focus:outline-none transition-colors focus:shadow-[0_0_15px_rgba(46,241,157,0.3)]"
+                className="w-full px-4 py-3 rounded-lg text-white focus:border-emerald-400 focus:outline-none transition-colors focus:shadow-[0_0_15px_rgba(46,241,157,0.3)]"
               >
                 <option value="shopify" className="bg-[#0A1E1C]">Shopify E-commerce</option>
                 <option value="woocommerce" className="bg-[#0A1E1C]">WooCommerce</option>
                 <option value="calendly" className="bg-[#0A1E1C]">Calendly / Google Calendar</option>
-                <option value="clinicpro" className="bg-[#0A1E1C]">ClinicPro / Klinik Manager</option>
+                <option value="clinicpro" className="bg-[#0A1E1C]">ClinicPro / Practice Manager</option>
                 <option value="hubspot" className="bg-[#0A1E1C]">HubSpot CRM</option>
                 <option value="salesforce" className="bg-[#0A1E1C]">Salesforce</option>
                 <option value="zapier" className="bg-[#0A1E1C]">Zapier Automation</option>
@@ -274,7 +274,7 @@ Sent from Bijou AI Integration Request Form
                   border: '2px solid #2EF19D',
                   backdropFilter: 'blur(10px)'
                 }}
-                className="w-full px-4 py-3 rounded-lg text-white focus:border-cyan-400 focus:outline-none transition-colors resize-none focus:shadow-[0_0_15px_rgba(46,241,157,0.3)]"
+                className="w-full px-4 py-3 rounded-lg text-white focus:border-emerald-400 focus:outline-none transition-colors resize-none focus:shadow-[0_0_15px_rgba(46,241,157,0.3)]"
                 placeholder="Describe your integration needs and use case..."
               />
             </div>

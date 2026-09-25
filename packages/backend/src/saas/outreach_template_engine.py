@@ -323,20 +323,25 @@ class TemplateEngine:
     """
 
     def __init__(self, gemini_api_key: Optional[str] = None):
-        self._api_key = gemini_api_key or os.getenv("GEMINI_API_KEY", "")
-        self._model = None  # lazy-loaded on first generate call
+        # gemini_api_key is ignored (kept for callers); AI goes through the gateway.
+        pass
 
-    def _get_model(self):
-        """Lazy-load Gemini model (allows unit tests without a real API key)."""
-        if self._model is None:
-            try:
-                import google.generativeai as genai  # type: ignore
-                genai.configure(api_key=self._api_key)
-                self._model = genai.GenerativeModel("gemini-2.0-flash-exp")
-            except Exception as exc:
-                logger.error(f"Gemini model init failed: {exc}")
-                raise
-        return self._model
+    async def _generate(self, prompt: str) -> str:
+        """One outreach message via the AI Gateway (ai://fast).
+
+        Was Gemini-direct (via google.generativeai, which is not even installed)
+        with a hand-rolled MiniMax fallback; the gateway's alias chain now does
+        both jobs, and no callsite names a provider.
+        """
+        from src.core.llm_gateway_v2 import llm
+
+        result = await llm.complete(
+            "ai://fast", [{"role": "user", "content": prompt}], max_output_tokens=300
+        )
+        text = (result.text or "").strip().strip('"').strip("'")
+        if not text:
+            raise ValueError("AI returned an empty message")
+        return text
 
     # ── CSV Validation ──────────────────────────────────────────────────────
 
@@ -623,53 +628,14 @@ OUTPUT: Return ONLY the message text. No labels. No quotes. No explanation."""
         """
         prompt = self.build_generation_context(contact, step, campaign_config)
         try:
-            model = self._get_model()
-            response = await model.generate_content_async(prompt)
-            message = response.text.strip().strip('"').strip("'")
-            return message
+            return await self._generate(prompt)
         except Exception as exc:
-            logger.error(f"Gemini generation failed for {contact.get('phone')}: {exc}")
-            # 2026-08-22 FIX: this had no fallback besides a single generic
-            # canned line — and with the project's Gemini key currently
-            # suspended (see bijou.py's "PRIMARY" routing comment for the
-            # main chat pipeline, same root cause here), EVERY outreach
-            # message was silently degrading to that one line per industry,
-            # with zero personalization and no warning to the tenant that
-            # the advertised "AI-personalized outreach" wasn't happening.
-            # Try MiniMax (already the primary provider elsewhere in this
-            # app) before giving up on personalization entirely.
-            minimax_message = await self._try_minimax(prompt)
-            if minimax_message:
-                return minimax_message
+            logger.error(f"AI generation failed for {contact.get('phone')}: {exc}")
             name = (contact.get("contact_name") or "there").split()[0]
             area = contact.get("area") or ""
             pack = BUILT_IN_INDUSTRY_PACKS.get(contact.get("industry_type") or "custom", {})
             hook = pack.get("hook_question") or "Quick question about your WhatsApp setup"
             return f"Hi {name}! {hook} 😊"
-
-    async def _try_minimax(self, prompt: str) -> Optional[str]:
-        """MiniMax fallback for generate_message() when Gemini is unavailable."""
-        mm_key = os.getenv("MINIMAX_API_KEY")
-        if not mm_key:
-            return None
-        try:
-            from openai import AsyncOpenAI
-            client = AsyncOpenAI(
-                base_url=os.getenv("MINIMAX_API_ENDPOINT") or "https://api.minimax.io/v1",
-                api_key=mm_key,
-            )
-            mm_model = os.getenv("MINIMAX_MODELS", "MiniMax-M3").split(",")[0].strip()
-            resp = await client.chat.completions.create(
-                model=mm_model,
-                messages=[{"role": "user", "content": prompt}],
-                temperature=0.7,
-                max_tokens=300,
-            )
-            content = (resp.choices[0].message.content or "").strip().strip('"').strip("'")
-            return content or None
-        except Exception as exc:
-            logger.error(f"MiniMax fallback generation failed: {exc}")
-            return None
 
     # ── Reply Scoring ───────────────────────────────────────────────────────
 
@@ -809,9 +775,7 @@ DO NOT:
 OUTPUT: Return ONLY the message text."""
 
         try:
-            model = self._get_model()
-            response = await model.generate_content_async(prompt)
-            return response.text.strip().strip('"').strip("'")
+            return await self._generate(prompt)
         except Exception as exc:
             logger.error(f"Reveal message generation failed: {exc}")
             return (

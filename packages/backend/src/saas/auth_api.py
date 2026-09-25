@@ -1,7 +1,10 @@
 import logging
 import os
-from fastapi import APIRouter, HTTPException, Depends, Header
-from typing import Optional
+import secrets as _secrets
+import threading
+import time
+from fastapi import APIRouter, HTTPException, Depends, Header, Request
+from typing import Dict, Optional
 from pydantic import BaseModel, EmailStr
 from src.core.dashboard_api_simple import get_supabase
 from src.saas.email_service import get_email_service
@@ -23,6 +26,66 @@ except ImportError:  # pragma: no cover
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
+
+# ---------------------------------------------------------------------------
+# Dedicated Supabase client for user-scoped auth operations.
+#
+# get_supabase() returns a PROCESS-WIDE singleton built with the service-role
+# key, and every .table(...) call in the backend shares it. RLS was hardened so
+# service_role is the only role that can read or write (ops/_fix_rls_v6.js), so
+# that credential is load-bearing for the entire application.
+#
+# supabase-py's Client._listen_to_auth_events rewrites
+# options.headers["Authorization"] and drops the cached PostgREST client on
+# SIGNED_IN / TOKEN_REFRESHED / SIGNED_OUT. Running sign_in_with_password(),
+# set_session() or refresh_session() on the shared client therefore replaced
+# the service-role credential with one user's JWT for the whole worker process,
+# and nothing put it back. Measured before this fix:
+#
+#     login   before: Bearer SERVICE-ROLE-KEY-AAA
+#     login   after : Bearer eyJhbGciOiAiSFMyNTYiL...   <- the user's JWT
+#
+# Every later request that worker handled — other tenants' dashboards, the
+# WhatsApp webhook, the schedulers — then authorized as that user.
+#
+# Keeping a SECOND singleton (rather than a fresh client per request) preserves
+# the reason the first one exists: get_supabase()'s docstring records that
+# create_client per call opened a new httpx pool and caused ConnectionTerminated
+# errors under load. Auth sessions still churn on this client between users, but
+# nothing here relies on its ambient session — every handler passes the caller's
+# token explicitly — and crucially it is never used for data access.
+# ---------------------------------------------------------------------------
+_auth_supabase_client = None
+_auth_client_lock = __import__("threading").Lock()
+
+
+def get_auth_client():
+    """Supabase client for user-scoped auth calls only. Never use for .table()."""
+    global _auth_supabase_client
+    with _auth_client_lock:
+        if _auth_supabase_client is None:
+            supabase_url = os.getenv("SUPABASE_URL") or os.getenv(
+                "NEXT_PUBLIC_SUPABASE_URL", ""
+            ).strip('"')
+            supabase_key = (
+                os.getenv("SUPABASE_SERVICE_KEY")
+                or os.getenv("SUPABASE_SERVICE_ROLE_KEY", "").strip('"')
+                or os.getenv("SUPABASE_KEY")
+            )
+            if not supabase_url or not supabase_key:
+                raise HTTPException(
+                    status_code=500, detail="Missing Supabase configuration"
+                )
+
+            import httpx as _httpx
+            from supabase import create_client as _create_client
+            from supabase import ClientOptions as _SBCO  # type: ignore
+
+            # Match get_supabase(): force HTTP/1.1 (PostgREST HTTP/2 drops
+            # certain tables).
+            opts = _SBCO(httpx_client=_httpx.Client(http2=False, timeout=30.0))
+            _auth_supabase_client = _create_client(supabase_url, supabase_key, options=opts)
+        return _auth_supabase_client
 
 # Canonical public origin. Everything user-facing (emails, WhatsApp links,
 # magic links, password resets) must be built on this — NEVER on
@@ -81,6 +144,11 @@ class AuthResponse(BaseModel):
     # already returns for the Google sign-in path.
     email: Optional[str] = None
     business_name: Optional[str] = None
+    # Where the client should go next. None => /dashboard. Set to an
+    # /onboard/{token} URL when this tenant still has to connect WhatsApp, so
+    # email/password login behaves like the Google path instead of dumping a
+    # brand-new user on an empty dashboard.
+    next_url: Optional[str] = None
 
 class RefreshRequest(BaseModel):
     refresh_token: str
@@ -98,7 +166,9 @@ async def refresh_access_token(request: RefreshRequest):
     """
     db = get_supabase()
     try:
-        result = db.auth.refresh_session(request.refresh_token)
+        # Auth client, not the shared data client: refresh_session fires
+        # TOKEN_REFRESHED, which would rewrite the data client's credential.
+        result = get_auth_client().auth.refresh_session(request.refresh_token)
         if not result or not result.session:
             raise HTTPException(status_code=401, detail="Refresh token invalid or expired. Please log in again.")
 
@@ -128,8 +198,92 @@ async def refresh_access_token(request: RefreshRequest):
         raise HTTPException(status_code=401, detail="Session expired. Please log in again.")
 
 
+# ---------------------------------------------------------------------------
+# Per-IP rate limit on /api/auth/signup. Before this, nothing throttled the
+# endpoint at our own edge — only Supabase's own project-wide signup limit
+# (signup.html's own comment cites "~4 per IP per hour"), which meant an
+# attacker probing candidate emails (see the anti-enumeration fix above) or
+# just spamming signups paid no cost until THAT tripped, at which point the
+# user got Supabase's raw 429 rather than a controlled response.
+#
+# Same token-bucket algorithm as _webhook_take_token in src/core/bijou.py
+# (kept as a separate, self-contained copy rather than a shared import: this
+# module is imported from bijou.py inside _include_routers(), so importing
+# bijou.py's helper back from here for one small function would add a real
+# circular-import risk for very little gain).
+# ---------------------------------------------------------------------------
+_SIGNUP_RATE_LOCK = threading.Lock()
+_SIGNUP_RATE_BUCKETS: Dict[str, list] = {}  # ip -> [tokens, last_refill_monotonic]
+_SIGNUP_RATE_BUCKET_MAX_KEYS = 10000
+
+
+def _reset_signup_rate_limit() -> None:
+    """Empty every bucket. For tests: this state is process-global, so a
+    flood in one test would otherwise 429 an unrelated later test."""
+    with _SIGNUP_RATE_LOCK:
+        _SIGNUP_RATE_BUCKETS.clear()
+
+
+def _signup_client_ip(http_request: Optional[Request]) -> str:
+    if http_request is None:
+        return "unknown"
+    forwarded = http_request.headers.get("x-forwarded-for", "").split(",")[0].strip()
+    if forwarded:
+        return forwarded
+    return http_request.client.host if http_request.client else "unknown"
+
+
+def _check_signup_rate_limit(http_request: Optional[Request]) -> None:
+    """Raise HTTPException(429) if this IP has exceeded its signup budget.
+
+    Env-tunable, same convention as the webhook limiter: capacity <= 0
+    disables it entirely.
+    """
+    try:
+        capacity = float(os.getenv("SIGNUP_RATE_CAPACITY", "5"))
+    except ValueError:
+        capacity = 5.0
+    if capacity <= 0:
+        return
+    try:
+        refill_per_sec = float(os.getenv("SIGNUP_RATE_REFILL_PER_SEC", str(5.0 / 3600)))
+    except ValueError:
+        refill_per_sec = 5.0 / 3600
+
+    key = _signup_client_ip(http_request)
+    now = time.monotonic()
+    with _SIGNUP_RATE_LOCK:
+        bucket = _SIGNUP_RATE_BUCKETS.get(key)
+        if bucket is None:
+            if len(_SIGNUP_RATE_BUCKETS) >= _SIGNUP_RATE_BUCKET_MAX_KEYS:
+                cutoff = now - 3600
+                for k in [k for k, v in _SIGNUP_RATE_BUCKETS.items() if v[1] < cutoff]:
+                    del _SIGNUP_RATE_BUCKETS[k]
+                if len(_SIGNUP_RATE_BUCKETS) >= _SIGNUP_RATE_BUCKET_MAX_KEYS:
+                    # Saturated: shed load rather than grow unbounded.
+                    raise HTTPException(
+                        status_code=429,
+                        detail="Too many sign-up attempts. Please wait a minute and try again.",
+                    )
+            bucket = [capacity, now]
+            _SIGNUP_RATE_BUCKETS[key] = bucket
+
+        tokens, last = bucket
+        tokens = min(capacity, tokens + (now - last) * refill_per_sec)
+        bucket[1] = now
+
+        if tokens < 1.0:
+            bucket[0] = tokens
+            logger.warning("🚦 signup rate limit hit for %s: shedding load", key)
+            raise HTTPException(
+                status_code=429,
+                detail="Too many sign-up attempts. Please wait a minute and try again.",
+            )
+        bucket[0] = tokens - 1.0
+
+
 @router.post("/api/auth/signup", response_model=AuthResponse)
-async def signup(request: SignupRequest):
+async def signup(request: SignupRequest, http_request: Request = None):
     """
     Professional signup with email/password authentication.
     Creates Supabase auth user + tenant + tenant_user link.
@@ -140,6 +294,7 @@ async def signup(request: SignupRequest):
     so a failure surfaces as a real 4xx/5xx with a JSON body instead of
     a silent Fly-edge 500 with no body.  2026-08-09.
     """
+    _check_signup_rate_limit(http_request)
     db = get_supabase()
 
     user_id = None
@@ -153,9 +308,18 @@ async def signup(request: SignupRequest):
         # actually provisioned, and the dashboard sees the real 4xx/5xx
         # instead of a misleading 500.
         try:
-            auth_response = db.auth.sign_up({
+            # email_redirect_to: every OTHER user-facing auth email in this
+            # file (reset_password below) builds its link on
+            # _public_base_url() explicitly, precisely because this project
+            # was bitten twice by a link defaulting to the wrong domain
+            # (Fly's internal host, or a stale Supabase dashboard Site URL)
+            # instead of app.mybijou.xyz. The confirmation email sign_up()
+            # sends was the one link in this file still relying on that
+            # dashboard-configured default — make it explicit too.
+            auth_response = get_auth_client().auth.sign_up({
                 "email": request.email,
                 "password": request.password,
+                "options": {"email_redirect_to": f"{_public_base_url()}/login"},
             })
         except AuthApiError as auth_err:
             # Let the outer `except` mapper translate it to a 4xx/5xx with
@@ -203,16 +367,47 @@ async def signup(request: SignupRequest):
         if isinstance(identities, list) and len(identities) == 0:
             logger.info(
                 "Signup for %s returned a user with no identities — email "
-                "already exists in auth.users; returning 409.",
+                "already exists in auth.users; sending a password-reset "
+                "email and responding as if this were a normal pending "
+                "signup (anti-enumeration).",
                 request.email,
             )
-            raise HTTPException(
-                status_code=409,
-                detail=(
-                    "An account with this email already exists. "
-                    "Please sign in instead, or use the password-reset link "
-                    "if you don't remember your password."
-                ),
+            # 2026-09-18 FIX: this used to raise 409 with "An account with
+            # this email already exists" — a textbook email-enumeration
+            # oracle (POST candidate emails, 409 vs 200 tells you which are
+            # registered), and inconsistent with reset_password's own
+            # "always return success, don't reveal if email exists" policy
+            # a few lines below. Instead: help the actual account owner (they
+            # may have forgotten they have one) via the same password-reset
+            # email that endpoint sends, and respond with the EXACT shape a
+            # genuine new signup gets while awaiting email confirmation
+            # (see the `email_confirmation_required=True` branch below) so
+            # the two cases are indistinguishable from the response alone.
+            # `user_id` here is GoTrue's own phantom UUID for this case (see
+            # the comment above) — already random and never in auth.users,
+            # which is exactly what an anti-enumeration placeholder needs.
+            # `tenant_id` has no real backing row here (we must NOT create a
+            # tenant for someone else's existing account), so a fresh UUID
+            # fills the same `tenant_id: str` field the real branch always
+            # populates, without persisting anything.
+            try:
+                get_auth_client().auth.reset_password_email(
+                    email=request.email,
+                    options={"redirect_to": f"{_public_base_url()}/reset-password"},
+                )
+            except Exception as reset_err:
+                logger.warning(
+                    "Could not send password-reset email during signup "
+                    "collision for %s: %s", request.email, reset_err,
+                )
+            return AuthResponse(
+                access_token=None,
+                refresh_token=None,
+                user={"id": user_id, "email": request.email},
+                tenant_id=str(uuid4()),
+                email_confirmation_required=True,
+                email=request.email,
+                business_name=request.business_name,
             )
 
         # 2. Create tenant record
@@ -511,12 +706,69 @@ async def signup(request: SignupRequest):
             ),
         )
 
+def _onboarding_redirect_for(db, tenant_id: str) -> Optional[str]:
+    """Where a just-logged-in tenant should land: onboarding, or nowhere.
+
+    Returns an absolute /onboard/{token} URL when this tenant still needs to
+    connect WhatsApp, or None when it should go to the dashboard as usual.
+
+    Why this exists: static/login.html sent EVERY successful login to
+    /dashboard, so a brand-new tenant landed on an empty dashboard with no QR
+    prompt and no route to the connect flow. The Google sign-in path already
+    got this right (src/saas/google_oauth.py:210) — it checks
+    whatsapp_connected_at and redirects to /onboard/{signup_token}. The two
+    sign-in methods disagreed. Putting the decision here means one rule serves
+    both instead of it being duplicated in JavaScript.
+
+    This must never turn a good login into a failed one, so every failure path
+    returns None and the user simply lands on /dashboard.
+    """
+    try:
+        resp = (
+            db.table("tenants")
+            .select("whatsapp_connected_at, onboarding_completed, signup_token")
+            .eq("id", tenant_id)
+            .maybe_single()
+            .execute()
+        )
+        row = getattr(resp, "data", None)
+        if not row:
+            return None
+
+        # Either signal counts as done. whatsapp_connected_at is the one the
+        # Google path uses; onboarding_completed covers tenants that finished
+        # before that column was populated.
+        if row.get("whatsapp_connected_at") or row.get("onboarding_completed"):
+            return None
+
+        token = row.get("signup_token")
+        if not token:
+            # Predates signup_token, or the backfill missed it. Mint one rather
+            # than stranding the user with no way into onboarding.
+            token = _secrets.token_urlsafe(32)
+            db.table("tenants").update({"signup_token": token}).eq("id", tenant_id).execute()
+
+        return f"{_public_base_url()}/onboard/{token}"
+    except Exception as e:  # noqa: BLE001 - routing is a nicety, login is not
+        logger.warning(f"⚠️ Onboarding routing check failed for {tenant_id}: {e}")
+        return None
+
+
 def _resolve_or_link_tenant(db, user_id: str, email: Optional[str]) -> Optional[str]:
     """Return the user's tenant_id from tenant_users; if there is no link yet,
     auto-link by matching a tenant this email owns. Self-heals existing owners for
     BOTH password and Google login. Uses the service-role client, so the insert
     bypasses RLS. Returns None only if the email owns no tenant."""
-    link = db.table("tenant_users").select("tenant_id").eq("user_id", user_id).execute()
+    # order() for the same reason as dashboard_api_simple.py::verify_session:
+    # a user in >1 tenant must get a deterministic pick (oldest membership),
+    # not whatever order Postgres happens to return with no ORDER BY.
+    link = (
+        db.table("tenant_users")
+        .select("tenant_id")
+        .eq("user_id", user_id)
+        .order("created_at", desc=False)
+        .execute()
+    )
     if link.data:
         return link.data[0]["tenant_id"]
     if not email:
@@ -551,7 +803,9 @@ async def login(request: LoginRequest):
 
     try:
         # 1. Authenticate with Supabase Auth
-        auth_response = db.auth.sign_in_with_password({
+        # Auth client, not the shared data client: a successful sign-in fires
+        # SIGNED_IN and would replace the service-role credential process-wide.
+        auth_response = get_auth_client().auth.sign_in_with_password({
             "email": request.email,
             "password": request.password,
         })
@@ -590,7 +844,13 @@ async def login(request: LoginRequest):
             # so the user still gets a usable shell.
             logger.warning("Could not load business_name for tenant %s: %s", tenant_id, biz_err)
 
-        # 4. Return JWT tokens + identity fields the dashboard expects
+        # 4. Decide where to send them. A tenant that has never connected
+        #    WhatsApp goes to the QR flow, matching what google_oauth.py:210
+        #    already does — otherwise email/password users land on an empty
+        #    dashboard with no prompt and no route into onboarding.
+        next_url = _onboarding_redirect_for(db, tenant_id)
+
+        # 5. Return JWT tokens + identity fields the dashboard expects
         return AuthResponse(
             access_token=auth_response.session.access_token,
             refresh_token=auth_response.session.refresh_token,
@@ -598,6 +858,7 @@ async def login(request: LoginRequest):
             tenant_id=tenant_id,
             email=request.email,
             business_name=business_name,
+            next_url=next_url,
         )
 
     except HTTPException:
@@ -626,6 +887,67 @@ async def login(request: LoginRequest):
             detail="Login failed. Please try again or contact support if it keeps happening.",
         )
 
+def _provision_oauth_tenant(db, user_id: str, email: Optional[str]) -> str:
+    """Create a tenant + tenant_users owner row for a first-time OAuth user.
+
+    signInWithOAuth already created the auth.users row client-side, so this
+    provisions ONLY the workspace — mirroring signup()'s tenant creation +
+    tenant_users insert (same TenantManager helper, same id/tenant_id/user_id/
+    role column shape) and its rollback cascade, minus the auth-user
+    creation/cleanup. On any failure it rolls the tenant back rather than
+    leaving a partial workspace, and raises a clean 500. The real business
+    name is collected later during onboarding, so we seed a placeholder from
+    the email local-part."""
+    business_name = (email.split("@", 1)[0] if email else "").strip() or "My Business"
+    tenant_manager = TenantManager(db)
+    try:
+        tenant_id = tenant_manager.create_tenant(
+            business_name=business_name,
+            whatsapp_number="",
+            owner_email=email,
+            subscription_tier="freemium",
+        )
+    except Exception as tenant_err:
+        logger.exception("OAuth tenant creation failed for %s: %s", email, tenant_err)
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to create workspace. Please try again or contact support.",
+        )
+    if not tenant_id:
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to create workspace. Please try again or contact support.",
+        )
+    try:
+        db.table("tenant_users").insert({
+            "id": str(uuid4()),
+            "tenant_id": tenant_id,
+            "user_id": user_id,
+            "role": "owner",
+        }).execute()
+    except Exception as link_err:
+        logger.exception(
+            "tenant_users insert failed for oauth user %s tenant %s; rolling back: %s",
+            user_id, tenant_id, link_err,
+        )
+        try:
+            db.table("tenants").delete().eq("id", tenant_id).execute()
+        except Exception as rollback_err:
+            logger.warning(
+                "Could not roll back tenant %s after tenant_users failure: %s",
+                tenant_id, rollback_err,
+            )
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to link account to workspace. Please try again.",
+        )
+    logger.info(
+        "Provisioned tenant %s for first-time OAuth user %s (%s)",
+        tenant_id, user_id, email,
+    )
+    return tenant_id
+
+
 @router.post("/api/auth/oauth-session")
 async def oauth_session(authorization: Optional[str] = Header(None)):
     """Complete a Supabase OAuth (e.g. Google) sign-in. The client obtains a
@@ -642,10 +964,13 @@ async def oauth_session(authorization: Optional[str] = Header(None)):
             raise HTTPException(status_code=401, detail="Invalid session")
         tenant_id = _resolve_or_link_tenant(db, user.id, user.email)
         if not tenant_id:
-            raise HTTPException(
-                status_code=404,
-                detail="No tenant is registered to this Google account's email. Please sign up first.",
-            )
+            # First-time Google user (D-AUTH-1). signInWithOAuth already
+            # created the auth.users row client-side, so — unlike signup() —
+            # we provision ONLY the workspace (tenant + tenant_users), then
+            # fall through to the normal onboarding-redirect response, exactly
+            # like a fresh email signup. Without this, Google was sign-in-only
+            # and every new Google user got a 404.
+            tenant_id = _provision_oauth_tenant(db, user.id, user.email)
         biz = (
             db.table("tenants").select("business_name").eq("id", tenant_id).limit(1).execute()
         )
@@ -657,12 +982,19 @@ async def oauth_session(authorization: Optional[str] = Header(None)):
         # refreshed. Falls back to the access token if the Supabase client
         # can't surface one (older supabase-py).
         refresh_token = getattr(getattr(user_resp, "session", None), "refresh_token", None) or ""
+        # Same onboarding-routing decision /api/auth/login makes (see
+        # _onboarding_redirect_for) — without it, a brand-new tenant signing
+        # in with Google lands on an empty dashboard with no QR prompt,
+        # because auth-callback.html unconditionally redirects to /dashboard
+        # unless this endpoint tells it otherwise.
+        next_url = _onboarding_redirect_for(db, tenant_id)
         return {
             "access_token": token,
             "refresh_token": refresh_token,
             "tenant_id": tenant_id,
             "email": user.email,
             "business_name": (biz.data[0]["business_name"] if biz.data else None),
+            "next_url": next_url,
         }
     except HTTPException:
         raise
@@ -678,24 +1010,29 @@ async def oauth_session(authorization: Optional[str] = Header(None)):
 @router.post("/api/auth/logout")
 async def logout(authorization: Optional[str] = Header(None)):
     """
-    Logout user by signing out from Supabase Auth.
+    Revoke the caller's own session via Supabase Auth.
     """
-    db = get_supabase()
-
-    try:
-        # Extract token from Authorization header
-        if authorization and authorization.startswith("Bearer "):
-            token = authorization.split(" ")[1]
-            db.auth.sign_out()
-            return {"message": "Logged out successfully"}
-
+    if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Not authenticated")
 
-    except HTTPException:
-        raise
+    token = authorization.split(" ", 1)[1]
+    try:
+        # admin.sign_out(jwt, scope) revokes exactly the token passed in, via
+        # a one-off request. The plain `.auth.sign_out()` used before acted on
+        # whatever session happened to be cached on get_auth_client()'s
+        # process-wide shared client (see its docstring) — not the caller's
+        # token. That meant logout could silently no-op, or revoke a
+        # different concurrent user's session instead of the caller's.
+        get_auth_client().auth.admin.sign_out(token, "global")
+    except AuthApiError:
+        # Token already invalid/expired — still a successful logout from the
+        # caller's point of view.
+        pass
     except Exception as e:
         logger.error("Logout error: %s", e, exc_info=True)
         raise HTTPException(status_code=500, detail="Logout failed")
+
+    return {"message": "Logged out successfully"}
 
 @router.post("/api/auth/reset-password")
 async def reset_password(request: MagicLinkRequest):
@@ -757,9 +1094,20 @@ async def change_password(
     token = authorization.split(" ", 1)[1]
     db = get_supabase()
     try:
-        # Set the user's session so auth.update_user acts on the correct account
-        db.auth.set_session(token, "")
-        result = db.auth.update_user({"password": request.new_password})
+        # Resolve the caller's user id from their token with get_user(jwt=...),
+        # which — like get_current_user() above — makes a stateless request and
+        # never touches session storage. Then update via admin.update_user_by_id
+        # (service-role, same pattern as the admin.delete_user calls elsewhere
+        # in this file), instead of the previous set_session()+update_user(),
+        # which mutated get_auth_client()'s process-wide shared session on
+        # every call — the same hazard documented on that client and on
+        # /api/auth/logout above.
+        user_result = db.auth.get_user(token)
+        if not user_result or not user_result.user:
+            raise HTTPException(status_code=401, detail="Invalid or expired token")
+        result = db.auth.admin.update_user_by_id(
+            str(user_result.user.id), {"password": request.new_password}
+        )
         if not result.user:
             raise HTTPException(status_code=400, detail="Failed to update password")
         return {"success": True, "message": "Password updated successfully"}
@@ -819,8 +1167,17 @@ async def get_current_user(authorization: Optional[str] = Header(None)):
 async def send_magic_link(request: MagicLinkRequest):
     """
     Endpoint to send magic link to user's email for login.
+
+    Always returns the same generic success message regardless of whether the
+    email is registered — matching /api/auth/reset-password's "don't reveal if
+    email exists" policy below. This endpoint used to return 404 "No account
+    found with that email" whenever the lookup failed, which let anyone probe
+    arbitrary emails against it to find out which ones have a Bijou account.
     """
     db = get_supabase()
+    generic_response = {
+        "message": "If an account exists with this email, you will receive a login link shortly."
+    }
 
     # Validate email is not empty
     if not request.email or not request.email.strip():
@@ -833,12 +1190,12 @@ async def send_magic_link(request: MagicLinkRequest):
     except Exception as e:
         # If tenant not found, Supabase throws an exception
         logging.warning(f"No tenant found for email: {request.email}")
-        raise HTTPException(status_code=404, detail="No account found with that email.")
+        return generic_response
 
     # Double-check if tenant data exists
     tdata = getattr(tenant, "data", None) if tenant else None
     if not tdata:
-        raise HTTPException(status_code=404, detail="No account found with that email.")
+        return generic_response
 
     # Construct Magic Link URL. 2026-08-17 FIX: prefer the canonical public
     # base via `_public_base_url()` so the link lands on app.mybijou.xyz
@@ -859,7 +1216,7 @@ async def send_magic_link(request: MagicLinkRequest):
     business_name = tdata.get("name", "") or ""
     if not token or not tenant_id:
         logging.warning(f"Magic link requested for {request.email} but tenant row is missing signup_token or id")
-        raise HTTPException(status_code=404, detail="No account found with that email.")
+        return generic_response
     magic_link_url = f"{login_url}?token={token}&tenant_id={tenant_id}"
 
     # Send branded magic link email via EmailService template
@@ -870,13 +1227,11 @@ async def send_magic_link(request: MagicLinkRequest):
             business_name=business_name,
             magic_link_url=magic_link_url,
         )
-
         if not email_sent:
             logging.error(f"Failed to send magic link email to {request.email}")
-            raise HTTPException(status_code=500, detail="Failed to send magic link email. Please try again later.")
-
-        return {"message": "Magic link sent successfully! Please check your email."}
-
     except Exception as e:
         logging.error(f"Unexpected error sending magic link: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail="An unexpected error occurred.")
+
+    # Same response whether the send above succeeded, failed, or the email
+    # simply wasn't registered — see docstring.
+    return generic_response

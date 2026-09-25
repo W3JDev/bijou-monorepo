@@ -269,7 +269,7 @@ class CommandHandler:
         elif command == "bookings":
             if not is_owner:
                 return "🔒 This command is only available to the account owner."
-            return await self._cmd_bookings()
+            return await self._cmd_bookings(tenant_id)
 
         # @bijou crm [name or phone] — look up CRM contact
         elif command == "crm":
@@ -282,7 +282,7 @@ class CommandHandler:
                     "Example: @bijou crm Ali Ahmad\n"
                     "Example: @bijou crm 60123456789"
                 )
-            return await self._cmd_crm_lookup(args)
+            return await self._cmd_crm_lookup(args, tenant_id)
 
         # @bijou send [phone/name] > [message] — send WA message to a contact
         elif command == "send":
@@ -297,7 +297,7 @@ class CommandHandler:
                 )
             parts = args.split(">", 1)
             target, text = parts[0].strip(), parts[1].strip()
-            return await self._cmd_send_to_contact(target, text)
+            return await self._cmd_send_to_contact(target, text, tenant_id)
 
         # @bijou confirm [booking_id or contact name] — update booking status
         elif command == "confirm":
@@ -309,7 +309,7 @@ class CommandHandler:
                     "Usage: @bijou confirm [booking_id]\n"
                     "Get booking IDs from: @bijou bookings"
                 )
-            return await self._cmd_confirm_booking(args.strip())
+            return await self._cmd_confirm_booking(args.strip(), tenant_id)
 
         # Search knowledge (everyone)
         elif command == "search":

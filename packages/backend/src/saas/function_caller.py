@@ -43,11 +43,11 @@ class FunctionCaller:
 
         Args:
             tool_orchestrator: ToolOrchestrator instance
-            gemini_api_key: Gemini API key
+            gemini_api_key: Ignored. Kept so existing callers don't break —
+                tool calling runs through Bijou._generate_response now.
             enable_confirmations: Require confirmation for destructive actions
         """
         self.tool_orchestrator = tool_orchestrator
-        self.gemini_api_key = gemini_api_key or os.getenv("GEMINI_API_KEY")
         self.enable_confirmations = enable_confirmations
 
         # Feature flag
@@ -66,18 +66,7 @@ class FunctionCaller:
         if self._registry is not None:
             self._connector_fn_map = {a.replace(".", "_"): a for a in self._registry}
 
-        # Initialize Gemini client
-        if self.enabled and self.gemini_api_key:
-            try:
-                from google import genai
-
-                self.genai_client = genai.Client(api_key=self.gemini_api_key)
-                logger.info("✅ FunctionCaller initialized (enabled=true)")
-            except Exception as e:
-                logger.error(f"Failed to initialize Gemini client: {e}")
-                self.enabled = False
-        else:
-            logger.info("✅ FunctionCaller initialized (enabled=false)")
+        logger.info(f"✅ FunctionCaller initialized (enabled={str(self.enabled).lower()})")
 
     def _ensure_connectors(self) -> None:
         """Lazily build the connector router + registry (idempotent)."""
@@ -730,68 +719,6 @@ class FunctionCaller:
             "update_calendar_event",
         ]
         return function_name in destructive_functions
-
-    async def detect_and_execute(
-        self, message: str, chat_jid: str, user_context: Optional[Dict[str, Any]] = None
-    ) -> Optional[Dict[str, Any]]:
-        """
-        Detect if message requires function calling and execute.
-
-        Args:
-            message: User message
-            chat_jid: Chat JID
-            user_context: Optional user context
-
-        Returns:
-            Execution result dict or None if no function detected
-        """
-        if not self.enabled:
-            return None
-
-        try:
-            from google.genai import types
-
-            # Get function declarations
-            functions = self.get_function_declarations()
-
-            if not functions:
-                logger.debug("No functions available for calling")
-                return None
-
-            # Create tools config
-            tools = [types.Tool(function_declarations=functions)]
-
-            # Call Gemini with function calling
-            response = self.genai_client.models.generate_content(
-                model="gemini-2.5-flash",
-                contents=message,
-                config=types.GenerateContentConfig(
-                    tools=tools,
-                    temperature=0.3,  # Lower temperature for function calling
-                ),
-            )
-
-            # Check if function was called
-            if not response.candidates:
-                return None
-
-            candidate = response.candidates[0]
-            if not hasattr(candidate, "function_calls") or not candidate.function_calls:
-                return None
-
-            # Execute function calls
-            results = []
-            for function_call in candidate.function_calls:
-                result = await self._execute_function(
-                    function_call, chat_jid, user_context
-                )
-                results.append(result)
-
-            return {"function_calls": results, "requires_confirmation": False}
-
-        except Exception as e:
-            logger.error(f"Error in function calling: {e}")
-            return None
 
     async def _execute_function(
         self,

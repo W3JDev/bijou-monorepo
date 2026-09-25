@@ -95,7 +95,7 @@ export const WaitlistStrip: React.FC<WaitlistStripProps> = ({
                   </span>
                 ))}
                 <span className="text-gray-500 text-[10px]">
-                  {/* Fix 3: Source "500+ Malaysian SMEs" — replaced with honest place-based proof */}
+                  {/* Fix 3: Vague "500+ businesses" claim replaced with honest place-based proof */}
                   · {t("waitlist.social")}
                 </span>
               </div>

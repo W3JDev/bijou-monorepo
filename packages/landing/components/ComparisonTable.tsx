@@ -21,15 +21,15 @@ const rows: Row[] = [
   {
     feature: "Monthly Price",
     category: "Pricing",
-    bijou: "RM299/mo",
-    chatdaddy: "RM75+ (see below)",
-    dahreply: "RM499/mo",
-    wati: "RM280+",
-    staff: "RM1,500–2,500",
+    bijou: "$499/mo",
+    chatdaddy: "$49+ (see below)",
+    dahreply: "$79/mo",
+    wati: "$49+",
+    staff: "$4,000–6,000",
     highlight: true,
   },
   {
-    feature: "WABA Required",
+    feature: "DIY Setup Required",
     category: "Pricing",
     bijou: false,
     chatdaddy: true,
@@ -68,7 +68,7 @@ const rows: Row[] = [
 
   // Channels
   {
-    feature: "WhatsApp (no WABA)",
+    feature: "WhatsApp (fully managed)",
     category: "Channels",
     bijou: true,
     chatdaddy: false,
@@ -99,17 +99,17 @@ const rows: Row[] = [
 
   // AI & Language
   {
-    feature: "Manglish / Malaysian AI",
+    feature: "Brand-voice AI persona",
     category: "AI & Language",
     bijou: true,
     chatdaddy: false,
     dahreply: "Partial",
     wati: false,
-    staff: "If Malaysian",
+    staff: "Varies",
     highlight: true,
   },
   {
-    feature: "English + BM + 中文 + தமிழ்",
+    feature: "English + multilingual",
     category: "AI & Language",
     bijou: true,
     chatdaddy: "English only",
@@ -218,11 +218,11 @@ const rows: Row[] = [
 const categories = ["All", ...Array.from(new Set(rows.map((r) => r.category)))];
 
 const providers = [
-  { key: "bijou", label: "Bijou PRO", price: "RM299/mo", highlight: true },
-  { key: "chatdaddy", label: "ChatDaddy", price: "RM75+*" },
-  { key: "dahreply", label: "DahReply", price: "RM499/mo" },
-  { key: "wati", label: "Wati", price: "RM280+" },
-  { key: "staff", label: "Human Staff", price: "RM1,500+" },
+  { key: "bijou", label: "Bijou", price: "$499/mo", highlight: true },
+  { key: "chatdaddy", label: "ChatDaddy", price: "$49+*" },
+  { key: "dahreply", label: "DahReply", price: "$79/mo" },
+  { key: "wati", label: "Wati", price: "$49+" },
+  { key: "staff", label: "Human Staff", price: "$4,000+" },
 ];
 
 const Cell: React.FC<{ value: CellValue; isBijou?: boolean }> = ({

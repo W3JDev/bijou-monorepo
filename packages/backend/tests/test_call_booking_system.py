@@ -196,7 +196,7 @@ def test_api_endpoints_structure():
     
     try:
         # Read the main bijou.py file and check for call booking endpoints
-        with open("src/core/bijou.py", "r") as f:
+        with open("src/core/bijou.py", "r", encoding="utf-8") as f:
             content = f.read()
         
         required_endpoints = [
@@ -226,7 +226,7 @@ def test_dashboard_integration():
     
     try:
         # Check dashboard.html for call booking UI
-        with open("static/dashboard.html", "r") as f:
+        with open("static/dashboard.html", "r", encoding="utf-8") as f:
             content = f.read()
         
         required_ui_elements = [

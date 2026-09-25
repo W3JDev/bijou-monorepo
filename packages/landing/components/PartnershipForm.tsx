@@ -47,20 +47,20 @@ ${formData.message}
 Partnership Program Details:
 
 PROPERTY NETWORKS:
-- RM50 recurring commission per active agent
-- Agents get 50% discount (RM99/month instead of RM199)
-- Solve RM300k/year lead leakage problem
+- $50 recurring commission per active agent
+- Agents get 50% discount
+- Solve the lead-leakage problem
 
 HEALTHCARE/DENTAL:
-- RM30 per signup affiliate fee
+- $30 per signup affiliate fee
 - 30-day extended trial + priority support
-- Native CMS integration (ClinicPro, Klinik Manager)
+- Native CMS integration
 - 75% reduction in no-shows
 
 TECH INFLUENCERS:
-- Free Lifetime Bijou Pro Account (RM399/month value)
-- RM100 per customer referral bounty
-- Exclusive "First Manglish AI Agent" content
+- Free Lifetime Bijou managed account
+- $100 per customer referral bounty
+- Exclusive "Done-for-You AI Agent" content
 
 Sent from Bijou AI Partnership Form
       `);
@@ -134,9 +134,9 @@ Sent from Bijou AI Partnership Form
             <div className="bg-deep-green-500/20 border border-gold-400/30 rounded-lg p-4 mb-6">
               <h3 className="text-gold-400 font-semibold mb-2">Partnership Benefits:</h3>
               <ul className="text-sm text-gray-300 space-y-1">
-                <li>🏢 Property Networks: RM50 recurring commission + 50% agent discount</li>
-                <li>🏥 Healthcare: RM30/signup + 30-day trial + CMS integration</li>
-                <li>📱 Tech Influencers: Free Pro account + RM100/customer bounty</li>
+                <li>🏢 Property Networks: $50 recurring commission + 50% agent discount</li>
+                <li>🏥 Healthcare: $30/signup + 30-day trial + CMS integration</li>
+                <li>📱 Tech Influencers: Free managed account + $100/customer bounty</li>
               </ul>
             </div>
 
@@ -198,7 +198,7 @@ Sent from Bijou AI Partnership Form
                   value={formData.phone}
                   onChange={handleChange}
                   className="w-full px-4 py-3 bg-black/40 border border-white/10 rounded-lg text-white focus:border-gold-400 focus:outline-none transition-colors"
-                  placeholder="+60 17-410 6981"
+                  placeholder="+1 (555) 000-0000"
                 />
               </div>
             </div>

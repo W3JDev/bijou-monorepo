@@ -14,11 +14,115 @@ Test Coverage:
 Author: @qa-engineer
 """
 
-import pytest
+import os
+import uuid
 from datetime import datetime, timedelta
+from pathlib import Path
 from typing import Dict, Any
-from supabase import Client
+
 import httpx
+import pytest
+from dotenv import dotenv_values
+from supabase import Client, create_client
+
+
+# ════════════════════════════════════════════════════════════════
+# LOCAL-STACK FIXTURES (override tests/e2e/conftest.py)
+# ════════════════════════════════════════════════════════════════
+#
+# These are the only tests in the e2e suite that need a real Postgres: they
+# prove tenant isolation by writing rows as two different tenants and reading
+# them back. tests/conftest.py's autouse setup_test_env pins SUPABASE_URL at
+# https://mock-supabase.test, and tests/e2e/conftest.py's supabase_client
+# reads it at fixture time, so every test here died resolving a host that does
+# not exist. The local docker stack (docker-compose.local.yml) carries the
+# production schema, so point at that instead.
+
+REPO_ROOT = Path(__file__).resolve().parents[4]
+LOCAL_ENV_FILE = REPO_ROOT / "ops" / "local" / ".env.local"
+
+# The stack publishes the Supabase gateway on 9321 and the backend on 8080.
+E2E_SUPABASE_URL = os.getenv("E2E_SUPABASE_URL", "http://localhost:9321")
+E2E_API_URL = os.getenv("E2E_API_URL", "http://localhost:8080")
+
+
+def _service_role_key() -> str:
+    """Service-role key for the local stack.
+
+    Read from the environment first so CI can point these somewhere else;
+    otherwise fall back to the generated local key, which is the same one the
+    backend container runs with.
+    """
+    key = os.getenv("E2E_SUPABASE_SERVICE_KEY")
+    if key:
+        return key
+    if LOCAL_ENV_FILE.exists():
+        return dotenv_values(LOCAL_ENV_FILE).get("SUPABASE_SERVICE_KEY") or ""
+    return ""
+
+
+@pytest.fixture(scope="session")
+def supabase_client() -> Client:
+    """Service-role client against the local stack (bypasses RLS)."""
+    return create_client(E2E_SUPABASE_URL, _service_role_key())
+
+
+@pytest.fixture(scope="session")
+def e2e_tenants(supabase_client: Client) -> Any:
+    """Two throwaway tenants, torn down at the end of the session.
+
+    conftest's placeholder ids (00000000-…-0001/0002) are not rows in
+    `tenants`, and conversations/escalations/knowledge_documents all carry a
+    tenant_id foreign key, so every arrange step here failed on the FK before
+    it could test anything. Deleting the tenants cascades to their rows.
+    """
+    created = []
+    for label in ("a", "b"):
+        suffix = uuid.uuid4().hex[:12]
+        response = supabase_client.table("tenants").insert({
+            "name": f"E2E Security {label.upper()} {suffix}",
+            "slug": f"e2e-security-{label}-{suffix}",
+            "business_name": f"E2E Security {label.upper()}",
+            "email": f"e2e-security-{label}-{suffix}@example.com",
+            "status": "active",
+            "plan": "basic",
+            "signup_token": f"e2e-sec-{suffix}",
+            "onboarding_completed": False,
+        }).execute()
+        assert response.data, f"Failed to create E2E tenant {label}"
+        created.append(response.data[0])
+
+    yield created
+
+    for row in created:
+        supabase_client.table("tenants").delete().eq("id", row["id"]).execute()
+
+
+@pytest.fixture(scope="session")
+def test_tenant_id(e2e_tenants) -> str:
+    return e2e_tenants[0]["id"]
+
+
+@pytest.fixture(scope="session")
+def second_tenant_id(e2e_tenants) -> str:
+    return e2e_tenants[1]["id"]
+
+
+@pytest.fixture(scope="session")
+def tenant_a_signup_token(e2e_tenants) -> str:
+    """Tenant A's signup_token — the magic-link credential verify_session accepts."""
+    return e2e_tenants[0]["signup_token"]
+
+
+@pytest.fixture
+async def api_client() -> httpx.AsyncClient:
+    """HTTP client against the running local backend, not the retired staging app."""
+    async with httpx.AsyncClient(
+        base_url=E2E_API_URL,
+        timeout=30.0,
+        follow_redirects=True,
+    ) as client:
+        yield client
 
 
 @pytest.mark.e2e
@@ -73,15 +177,15 @@ async def test_cross_tenant_escalation_leak(
         tenant_ids_in_result = [esc.get("tenant_id") for esc in query_result.data]
         
         assert second_tenant_id not in tenant_ids_in_result, \
-            f"❌ SECURITY BREACH: Tenant B's data leaked into Tenant A's query! " \
+            f"SECURITY BREACH: Tenant B's data leaked into Tenant A's query! " \
             f"Found tenant IDs: {tenant_ids_in_result}"
         
         # Verify tenant isolation is working correctly
         for escalation in query_result.data:
             assert escalation["tenant_id"] == test_tenant_id, \
-                f"❌ SECURITY BREACH: Escalation {escalation['id']} belongs to different tenant!"
+                f"SECURITY BREACH: Escalation {escalation['id']} belongs to different tenant!"
         
-        print(f"✅ TC-SEC-001 PASSED: Tenant isolation verified - no cross-tenant data leak")
+        print(f"OK: TC-SEC-001 PASSED: Tenant isolation verified - no cross-tenant data leak")
         
     finally:
         # Cleanup: Delete Tenant B escalation
@@ -131,13 +235,13 @@ async def test_escalation_requires_tenant_id(
         result = handover.escalate(
             chat_jid=test_customer_jid,
             reason="Test escalation without tenant_id",
-            tenant_id=None,  # ❌ Security issue: No tenant_id
+            tenant_id=None,  # Security issue: No tenant_id
             priority="high"
         )
         
         # Assert: Escalation should be rejected
         assert result is None, \
-            f"❌ SECURITY BREACH: Escalation created without tenant_id! " \
+            f"SECURITY BREACH: Escalation created without tenant_id! " \
             f"Result: {result}"
         
         # Verify no database record was created
@@ -147,10 +251,10 @@ async def test_escalation_requires_tenant_id(
         final_total = final_count.count or 0
         
         assert final_total == initial_total, \
-            f"❌ SECURITY BREACH: Escalation was created in database without tenant_id! " \
+            f"SECURITY BREACH: Escalation was created in database without tenant_id! " \
             f"Count before: {initial_total}, after: {final_total}"
         
-        print(f"✅ TC-SEC-002 PASSED: Escalation correctly rejected when tenant_id is None")
+        print(f"OK: TC-SEC-002 PASSED: Escalation correctly rejected when tenant_id is None")
         
     finally:
         # Restore original state
@@ -165,20 +269,36 @@ async def test_dashboard_api_tenant_isolation(
     api_client: httpx.AsyncClient,
     supabase_client: Client,
     test_tenant_id: str,
-    second_tenant_id: str
+    second_tenant_id: str,
+    tenant_a_signup_token: str
 ):
     """
     TC-SEC-003: Dashboard API Tenant Isolation
     
     GIVEN: Conversations exist for multiple tenants
-    WHEN: GET /api/dashboard/conversations with tenant_id header
-    THEN: Only specified tenant's conversations returned
+    WHEN: GET /api/dashboard/conversations authenticated as one tenant
+    THEN: Only that tenant's conversations returned
     AND: No data from other tenants leaked
+
+    What was stale here is the auth, not the shape: verify_session fails closed
+    under the default DASHBOARD_MODE=strict, so an X-Tenant-ID header on its own
+    is 401 and the isolation assertions below never ran. The token is the
+    tenant's signup_token, the magic-link credential verify_session accepts.
+    That is what gives the test its teeth -- a *legitimately authenticated*
+    caller for tenant A must still not see tenant B.
+
+    Note the endpoint served here is get_active_conversations
+    (src/core/dashboard_api_simple.py:617), not the paginated get_conversations
+    lower in the same module -- both register GET /conversations on the same
+    router and the first one registered wins.
     """
     # Arrange: Create conversations for 2 different tenants
+    jid_a = "60100000010@s.whatsapp.net"
+    jid_b = "60100000011@s.whatsapp.net"
+
     test_data_a = {
         "tenant_id": test_tenant_id,
-        "chat_jid": "60100000010@s.whatsapp.net",
+        "chat_jid": jid_a,
         "message_content": "Message for Tenant A",
         "ai_response": "Response to Tenant A",
         "contact_name": "Tenant A Customer"
@@ -186,7 +306,7 @@ async def test_dashboard_api_tenant_isolation(
     
     test_data_b = {
         "tenant_id": second_tenant_id,
-        "chat_jid": "60100000011@s.whatsapp.net",
+        "chat_jid": jid_b,
         "message_content": "Message for Tenant B",
         "ai_response": "Response to Tenant B",
         "contact_name": "Tenant B Customer"
@@ -206,7 +326,7 @@ async def test_dashboard_api_tenant_isolation(
         response = await api_client.get(
             "/api/dashboard/conversations",
             headers={"X-Tenant-ID": test_tenant_id},
-            params={"limit": 100}
+            params={"limit": 100, "token": tenant_a_signup_token}
         )
         
         # Assert: Response should be successful
@@ -220,16 +340,15 @@ async def test_dashboard_api_tenant_isolation(
         chat_jids_in_response = [conv.get("chat_jid") for conv in conversations]
         
         # Assert: Tenant A's data should be present
-        assert "60100000010@s.whatsapp.net" in chat_jids_in_response or len(conversations) >= 0, \
+        assert jid_a in chat_jids_in_response, \
             "Tenant A's conversation should be accessible"
         
         # Assert: Tenant B's data should NOT be present
-        assert "60100000011@s.whatsapp.net" not in chat_jids_in_response, \
-            f"❌ SECURITY BREACH: Tenant B's conversation leaked into Tenant A's dashboard! " \
+        assert jid_b not in chat_jids_in_response, \
+            f"SECURITY BREACH: Tenant B's conversation leaked into Tenant A's dashboard! " \
             f"Found JIDs: {chat_jids_in_response}"
         
         # Verify all returned conversations belong to correct tenant
-        # (API may not return tenant_id, so we check via database verification)
         for conv in conversations:
             if conv.get("chat_jid"):
                 db_check = supabase_client.table("conversations")\
@@ -241,10 +360,10 @@ async def test_dashboard_api_tenant_isolation(
                 if db_check.data:
                     actual_tenant = db_check.data[0]["tenant_id"]
                     assert actual_tenant == test_tenant_id, \
-                        f"❌ SECURITY BREACH: Conversation {conv['chat_jid']} belongs to {actual_tenant}, " \
+                        f"SECURITY BREACH: Conversation {conv['chat_jid']} belongs to {actual_tenant}, " \
                         f"not {test_tenant_id}!"
         
-        print(f"✅ TC-SEC-003 PASSED: Dashboard API correctly isolates tenant data")
+        print(f"OK: TC-SEC-003 PASSED: Dashboard API correctly isolates tenant data")
         
     finally:
         # Cleanup
@@ -308,11 +427,11 @@ async def test_conversation_data_isolation(
         
         for conv in tenant_a_result.data:
             assert conv["tenant_id"] == test_tenant_id, \
-                f"❌ SECURITY BREACH: Found conversation belonging to {conv['tenant_id']}"
+                f"SECURITY BREACH: Found conversation belonging to {conv['tenant_id']}"
             
             # Ensure Tenant B's data is not present
             assert conv["chat_jid"] != "60100000022@s.whatsapp.net", \
-                "❌ SECURITY BREACH: Tenant B's conversation leaked into Tenant A's query!"
+                "SECURITY BREACH: Tenant B's conversation leaked into Tenant A's query!"
         
         # Act: Query for Tenant B only
         tenant_b_result = supabase_client.table("conversations")\
@@ -325,13 +444,13 @@ async def test_conversation_data_isolation(
         
         for conv in tenant_b_result.data:
             assert conv["tenant_id"] == second_tenant_id, \
-                f"❌ SECURITY BREACH: Found conversation belonging to {conv['tenant_id']}"
+                f"SECURITY BREACH: Found conversation belonging to {conv['tenant_id']}"
             
             # Ensure Tenant A's data is not present
             assert conv["chat_jid"] not in ["60100000020@s.whatsapp.net", "60100000021@s.whatsapp.net"], \
-                "❌ SECURITY BREACH: Tenant A's conversation leaked into Tenant B's query!"
+                "SECURITY BREACH: Tenant A's conversation leaked into Tenant B's query!"
         
-        print(f"✅ TC-SEC-004 PASSED: Conversation data correctly isolated by tenant_id")
+        print(f"OK: TC-SEC-004 PASSED: Conversation data correctly isolated by tenant_id")
         
     finally:
         # Cleanup
@@ -359,19 +478,24 @@ async def test_knowledge_base_isolation(
     # Check if knowledge_documents table exists
     try:
         # Arrange: Create test knowledge documents for both tenants
+        # Column names follow the live schema (filename / file_type /
+        # content_extracted), which is what src/core/dashboard_api_simple.py
+        # writes. The content/source_name/source_type trio this used to insert
+        # has never existed on knowledge_documents, so the arrange step failed
+        # with PGRST204 before any isolation was checked.
         documents = [
             {
                 "tenant_id": test_tenant_id,
-                "content": "Tenant A knowledge document",
-                "source_name": "test_doc_a.txt",
-                "source_type": "text",
+                "content_extracted": "Tenant A knowledge document",
+                "filename": "test_doc_a.txt",
+                "file_type": "text/plain",
                 "metadata": {"test": True}
             },
             {
                 "tenant_id": second_tenant_id,
-                "content": "Tenant B knowledge document",
-                "source_name": "test_doc_b.txt",
-                "source_type": "text",
+                "content_extracted": "Tenant B knowledge document",
+                "filename": "test_doc_b.txt",
+                "file_type": "text/plain",
                 "metadata": {"test": True}
             }
         ]
@@ -396,12 +520,12 @@ async def test_knowledge_base_isolation(
             
             for doc in tenant_a_knowledge.data:
                 assert doc["tenant_id"] == test_tenant_id, \
-                    f"❌ SECURITY BREACH: Knowledge document belongs to {doc['tenant_id']}"
+                    f"SECURITY BREACH: Knowledge document belongs to {doc['tenant_id']}"
                 
-                assert doc["source_name"] != "test_doc_b.txt", \
-                    "❌ SECURITY BREACH: Tenant B's knowledge leaked into Tenant A's query!"
+                assert doc["filename"] != "test_doc_b.txt", \
+                    "SECURITY BREACH: Tenant B's knowledge leaked into Tenant A's query!"
             
-            print(f"✅ TC-SEC-005 PASSED: Knowledge base correctly isolated by tenant_id")
+            print(f"OK: TC-SEC-005 PASSED: Knowledge base correctly isolated by tenant_id")
             
         finally:
             # Cleanup

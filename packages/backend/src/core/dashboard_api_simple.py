@@ -323,10 +323,18 @@ async def verify_session(
         try:
             supabase = get_supabase()
             # Get tenant_id from tenant_users table
+            # order() makes the pick deterministic for a user who belongs to
+            # more than one tenant — without it, Postgres has no guaranteed
+            # row order and .limit(1) could return a different tenant_id on a
+            # different query plan (e.g. after a VACUUM or index change),
+            # silently moving the user between tenants. Oldest membership
+            # first is the least surprising choice until there's a real
+            # workspace switcher.
             link_response = (
                 supabase.table("tenant_users")
                 .select("tenant_id")
                 .eq("user_id", user.id)
+                .order("created_at", desc=False)
                 .limit(1)
                 .execute()
             )
@@ -1932,7 +1940,15 @@ async def get_whatsapp_qr(tenant_id: str = Depends(verify_session)):
 
     import httpx
 
-    bridge_url = os.getenv("BRIDGE_URL", "http://localhost:8080").rstrip("/")
+    # Prefer WHATSAPP_BRIDGE_URL (what the compose/onboarding use). BRIDGE_URL is
+    # often unset, and its old default http://localhost:8080 is the BACKEND itself
+    # — so bridge calls hit the app, which has no /app/login and returns
+    # 404 {"detail":"Not Found"}, surfaced in the UI as "Bridge rejected: 404".
+    bridge_url = (
+        os.getenv("WHATSAPP_BRIDGE_URL")
+        or os.getenv("BRIDGE_URL")
+        or "http://localhost:8080"
+    ).strip('"').rstrip("/")
     bridge_api_key = os.getenv("BRIDGE_API_KEY", "")
 
     try:
@@ -1952,11 +1968,22 @@ async def get_whatsapp_qr(tenant_id: str = Depends(verify_session)):
         device_id = device_result.data[0]["device_id"]
         logger.info(f"📱 Using device {device_id} for tenant {tenant_id}")
 
+        # Auth priority matches the /status endpoint and get_bridge_auth_headers:
+        # BRIDGE_API_KEY 'user:pass' or BRIDGE_USER+BRIDGE_PASSWORD -> Basic.
+        # Previously ONLY BRIDGE_API_KEY was read, so with just BRIDGE_USER/
+        # BRIDGE_PASSWORD set (the local + compose default) the bridge 401'd and
+        # the QR came back as a broken image.
         headers = {}
-        if bridge_api_key:
-            # Use Basic Auth instead of Bearer (bridge expects username:password)
-            auth_b64 = base64.b64encode(bridge_api_key.encode()).decode()
-            headers["Authorization"] = f"Basic {auth_b64}"
+        bridge_user = os.getenv("BRIDGE_USER", "")
+        bridge_password = os.getenv("BRIDGE_PASSWORD", "")
+        if bridge_api_key and ":" in bridge_api_key:
+            headers["Authorization"] = "Basic " + base64.b64encode(bridge_api_key.encode()).decode()
+        elif bridge_user and bridge_password:
+            headers["Authorization"] = "Basic " + base64.b64encode(
+                f"{bridge_user}:{bridge_password}".encode()
+            ).decode()
+        elif bridge_api_key:
+            headers["X-API-Key"] = bridge_api_key
 
         async with httpx.AsyncClient(timeout=httpx.Timeout(15.0)) as client:
             # Get QR code using mapped device_id
@@ -1967,11 +1994,42 @@ async def get_whatsapp_qr(tenant_id: str = Depends(verify_session)):
                 timeout=15.0
             )
             if response.status_code == 200:
-                if "application/json" in response.headers.get("content-type", ""):
-                    return response.json()
+                ctype = response.headers.get("content-type", "")
+                if "image/" in ctype:
+                    b64_qr = base64.b64encode(response.content).decode("utf-8")
+                    return {"status": "success", "qr": f"data:image/png;base64,{b64_qr}"}
 
-                b64_qr = base64.b64encode(response.content).decode("utf-8")
+                # JSON: {results:{qr_link}}. That link is an ephemeral PNG served
+                # by the bridge on its INTERNAL host (e.g. http://bridge:3000/...),
+                # which the browser cannot reach. Proxy the bytes ourselves and
+                # return a self-contained data URI — the frontend expects `r.qr`.
+                # (Mirrors the onboarding QR endpoint.)
+                payload = response.json()
+                qr_link = (payload.get("results") or {}).get("qr_link")
+                if not qr_link:
+                    return {
+                        "status": "error",
+                        "message": f"Bridge returned no qr_link: {str(payload)[:150]}",
+                    }
+                from urllib.parse import urlsplit, urlunsplit
+                b, l = urlsplit(bridge_url), urlsplit(qr_link)
+                img_url = (
+                    urlunsplit((b.scheme, b.netloc, l.path, l.query, ""))
+                    if b.scheme and b.netloc else qr_link
+                )
+                img = await client.get(img_url, headers=headers)
+                if img.status_code != 200:
+                    return {
+                        "status": "error",
+                        "message": f"QR image fetch failed: {img.status_code}",
+                    }
+                b64_qr = base64.b64encode(img.content).decode("utf-8")
                 return {"status": "success", "qr": f"data:image/png;base64,{b64_qr}"}
+
+            # Non-200 from /app/login. ALREADY_LOGGED_IN means the number is
+            # already linked — the status poll will flip the UI to "connected".
+            if response.status_code == 400 and "ALREADY_LOGGED_IN" in response.text:
+                return {"status": "already_connected", "message": "WhatsApp is already connected."}
             return {
                 "status": "error",
                 "message": f"Bridge rejected: {response.status_code} - {response.text}",
@@ -1986,7 +2044,15 @@ async def init_whatsapp(tenant_id: str = Depends(verify_session)):
     """Initialize session in bridge for this tenant"""
     import httpx
 
-    bridge_url = os.getenv("BRIDGE_URL", "http://localhost:8080").rstrip("/")
+    # Prefer WHATSAPP_BRIDGE_URL (what the compose/onboarding use). BRIDGE_URL is
+    # often unset, and its old default http://localhost:8080 is the BACKEND itself
+    # — so bridge calls hit the app, which has no /app/login and returns
+    # 404 {"detail":"Not Found"}, surfaced in the UI as "Bridge rejected: 404".
+    bridge_url = (
+        os.getenv("WHATSAPP_BRIDGE_URL")
+        or os.getenv("BRIDGE_URL")
+        or "http://localhost:8080"
+    ).strip('"').rstrip("/")
     bridge_api_key = os.getenv("BRIDGE_API_KEY", "")
 
     try:
@@ -2012,7 +2078,15 @@ async def get_whatsapp_status(tenant_id: str = Depends(verify_session)):
     import base64
     import httpx
 
-    bridge_url = os.getenv("BRIDGE_URL", "http://localhost:8080").rstrip("/")
+    # Prefer WHATSAPP_BRIDGE_URL (what the compose/onboarding use). BRIDGE_URL is
+    # often unset, and its old default http://localhost:8080 is the BACKEND itself
+    # — so bridge calls hit the app, which has no /app/login and returns
+    # 404 {"detail":"Not Found"}, surfaced in the UI as "Bridge rejected: 404".
+    bridge_url = (
+        os.getenv("WHATSAPP_BRIDGE_URL")
+        or os.getenv("BRIDGE_URL")
+        or "http://localhost:8080"
+    ).strip('"').rstrip("/")
     bridge_user = os.getenv("BRIDGE_USER", "bijou")
     bridge_pass = os.getenv("BRIDGE_PASSWORD")
     if not bridge_pass:
@@ -2799,6 +2873,51 @@ async def add_to_blacklist(
     except Exception as e:
         logger.error(f"❌ add_to_blacklist error (tenant={tenant_id}): {e}")
         raise HTTPException(status_code=500, detail="Failed to block number")
+
+
+class ContactAIPauseRequest(BaseModel):
+    jid: str
+    paused: bool
+
+
+@router.post("/contact/ai-pause")
+async def set_contact_ai_pause(
+    request: ContactAIPauseRequest, tenant_id: str = Depends(verify_session)
+):
+    """Toggle the soft per-contact AI pause (#3, 2026-09-21).
+
+    paused=True  -> AI stops auto-replying to this contact (owner still receives
+                    their messages and can reply manually from the dashboard).
+    paused=False -> AI resumes auto-replying.
+    Distinct from /blacklist (hard drop) and /takeover (human handling the chat).
+    See bijou.py::_is_ai_paused.
+    """
+    jid = (request.jid or "").strip()
+    if not jid:
+        raise HTTPException(status_code=400, detail="jid is required")
+    if "@" not in jid:  # accept a bare phone, normalise to a WA JID
+        jid = f"{jid}@s.whatsapp.net"
+    try:
+        supabase = get_supabase()
+        res = (
+            supabase.table("contacts")
+            .update({"ai_paused": bool(request.paused)})
+            .eq("tenant_id", tenant_id)
+            .eq("jid", jid)
+            .execute()
+        )
+        if not res.data:
+            raise HTTPException(status_code=404, detail="Contact not found")
+        logger.info(
+            f"🔇 AI auto-reply {'paused' if request.paused else 'resumed'} for "
+            f"{jid} (tenant={tenant_id})"
+        )
+        return {"status": "success", "jid": jid, "ai_paused": bool(request.paused)}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"❌ set_contact_ai_pause error (tenant={tenant_id}): {e}")
+        raise HTTPException(status_code=500, detail="Failed to update AI pause")
 
 
 @router.delete("/blacklist/{entry_id}")

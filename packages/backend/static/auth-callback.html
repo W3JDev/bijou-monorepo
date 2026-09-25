@@ -133,7 +133,10 @@
           localStorage.setItem("session_login_at", Date.now().toString());
 
           document.getElementById("msg").textContent = "Success! Redirecting…";
-          window.location.href = "/dashboard";
+          // Same routing decision login.html's email/password path makes: a
+          // tenant that hasn't connected WhatsApp yet gets next_url =
+          // /onboard/{token} instead of an empty dashboard with no QR prompt.
+          window.location.href = data.next_url || "/dashboard";
         } catch (e) {
           fail(String(e && e.message ? e.message : e));
         }

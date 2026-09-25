@@ -66,7 +66,7 @@ async def test_strict_mode_with_valid_session():
 
         with patch("src.core.dashboard_api_simple.get_supabase") as mock_get_supabase:
             mock_sb = Mock()
-            mock_sb.table.return_value.select.return_value.eq.return_value.limit.return_value.execute.return_value = Mock(
+            mock_sb.table.return_value.select.return_value.eq.return_value.order.return_value.limit.return_value.execute.return_value = Mock(
                 data=[{"tenant_id": "test-tenant-123"}]
             )
             mock_get_supabase.return_value = mock_sb
@@ -94,7 +94,7 @@ async def test_strict_mode_blocks_cross_tenant_access():
 
         with patch("src.core.dashboard_api_simple.get_supabase") as mock_get_supabase:
             mock_sb = Mock()
-            mock_sb.table.return_value.select.return_value.eq.return_value.limit.return_value.execute.return_value = Mock(
+            mock_sb.table.return_value.select.return_value.eq.return_value.order.return_value.limit.return_value.execute.return_value = Mock(
                 data=[{"tenant_id": "tenant-a-id"}]
             )
             mock_get_supabase.return_value = mock_sb
@@ -169,7 +169,11 @@ async def test_get_current_user_with_valid_token():
         result = await get_current_user(authorization="Bearer test-token-123")
         
         assert result == mock_user
-        mock_supabase.auth.get_user.assert_called_once_with("test-token-123")
+        # dashboard_api_simple.py:284 calls get_user(jwt=token), by keyword.
+        # This asserted the positional form and so failed on a convention
+        # difference, not a behaviour one — the token value, which is the part
+        # worth pinning, was always correct. Asserting the real call shape.
+        mock_supabase.auth.get_user.assert_called_once_with(jwt="test-token-123")
 
 
 @pytest.mark.asyncio
