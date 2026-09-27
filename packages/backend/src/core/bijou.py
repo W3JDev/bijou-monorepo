@@ -953,8 +953,12 @@ async def _wa_keepalive_monitor():
 
                 # 2. Check device list for disconnected sessions
                 try:
+                    # NOTE: GOWA exposes the device list at /devices. /app/devices
+                    # is not a GOWA route, so calling it here made `devices` empty
+                    # on every cycle, which fed the stale-device cleanup below an
+                    # empty allowlist — see the guard on that block.
                     devices_resp = await client.get(
-                        f"{bridge_url}/app/devices",
+                        f"{bridge_url}/devices",
                         auth=auth,
                     )
                     if devices_resp.status_code != 200:
@@ -1005,21 +1009,33 @@ async def _wa_keepalive_monitor():
 
             # Stale device cleanup: auto-remove DB entries for devices no
             # longer registered in the bridge (e.g. after DEVICE_REMOVED events)
+            #
+            # SAFETY: this deletes rows. An empty `devices` list means "we could
+            # not read the bridge", NOT "the bridge has no devices" — cleaning up
+            # against it wipes every tenant's device mapping and silently kills
+            # message routing for the whole product. Only clean up when the
+            # bridge actually returned devices.
             try:
                 bridge_device_ids = {
                     d.get("device_id") or d.get("id", "")
                     for d in devices
                     if d.get("device_id") or d.get("id")
                 }
-                db_devices = db.table("whatsapp_devices").select("device_id").execute()
-                for db_dev in (db_devices.data or []):
-                    db_device_id = db_dev.get("device_id", "")
-                    if db_device_id and db_device_id not in bridge_device_ids:
-                        db.table("whatsapp_devices").delete().eq("device_id", db_device_id).execute()
-                        logger.warning(
-                            f"🗑️ [KEEPALIVE] Removed stale device {db_device_id} "
-                            f"— no longer registered in bridge"
-                        )
+                if not bridge_device_ids:
+                    logger.debug(
+                        "[KEEPALIVE] Bridge returned no devices — skipping stale "
+                        "cleanup to avoid deleting valid mappings"
+                    )
+                else:
+                    db_devices = db.table("whatsapp_devices").select("device_id").execute()
+                    for db_dev in (db_devices.data or []):
+                        db_device_id = db_dev.get("device_id", "")
+                        if db_device_id and db_device_id not in bridge_device_ids:
+                            db.table("whatsapp_devices").delete().eq("device_id", db_device_id).execute()
+                            logger.warning(
+                                f"🗑️ [KEEPALIVE] Removed stale device {db_device_id} "
+                                f"— no longer registered in bridge"
+                            )
             except Exception as _cleanup_err:
                 logger.debug(f"[KEEPALIVE] Stale device cleanup error: {_cleanup_err}")
 
