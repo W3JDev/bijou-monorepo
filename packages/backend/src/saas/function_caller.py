@@ -422,9 +422,15 @@ class FunctionCaller:
         temperature: float = 0.7,
         max_tokens: int = 1024,
         user_context: Optional[Dict[str, Any]] = None,
+        guard: Optional[Callable] = None,
+        extra_body: Optional[Dict[str, Any]] = None,
     ) -> str:
         """
         Drive an OpenAI-compatible chat completion with function calling.
+
+        guard: optional (name, args) -> None (run the tool) | result dict (hand
+        that to the model instead). How ActionGuard / owner approvals reach
+        this path.
 
         Sends the conversation; if the model returns tool_calls, dispatches
         each via _call_function, sends the results back, and loops. Stops
@@ -460,6 +466,7 @@ class FunctionCaller:
                     tools=tools,
                     temperature=temperature,
                     max_tokens=max_tokens,
+                    extra_body=extra_body,
                 )
             except Exception as e:
                 logger.error(f"❌ OpenAI-compat call failed for {model}: {e}")
@@ -513,7 +520,10 @@ class FunctionCaller:
                 # so every send_email/delete_email/create_calendar_event/etc.
                 # tool call went straight through with no confirmation step
                 # on the path actually in use. Mirror the same gate here.
-                if self.enable_confirmations and self.is_destructive_action(name):
+                blocked = guard(name, args) if guard else None
+                if blocked:
+                    result = blocked
+                elif self.enable_confirmations and self.is_destructive_action(name):
                     confirmation_id = f"{user_context.get('chat_jid', 'unknown')}_{datetime.now().timestamp()}"
                     self.pending_confirmations[confirmation_id] = {
                         "function_name": name,

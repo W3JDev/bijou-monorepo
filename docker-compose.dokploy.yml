@@ -81,6 +81,14 @@ services:
     image: bijou-backend:${IMAGE_TAG:-latest}
     restart: unless-stopped
     networks: [dokploy-network, internal]
+    # Every variable set in Dokploy's Environment tab (written to .env when
+    # createEnvFile is on) reaches the app: feature flags like
+    # ENABLE_MORNING_BRIEF / ENABLE_OWNER_APPROVALS / ENABLE_OUTREACH_SCHEDULER
+    # are read straight from os.environ. Unset vars stay unset, so code
+    # defaults apply. The explicit `environment:` block below still wins.
+    env_file:
+      - path: .env
+        required: false
     environment:
       <<: *backend-core
       PORT: "8080"

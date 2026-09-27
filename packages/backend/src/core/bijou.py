@@ -785,6 +785,14 @@ def _include_routers():
     except ImportError as e:
         logger.warning(f"⚠️ Could not import message reasons API: {e}")
 
+    # Owner phones API (per-tenant owner identity for ENABLE_OWNER_APPROVALS).
+    try:
+        from src.core.owner_phones_api import router as owner_phones_router
+        app.include_router(owner_phones_router)
+        logger.info("✅ Owner phones API routes included")
+    except ImportError as e:
+        logger.warning(f"⚠️ Could not import owner phones API: {e}")
+
     # Inbox Co-pilot API (issue #13).
     # The third GenUI primitive. While the human agent is typing, the
     # Co-pilot surfaces 1-3 suggestions. NEVER auto-sends. Audit log
@@ -1053,6 +1061,20 @@ async def _ensure_tenant_tokens():
         logger.warning(f"⚠️ signup_token backfill failed (non-fatal): {e}")
 
 
+async def _owner_approvals_sweeper():
+    """Background task: every 60s, expire pending owner approvals past expires_at
+    and tell the customer. Failures (e.g. table not migrated) are logged and retried."""
+    from src.core.owner_approvals import expire_due
+
+    while True:
+        await asyncio.sleep(60)
+        try:
+            if bijou_instance and bijou_instance.db_conn:
+                await asyncio.to_thread(expire_due, bijou_instance.db_conn, bijou_instance._approval_notify)
+        except Exception as e:
+            logger.debug(f"owner approvals sweep skipped: {e}")
+
+
 @app.on_event("startup")
 async def startup_event():
     """Initialize Bijou AI when FastAPI starts (for uvicorn direct launch)"""
@@ -1106,8 +1128,12 @@ async def startup_event():
         asyncio.create_task(_bg(bijou_instance.proactive_messaging.start(), "proactive_messaging"))
         logger.info("✅ Proactive messaging scheduler started")
 
-    # Start Outreach scheduler
+    # Start Outreach scheduler. ENABLE_OUTREACH_SCHEDULER=false lets a second
+    # deployment share the production DB (e.g. a standby before DNS cutover)
+    # without also claiming and sending queued campaign messages.
     try:
+        if os.getenv("ENABLE_OUTREACH_SCHEDULER", "true").lower() != "true":
+            raise RuntimeError("outreach scheduler disabled by ENABLE_OUTREACH_SCHEDULER")
         from src.channels.bridge_adapter import BridgeAdapter
         from src.core.outreach_scheduler import OutreachScheduler
         _supabase_for_outreach = get_supabase()
@@ -1125,6 +1151,10 @@ async def startup_event():
     # Start WhatsApp bridge keepalive monitor
     asyncio.create_task(_bg(_wa_keepalive_monitor(), "keepalive_monitor"))
     logger.info("✅ WhatsApp keepalive monitor started")
+
+    # Auto-reject owner approvals nobody answered (ENABLE_OWNER_APPROVALS)
+    if os.getenv("ENABLE_OWNER_APPROVALS", "false").lower() == "true":
+        asyncio.create_task(_bg(_owner_approvals_sweeper(), "owner_approvals_sweeper"))
 
     # Backfill signup_token for any tenants missing it (idempotent, non-blocking)
     asyncio.create_task(_bg(_ensure_tenant_tokens(), "token_backfill"))
@@ -2028,6 +2058,8 @@ class BijouAI:
                 self.proactive_messaging = ProactiveMessagingSystem(
                     db_connection=self.db_conn,
                     channel_adapter=bridge_adapter if bridge_adapter else self,
+                    wa_sender=self.send_message,
+                    feature_enabled=_agent_feature_enabled,
                 )
                 logger.info("✅ ProactiveMessagingSystem initialized")
 
@@ -3184,6 +3216,33 @@ class BijouAI:
                 self.processed_message_ids.add(msg_id)  # Mark as processed
                 return
 
+            # === OWNER APPROVAL REPLY ("1"/"2", ENABLE_OWNER_APPROVALS) ===
+            # Must run BEFORE the typing (<2 chars) and self-echo filters below: a
+            # bare "1" is one char, and it is a substring of the approval summary we
+            # just sent this chat, so either filter would silently drop it. Only the
+            # tenant's own owner_phones (who the summary went to) may answer.
+            if (
+                content
+                and not media_type
+                and chat_jid
+                and not chat_jid.endswith("@g.us")
+                and _agent_feature_enabled("ENABLE_OWNER_APPROVALS", tenant_id)
+            ):
+                from src.core.owner_approvals import _digits, handle_owner_reply, parse_decision, tenant_owner_phones
+
+                if parse_decision(content):
+                    _approvers = tenant_owner_phones(self.db_conn, tenant_id)  # 60s per-tenant cache
+                    if _digits(chat_jid) in _approvers or _digits(sender) in _approvers:
+                        _appr = await handle_owner_reply(
+                            self.db_conn, tenant_id, sender or chat_jid, content,
+                            execute=self._execute_approved_action, notify=self._approval_notify,
+                        )
+                        if _appr:
+                            self.send_message(chat_jid, _appr, tenant_id=tenant_id)
+                            self.processed_message_ids.add(msg_id)
+                            return
+            # === END OWNER APPROVAL REPLY ===
+
             # ✅ CRITICAL FIX 3: Ignore empty/typing indicator messages (unless has media)
             # IMPORTANT: Don't add to processed_message_ids - WhatsApp sends empty messages first, then full message
             if not media_type and (not content or len(content.strip()) < 2):
@@ -3284,8 +3343,15 @@ class BijouAI:
             # 1. Direct DM: chat_jid = owner_jid (from env)
             # 2. Group chat: sender = owner_jid (from env)
             # 3. Linked device: chat_jid = 84950644740196@lid (mapped to owner)
-            is_owner_dm = chat_phone == owner_phone  # DM from owner phone
-            is_owner_sender = sender_phone == owner_phone  # Owner in group chat
+            # ENABLE_OWNER_APPROVALS: per-tenant owners (tenants.owner_phones),
+            # falling back to the global OWNER_WHATSAPP_JID.
+            owner_phones = [owner_phone] if owner_phone else []
+            if _agent_feature_enabled("ENABLE_OWNER_APPROVALS", tenant_id):
+                from src.core.owner_approvals import resolve_owner_phones
+
+                owner_phones = resolve_owner_phones(self.db_conn, tenant_id)
+            is_owner_dm = chat_phone in owner_phones  # DM from owner phone
+            is_owner_sender = sender_phone in owner_phones  # Owner in group chat
             is_owner_linked = chat_jid in self.owner_linked_devices  # Linked device
 
             is_owner = is_owner_dm or is_owner_sender or is_owner_linked
@@ -3458,7 +3524,7 @@ class BijouAI:
                 logger.info(f"🤖 @bijou command from owner: {content[:60]}")
                 try:
                     response = await self.command_handler.handle_command(
-                        message=message,
+                        message=content,
                         chat_jid=chat_jid,
                         sender=sender,
                         tenant_id=tenant_id,
@@ -4318,6 +4384,11 @@ Use `/quiet` to reduce my chattiness!
             # public.message_reasons table. The Inbox side panel reads from
             # this table via GET /api/dashboard/messages/{id}/reason.
             # Best-effort: failures are logged but never block the response.
+            # _jev_decided: what current code decides this turn, logged next to
+            # Jev's shadow answers (ENABLE_JEV_SHADOW). Tools run inside
+            # _generate_response and are not surfaced here, so "tool" stays None.
+            _jev_decided = {"message_id": None, "lead_tier": None, "lead_handover": None,
+                            "handover": None, "tool": None}
             if self.db_conn and self.db_type == "supabase" and response:
                 try:
                     import hashlib
@@ -4329,6 +4400,7 @@ Use `/quiet` to reduce my chattiness!
                     # later by the integration owner.
                     _raw_id = f"{chat_jid}|{tenant_id or 'default'}|{response[:200]}"
                     _msg_id = "ai-" + hashlib.sha256(_raw_id.encode()).hexdigest()[:24]
+                    _jev_decided["message_id"] = _msg_id
                     # Tool calls happen inside _generate_response and are logged
                     # to conversation_logs / trajectory there; the pre-pass that
                     # fed this field was removed (2026-09-26).
@@ -4389,6 +4461,8 @@ Use `/quiet` to reduce my chattiness!
                             enhanced_content, lead_status
                         )
                     )
+                    _jev_decided["lead_tier"] = getattr(lead_status, "value", None)
+                    _jev_decided["lead_handover"] = bool(should_handover)
 
                     # Append CTA based on lead quality
                     if should_handover:
@@ -4600,6 +4674,7 @@ Use `/quiet` to reduce my chattiness!
                                 tenant_id=tenant_id,
                             )
                         )
+                        _jev_decided["handover"] = bool(should_escalate)
 
                         if should_escalate:
                             logger.info(
@@ -4855,10 +4930,85 @@ Use `/quiet` to reduce my chattiness!
             # Mark as processed
             self.processed_message_ids.add(msg_id)
 
+            # Jev shadow: fire-and-forget AFTER the reply is sent; log only.
+            if not is_from_me:
+                self._schedule_jev_shadow(
+                    tenant_id, chat_jid, clean_user_message, response,
+                    client_config, _jev_decided,
+                )
+
             logger.info(f"✅ Message {msg_id} processed successfully")
 
         except Exception as e:
             logger.error(f"❌ Error processing message {message.get('id')}: {e}")
+
+    def _schedule_jev_shadow(self, tenant_id, chat_jid, latest_message, response,
+                             client_config, decided) -> None:
+        """Gate + fire-and-forget the Jev shadow call. Never raises, never awaits.
+
+        Strict-privacy tenants (client_config / system_prompt_vars privacy ==
+        "strict", the same word the gateway uses for ai://private) are skipped:
+        Jev is a third-party API and would see the customer's message."""
+        try:
+            if not _agent_feature_enabled("ENABLE_JEV_SHADOW", tenant_id):
+                return
+            cfg = client_config or {}
+            spv = cfg.get("system_prompt_vars") if isinstance(cfg.get("system_prompt_vars"), dict) else {}
+            if "strict" in (str(cfg.get("privacy", "")).lower(), str(spv.get("privacy", "")).lower()):
+                return
+            asyncio.get_running_loop().create_task(
+                self._jev_shadow(tenant_id, chat_jid, latest_message, response, cfg, dict(decided))
+            )
+        except Exception as e:
+            logger.debug(f"Jev shadow not scheduled: {e}")
+
+    async def _jev_shadow(self, tenant_id, chat_jid, latest_message, response,
+                          client_config, decided) -> None:
+        """Ask Jev the routing questions and persist its answers next to what the
+        current code decided (message_reasons.jev_shadow). Log only — nothing
+        here changes behaviour. Missing column/table = debug log, no crash."""
+        try:
+            from src.core.jev_router import jev_route
+
+            history = await asyncio.to_thread(
+                self._get_conversation_history, chat_jid, 10, tenant_id
+            )
+            # ponytail: by now this turn is already saved; drop it by text match.
+            skip = {(latest_message or "").strip(), (response or "").strip()}
+            turns = [
+                {"role": "assistant" if h.get("role") == "model" else "user",
+                 "text": (h.get("parts") or [{}])[0].get("text", "")[:500]}
+                for h in history
+            ]
+            turns = [t for t in turns if t["text"].strip() not in skip][-6:]
+            tools: List[str] = []
+            fc = getattr(self, "function_caller", None)
+            if fc is not None and getattr(fc, "enabled", False):
+                tools = [d.get("name") for d in fc.get_function_declarations(
+                    enabled_tools=client_config.get("enabled_tools")) if d.get("name")]
+            business = ": ".join(
+                str(x) for x in (client_config.get("business_name"), client_config.get("business_description")) if x
+            )
+            jev = await jev_route(latest_message or "", turns, business, tools)
+            if jev is None:
+                return
+            record = {"jev": jev, "current": {k: v for k, v in decided.items() if k != "message_id"}}
+            a = jev["answers"]
+            logger.info(
+                f"🧪 Jev shadow ({jev['latency_ms']}ms) intent={a.get('intent', {}).get('value')} "
+                f"wants_human={a.get('wants_human', {}).get('value')} | current handover={decided.get('handover')} "
+                f"lead={decided.get('lead_tier')}"
+            )
+            if decided.get("message_id") and self.db_conn and self.db_type == "supabase":
+                await asyncio.to_thread(
+                    lambda: self.db_conn.table("message_reasons")
+                    .update({"jev_shadow": record})
+                    .eq("tenant_id", tenant_id)
+                    .eq("message_id", decided["message_id"])
+                    .execute()
+                )
+        except Exception as e:
+            logger.debug(f"Jev shadow write skipped: {e}")
 
     async def _generate_response(
         self,
@@ -4911,10 +5061,13 @@ Use `/quiet` to reduce my chattiness!
                 "render_mode=bot: Tool requested raw output, skipping Persona Engine"
             )
 
+        # Assigned unconditionally: history, ActionGuard and fast-reply gates below
+        # read tenant_id even when knowledge_uploader failed to initialise.
+        tenant_id = client_config.get("tenant_id") if client_config else None
+
         # Knowledge Engine Context (Phase 2)
         knowledge_context = ""
         if self.knowledge_uploader:
-            tenant_id = client_config.get("tenant_id") if client_config else None
             if tenant_id:
                 try:
                     # Get combined knowledge from all uploaded documents
@@ -5194,10 +5347,7 @@ Use `/quiet` to reduce my chattiness!
                     )
                     _guard_fn = None
                     if _agent_feature_enabled("ENABLE_ACTION_GUARD", tenant_id):
-                        from src.core.action_guard import ActionGuard
-
-                        _ag = ActionGuard(self.db_conn)
-                        _guard_fn = lambda _n: _ag.check(tenant_id, _n)  # noqa: E731
+                        _guard_fn = lambda _n: self._guard_mode(tenant_id, chat_jid, _n)  # noqa: E731
 
                     async def _gw_exec(_name, _args):
                         # SANDBOX: short-circuit BEFORE the real executor runs.
@@ -5230,6 +5380,11 @@ Use `/quiet` to reduce my chattiness!
                         model_chain=[m.strip() for m in _models if m.strip()],
                         execute_tool=_gw_exec,
                         guard=_guard_fn,
+                        on_confirm=(
+                            (lambda _n, _a: self._queue_owner_approval(tenant_id, chat_jid, _n, _a))
+                            if _guard_fn and not _sandbox
+                            else None
+                        ),
                     )
                     _greply = (_gres.get("reply") or "").strip()
                     if _greply:
@@ -5298,6 +5453,16 @@ Use `/quiet` to reduce my chattiness!
                 # function_caller.py's get_function_declarations().
                 "enabled_tools": client_config.get("enabled_tools") if client_config else None,
             }
+            # MiniMax-M3 thinks by default (hidden reasoning). Measured 2026-09-26
+            # on 5 short WhatsApp questions: p50 1403ms / 127 output tokens with
+            # thinking vs 663ms / 36 with it disabled; single-turn tool selection
+            # unchanged. Flag-gated because this path runs the multi-round tool
+            # loop, which was not benchmarked. M2.x accept the field and ignore it.
+            mm_extra_body = (
+                {"thinking": {"type": "disabled"}}
+                if _agent_feature_enabled("ENABLE_FAST_REPLY", mm_user_context["tenant_id"])
+                else None
+            )
             for mm_model in [m.strip() for m in mm_models if m.strip()]:
                 try:
                     # Use the FunctionCaller's OpenAI-compatible path so
@@ -5314,6 +5479,12 @@ Use `/quiet` to reduce my chattiness!
                             temperature=0.7,
                             max_tokens=1024,
                             user_context=mm_user_context,
+                            guard=(
+                                (lambda _n, _a: self._guard_tool(tenant_id, chat_jid, _n, _a))
+                                if _agent_feature_enabled("ENABLE_ACTION_GUARD", tenant_id) and not _sandbox
+                                else None
+                            ),
+                            extra_body=mm_extra_body,
                         )
                     else:
                         # No function caller (or disabled) — keep the old
@@ -5325,6 +5496,7 @@ Use `/quiet` to reduce my chattiness!
                             messages=_messages,
                             temperature=0.7,
                             max_tokens=1024,
+                            extra_body=mm_extra_body,
                         )
                         content = (resp.choices[0].message.content or "").strip()
                         import re
@@ -5439,29 +5611,17 @@ Use `/quiet` to reduce my chattiness!
 
                             # === ActionGuard (Phase 3, flag-gated): consequential tools
                             # do NOT auto-fire without a per-tenant 'allow' policy ===
-                            _guard_mode = "allow"
+                            _blocked = None
                             if _agent_feature_enabled("ENABLE_ACTION_GUARD", tenant_id) and not _sandbox:
-                                try:
-                                    from src.core.action_guard import ActionGuard
-
-                                    _guard_mode = ActionGuard(self.db_conn).check(tenant_id, func_call.name)
-                                except Exception as _ge:
-                                    logger.debug(f"ActionGuard check skipped: {_ge}")
+                                _blocked = self._guard_tool(
+                                    tenant_id, chat_jid, func_call.name, dict(func_call.args or {})
+                                )
                             if _sandbox:
                                 # SANDBOX: short-circuit BEFORE the real executor runs.
                                 logger.info(f"🧪 Sandbox: '{func_call.name}' NOT executed (test mode)")
                                 result = _sandbox_stub(func_call.name)
-                            elif _guard_mode != "allow":
-                                logger.info(f"🛡️ ActionGuard: '{func_call.name}' -> {_guard_mode} (not auto-executed)")
-                                result = {
-                                    "status": "blocked",
-                                    "guard": _guard_mode,
-                                    "message": (
-                                        f"Action '{func_call.name}' needs confirmation before it runs."
-                                        if _guard_mode == "confirm"
-                                        else f"Action '{func_call.name}' is not permitted for this tenant."
-                                    ),
-                                }
+                            elif _blocked:
+                                result = _blocked
                             else:
                                 result = await self.function_caller._execute_function(
                                     func_call,
@@ -6389,6 +6549,76 @@ BE HELPFUL - Answer directly, then stop."""
         self.recent_sent[chat_jid] = [
             (p, t) for p, t in self.recent_sent[chat_jid] if t > cutoff
         ][-self.recent_sent_max_per_chat :]
+
+    # ==================== ACTION GUARD + OWNER APPROVALS ====================
+
+    def _guard_mode(self, tenant_id, chat_jid, tool, args=None) -> str:
+        """ActionGuard mode for a tool (fail-open to 'allow', as before). With
+        ENABLE_OWNER_APPROVALS, a consequential tool the tenant opted into
+        auto-run is logged as an 'auto' decision."""
+        try:
+            from src.core.action_guard import DEFAULT_CONFIRM, ActionGuard
+
+            mode = ActionGuard(self.db_conn).check(tenant_id, tool)
+        except Exception as _ge:
+            logger.debug(f"ActionGuard check skipped: {_ge}")
+            return "allow"
+        if mode == "allow" and tool in DEFAULT_CONFIRM and _agent_feature_enabled("ENABLE_OWNER_APPROVALS", tenant_id):
+            from src.core.owner_approvals import log_decision
+
+            log_decision(self.db_conn, tenant_id, chat_jid, tool, args, "auto", "tenant policy allows auto-run")
+        return mode
+
+    def _queue_owner_approval(self, tenant_id, chat_jid, tool, args) -> Optional[Dict]:
+        """ENABLE_OWNER_APPROVALS: persist the action + WhatsApp the owner. None =
+        feature off / unavailable, so the caller keeps the plain 'blocked' result."""
+        if not chat_jid or not _agent_feature_enabled("ENABLE_OWNER_APPROVALS", tenant_id):
+            return None
+        try:
+            from src.core.owner_approvals import request_approval
+
+            return request_approval(self.db_conn, tenant_id, chat_jid, tool, args, self._approval_notify)
+        except Exception as _qe:  # never break the reply path
+            logger.warning(f"owner approval queue skipped: {_qe}")
+            return None
+
+    def _guard_tool(self, tenant_id, chat_jid, tool, args) -> Optional[Dict]:
+        """None = run the tool; otherwise the result to hand the LLM instead."""
+        mode = self._guard_mode(tenant_id, chat_jid, tool, args)
+        if mode == "allow":
+            return None
+        logger.info(f"🛡️ ActionGuard: '{tool}' -> {mode} (not auto-executed)")
+        if mode == "confirm":
+            queued = self._queue_owner_approval(tenant_id, chat_jid, tool, args)
+            if queued:
+                return queued
+        return {
+            "status": "blocked",
+            "guard": mode,
+            "message": (
+                f"Action '{tool}' needs confirmation before it runs."
+                if mode == "confirm"
+                else f"Action '{tool}' is not permitted for this tenant."
+            ),
+        }
+
+    def _approval_notify(self, tenant_id, jid, text) -> None:
+        """send_message is a blocking HTTP call: on the event loop, hand it to a
+        worker thread; off-loop (the sweeper's to_thread) just call it."""
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            self.send_message(jid, text, tenant_id=tenant_id)
+            return
+        loop.run_in_executor(None, lambda: self.send_message(jid, text, tenant_id=tenant_id))
+
+    async def _execute_approved_action(self, row: Dict) -> Any:
+        """Run an owner-approved pending action. Approval is already given, so the
+        tool is called directly (no guard, no second confirmation)."""
+        return await self.function_caller._call_function(
+            row["tool"], row.get("args") or {},
+            {"tenant_id": row["tenant_id"], "chat_jid": row["chat_jid"]},
+        )
 
     async def _send_direct_owner_notification(self, tenant_id: str, message: str) -> bool:
         """

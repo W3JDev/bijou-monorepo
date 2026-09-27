@@ -22,6 +22,8 @@ from enum import Enum
 import json
 import uuid
 
+from src.core.outbound_guard import PROACTIVE, RETRYABLE, TRANSACTIONAL, check_outbound
+
 logger = logging.getLogger(__name__)
 
 
@@ -715,6 +717,21 @@ We appreciate your business! 🙏
                 else:
                     template_key = "consultation_reminder_2h"  # Default
             
+            # Ban-safety guard. A post-appointment feedback nudge starts a new
+            # conversation; every other template is a reminder the customer booked.
+            kind = PROACTIVE if template_key == "post_appointment_feedback" else TRANSACTIONAL
+            allowed, reason = check_outbound(
+                self.bijou.db_conn, reminder.get("tenant_id"), reminder.get("recipient"), kind
+            )
+            if not allowed:
+                if reason in RETRYABLE:
+                    return False  # stays pending; retried next poll
+                if self.bijou.db_type == "supabase":
+                    self.bijou.db_conn.table("scheduled_messages").update({
+                        "status": "cancelled"
+                    }).eq("tenant_id", reminder["tenant_id"]).eq("id", reminder["id"]).execute()
+                return False
+
             # Send the reminder
             success = await self._send_template_message(
                 recipient=reminder["recipient"],

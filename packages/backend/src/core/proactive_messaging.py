@@ -17,10 +17,13 @@ import asyncio
 import json
 import logging
 import os
+import time
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from enum import Enum
 from typing import Dict, List, Optional, Set
+
+from src.core.outbound_guard import PROACTIVE, RETRYABLE, TRANSACTIONAL, check_outbound
 
 logger = logging.getLogger(__name__)
 
@@ -92,16 +95,22 @@ class ProactiveMessagingSystem:
     Handles scheduling, silence detection, and campaign execution.
     """
 
-    def __init__(self, db_connection, channel_adapter):
+    def __init__(self, db_connection, channel_adapter, wa_sender=None, feature_enabled=None):
         """
         Initialize the proactive messaging system.
 
         Args:
             db_connection: Database connection for persistence
             channel_adapter: Bridge/Telegram adapter for sending messages
+            wa_sender: Optional sync send(jid, text, tenant_id=...) on the GOWA
+                path (Bijou.send_message). Used by the owner morning brief.
+            feature_enabled: Optional (env_flag, tenant_id) -> bool gate
+                (bijou._agent_feature_enabled).
         """
         self.db = db_connection
         self.channel = channel_adapter
+        self.wa_sender = wa_sender
+        self.feature_enabled = feature_enabled
         self.scheduled_messages: Dict[str, ScheduledMessage] = {}
         self.silence_rules: Dict[str, SilenceRule] = {}
         self.campaigns: Dict[str, Campaign] = {}
@@ -146,6 +155,7 @@ class ProactiveMessagingSystem:
                 await self._check_silence_rules()
                 await self._process_campaigns()
                 await self._process_lead_followups()
+                await self._process_morning_briefs()
 
                 # Sleep for 1 minute before next check
                 await asyncio.sleep(60)
@@ -170,6 +180,19 @@ class ProactiveMessagingSystem:
                 if msg.recipient == "owner":
                     success = await self._send_owner_notification(msg.tenant_id, msg.content)
                 else:
+                    # Only reminders for a booking the customer made are
+                    # transactional; everything else here starts a conversation.
+                    kind = TRANSACTIONAL if msg.message_type in (
+                        MessageType.CALL_REMINDER_24H, MessageType.CALL_REMINDER_1H
+                    ) else PROACTIVE
+                    allowed, reason = check_outbound(self.db, msg.tenant_id, msg.recipient, kind)
+                    if not allowed:
+                        if reason in RETRYABLE:
+                            continue  # stays SCHEDULED; retried next tick
+                        msg.status = MessageStatus.CANCELLED  # reason logged by the guard
+                        await self._update_message_status(msg)
+                        self.scheduled_messages.pop(msg.id, None)
+                        continue
                     success = await self._send_message(msg.recipient, msg.content)
 
                 if success:
@@ -259,7 +282,15 @@ class ProactiveMessagingSystem:
                 logger.info(f"🚀 Starting campaign: {campaign.name}")
 
                 # Send to all recipients
-                for recipient in campaign.recipients:
+                deferred: List[str] = []
+                for i, recipient in enumerate(campaign.recipients):
+                    allowed, reason = check_outbound(self.db, campaign.tenant_id, recipient, PROACTIVE)
+                    if not allowed:
+                        if reason in RETRYABLE:
+                            deferred = campaign.recipients[i:]
+                            break
+                        campaign.failed_count += 1
+                        continue
                     try:
                         success = await self._send_message(recipient, campaign.message_template)
                         if success:
@@ -273,6 +304,11 @@ class ProactiveMessagingSystem:
                     except Exception as e:
                         logger.error(f"❌ Campaign send error for {recipient}: {e}")
                         campaign.failed_count += 1
+
+                if deferred:
+                    # Cap/spacing hit: keep the rest, stay SCHEDULED, resume next tick.
+                    campaign.recipients = deferred
+                    continue
 
                 campaign.status = MessageStatus.SENT
                 logger.info(
@@ -304,9 +340,12 @@ class ProactiveMessagingSystem:
                 return 0
 
             sent_count = 0
+            paced_tenants: Set[str] = set()
             for row in due:
                 chat_jid    = row.get("chat_jid")
                 tenant_id   = row.get("tenant_id")
+                if tenant_id in paced_tenants:
+                    continue  # this tenant hit cap/spacing this tick; others still go
                 lead_status = row.get("lead_status", "warm")
                 row_id      = row.get("id")
                 # Use custom message if set by tenant (stored in metadata jsonb), otherwise pick by lead status
@@ -338,6 +377,19 @@ class ProactiveMessagingSystem:
                         "Feel free to reach out anytime if you need anything \u2014 happy to help! \ud83d\ude0a"
                     )
 
+                allowed, reason = check_outbound(self.db, tenant_id, chat_jid, PROACTIVE)
+                if not allowed:
+                    if reason in RETRYABLE:
+                        # cap/spacing is per tenant: leave only THIS tenant's rows
+                        # pending for the next tick.
+                        paced_tenants.add(tenant_id)
+                        continue
+                    self.db.table("follow_ups").update({
+                        "status": "cancelled",
+                        "notes": f"outbound_guard: {reason}",
+                    }).eq("id", row_id).execute()
+                    continue
+
                 try:
                     success = await self._send_message(chat_jid, message)
                     new_status = "sent" if success else "failed"
@@ -364,6 +416,29 @@ class ProactiveMessagingSystem:
         except Exception as e:
             logger.error(f"\u274c _process_lead_followups error: {e}")
             return 0
+
+    async def _process_morning_briefs(self) -> int:
+        """Owner morning brief at 09:00 tenant-local (ENABLE_MORNING_BRIEF, default off)."""
+        sender = getattr(self, "wa_sender", None)
+        gate = getattr(self, "feature_enabled", None)
+        if (
+            os.getenv("ENABLE_MORNING_BRIEF", "false").lower() != "true"
+            or not sender or not gate or not hasattr(self.db, "table")
+        ):
+            return 0
+        # 5-min tick is plenty for a 3h send window; the loop itself runs every 60s.
+        now_mono = time.monotonic()
+        if now_mono - getattr(self, "_last_brief_tick", float("-inf")) < 300:
+            return 0
+        self._last_brief_tick = now_mono
+        from src.core.morning_brief import run_due_briefs
+
+        async def _send(jid: str, text: str, tenant_id: str) -> bool:
+            return await asyncio.to_thread(sender, jid, text, tenant_id=tenant_id)
+
+        return await run_due_briefs(
+            self.db, _send, lambda tid: gate("ENABLE_MORNING_BRIEF", tid)
+        )
 
     async def schedule_message(
         self,

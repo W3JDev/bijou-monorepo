@@ -54,12 +54,14 @@ async def _complete(client, model_chain, messages, tools):
 
 async def run_gateway_agent(
     *, system, user_message, history, declarations, client, model_chain,
-    execute_tool, guard=None, budget=None,
+    execute_tool, guard=None, budget=None, on_confirm=None,
 ):
     """Bounded gateway tool-calling loop.
 
     execute_tool: async (name, args) -> result dict.
     guard: optional (name) -> 'allow' | 'confirm' | 'deny'.
+    on_confirm: optional (name, args) -> result dict | None, called for 'confirm'
+        (e.g. queue for owner approval); None keeps the plain 'blocked' result.
     Returns {"reply": str, "steps": list}.
     """
     budget = budget or Budget()
@@ -106,6 +108,8 @@ async def run_gateway_agent(
                         if mode == "confirm" else f"Action '{name}' is not permitted."
                     ),
                 }
+                if mode == "confirm" and on_confirm:
+                    result = on_confirm(name, args) or result
             else:
                 result = await execute_tool(name, args)
             steps.append({"tool": name, "args": args, "result": result})

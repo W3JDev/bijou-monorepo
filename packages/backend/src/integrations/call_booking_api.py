@@ -24,6 +24,7 @@ from pydantic import BaseModel
 from supabase import Client, create_client
 
 from src.core.bridge_client import BridgeClient
+from src.core.outbound_guard import TRANSACTIONAL, check_outbound
 
 logger = logging.getLogger(__name__)
 
@@ -319,6 +320,11 @@ You'll receive a reminder 1 hour before your appointment.
 Need to reschedule? Just reply with "reschedule" or give us a call.
 
 - {business_name}"""
+
+        # Transactional (the customer just booked) — still skips stop/blocked contacts.
+        allowed, reason = check_outbound(supabase, tenant_id, customer_jid, TRANSACTIONAL)
+        if not allowed:
+            return {"status": "blocked", "error": reason}
 
         # Initialize bridge client
         bridge = BridgeClient()

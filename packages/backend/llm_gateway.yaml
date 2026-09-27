@@ -138,6 +138,15 @@ aliases:
       model: "MiniMax-M3"
       max_output_tokens: 512
       temperature: 0.7
+      # Thinking OFF (2026-09-26). Same 5 short WhatsApp questions, same key:
+      #   MiniMax-M3 thinking on    p50 1403ms  p50 127 output tokens
+      #   MiniMax-M3 thinking off   p50  663ms  p50  36 output tokens
+      #   MiniMax-M2.7-highspeed    p50 2904ms  (M2.x cannot disable thinking)
+      #   M2-her                    p50 1487ms
+      # Reply quality was equivalent (every variant sometimes invents details
+      # absent from the prompt). Delete this line to turn thinking back on.
+      # ai://reasoning deliberately keeps thinking.
+      thinking: {type: disabled}
     fallbacks:
       - provider: vercel
         model: "google/gemini-2.5-flash"

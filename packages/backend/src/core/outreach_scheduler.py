@@ -22,6 +22,8 @@ import random
 from datetime import datetime, time, timedelta
 from typing import Dict, List, Optional, Set
 
+from src.core.outbound_guard import HELD, PROACTIVE, RETRYABLE, check_outbound
+
 try:
     from zoneinfo import ZoneInfo  # Python 3.9+
 except ImportError:
@@ -208,7 +210,16 @@ class OutreachScheduler:
                 await self._mark_cancelled(message['id'], "Contact replied")
                 return
 
-        # Check 6: Random delay since last message
+        # Check 6: Shared ban-safety guard (24h window / consent, cap, spacing, stop)
+        allowed, reason = check_outbound(self.db, tenant_id, message.get('recipient_jid'), PROACTIVE)
+        if not allowed:
+            if reason in HELD:
+                await self._mark_held(message['id'], reason)
+            elif reason not in RETRYABLE:
+                await self._mark_blocked(message['id'], reason)
+            return
+
+        # Check 7: Random delay since last message
         await self._wait_for_delay(tenant_id, campaign)
 
         # All checks passed - send the message
@@ -417,6 +428,16 @@ class OutreachScheduler:
             }) \
             .eq("id", message_id) \
             .execute()
+
+    async def _mark_held(self, message_id: str, reason: str):
+        """Park a message that lacks consent/24h window. Recoverable: re-queue with
+        status='pending' WHERE error_code='held_no_consent' once consent exists.
+        Reuses 'blocked' because outbound_queue_status_check allows no new status."""
+        self.db.table("outbound_queue")             .update({
+                "status": "blocked",
+                "error_code": "held_no_consent",
+                "error_message": reason
+            })             .eq("id", message_id)             .execute()
 
     async def _mark_cancelled(self, message_id: str, reason: str):
         """Mark message as cancelled (e.g., contact replied)."""

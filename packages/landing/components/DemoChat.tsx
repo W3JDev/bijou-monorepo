@@ -25,7 +25,7 @@ export const DemoChat: React.FC<DemoChatProps> = ({ onOpenModal }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [isExcited, setIsExcited] = useState(false);
   const [showQuickReplies, setShowQuickReplies] = useState(true);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
 
   // Signal Gem chat state machine
   const chatState: "idle" | "thinking" | "speaking" = isLoading
@@ -75,8 +75,11 @@ export const DemoChat: React.FC<DemoChatProps> = ({ onOpenModal }) => {
     { icon: "📅", text: "I want to book a demo" },
   ];
 
+  // Scroll only the chat's own message list. scrollIntoView() also scrolls the
+  // page, which yanked visitors down to the chat on load and on every message.
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    const el = messagesContainerRef.current;
+    if (el) el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
   };
 
   useEffect(() => {
@@ -193,7 +196,7 @@ export const DemoChat: React.FC<DemoChatProps> = ({ onOpenModal }) => {
           </div>
 
           {/* Chat Messages */}
-          <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-gradient-to-b from-black/30 to-black/50 scroll-smooth">
+          <div ref={messagesContainerRef} className="flex-1 overflow-y-auto p-6 space-y-6 bg-gradient-to-b from-black/30 to-black/50 scroll-smooth">
             {messages.map((msg, idx) => (
               <motion.div
                 key={idx}
@@ -268,7 +271,6 @@ export const DemoChat: React.FC<DemoChatProps> = ({ onOpenModal }) => {
               </motion.div>
             )}
 
-            <div ref={messagesEndRef} />
           </div>
 
           {/* Input Area */}
@@ -293,7 +295,7 @@ export const DemoChat: React.FC<DemoChatProps> = ({ onOpenModal }) => {
             <div className="text-center mt-4 space-y-2">
               <p className="text-xs text-gray-500 flex items-center justify-center gap-2">
                 <Zap className="w-3 h-3 text-emerald-500" />
-                Powered by Gemini. Bijou may display inaccurate info about
+                AI-generated replies. Bijou may display inaccurate info about
                 people or places.
               </p>
               <p className="text-xs text-gray-400">

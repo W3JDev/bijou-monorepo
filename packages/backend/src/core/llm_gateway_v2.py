@@ -512,6 +512,10 @@ def _call_openai_compatible(
     ]
     if tools:
         payload["tools"] = tools
+    # Per-entry YAML passthrough (MiniMax-M3 `thinking`). Entry-scoped, so a
+    # fallback provider that would reject the field never receives it.
+    if opts.get("thinking"):
+        payload["thinking"] = opts["thinking"]
     headers = {
         "Authorization": f"Bearer {api_key}",
         "Content-Type": "application/json",
