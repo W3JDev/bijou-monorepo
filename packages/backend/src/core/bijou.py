@@ -963,7 +963,14 @@ async def _wa_keepalive_monitor():
                     )
                     if devices_resp.status_code != 200:
                         continue
-                    devices = devices_resp.json() if isinstance(devices_resp.json(), list) else []
+                    # GOWA wraps its payload: {"code":"SUCCESS","results":[...]}.
+                    # A bare-list check therefore always failed and left `devices`
+                    # empty, which made the cleanup below delete every mapping.
+                    _raw = devices_resp.json()
+                    if isinstance(_raw, dict):
+                        devices = _raw.get("results") or []
+                    else:
+                        devices = _raw if isinstance(_raw, list) else []
                 except Exception:
                     continue
 
@@ -1007,37 +1014,14 @@ async def _wa_keepalive_monitor():
                 except Exception as e:
                     logger.debug(f"[KEEPALIVE] Error processing device {device_id}: {e}")
 
-            # Stale device cleanup: auto-remove DB entries for devices no
-            # longer registered in the bridge (e.g. after DEVICE_REMOVED events)
-            #
-            # SAFETY: this deletes rows. An empty `devices` list means "we could
-            # not read the bridge", NOT "the bridge has no devices" — cleaning up
-            # against it wipes every tenant's device mapping and silently kills
-            # message routing for the whole product. Only clean up when the
-            # bridge actually returned devices.
-            try:
-                bridge_device_ids = {
-                    d.get("device_id") or d.get("id", "")
-                    for d in devices
-                    if d.get("device_id") or d.get("id")
-                }
-                if not bridge_device_ids:
-                    logger.debug(
-                        "[KEEPALIVE] Bridge returned no devices — skipping stale "
-                        "cleanup to avoid deleting valid mappings"
-                    )
-                else:
-                    db_devices = db.table("whatsapp_devices").select("device_id").execute()
-                    for db_dev in (db_devices.data or []):
-                        db_device_id = db_dev.get("device_id", "")
-                        if db_device_id and db_device_id not in bridge_device_ids:
-                            db.table("whatsapp_devices").delete().eq("device_id", db_device_id).execute()
-                            logger.warning(
-                                f"🗑️ [KEEPALIVE] Removed stale device {db_device_id} "
-                                f"— no longer registered in bridge"
-                            )
-            except Exception as _cleanup_err:
-                logger.debug(f"[KEEPALIVE] Stale device cleanup error: {_cleanup_err}")
+            # NO stale-device cleanup here, deliberately. It used to delete every
+            # whatsapp_devices row whose device this backend's bridge did not
+            # list. That table is shared by every backend pointed at the prod
+            # Supabase (Dokploy, the stale Fly stack, local dev), each with a
+            # DIFFERENT bridge — so each one pruned the others' tenants, and an
+            # unreadable bridge pruned everyone. That is why the table was
+            # empty and routing fell back to a shared tenants.whatsapp_jid.
+            # Rows are removed by /api/dashboard/whatsapp/disconnect instead.
 
         except Exception as e:
             logger.debug(f"[KEEPALIVE] Monitor cycle error: {e}")
@@ -6335,12 +6319,14 @@ BE HELPFUL - Answer directly, then stop."""
                     if not device_id or device_id in ("default", "", None):
                         try:
                             _disc = requests.get(
-                                f"{self.bridge_url}/app/devices",
+                                f"{self.bridge_url}/devices",
                                 headers={k: v for k, v in headers.items() if k != "Content-Type"},
                                 timeout=5,
                             )
                             if _disc.ok:
-                                _devs = _disc.json()
+                                # GOWA wraps the list in {"results": [...]}.
+                                _raw = _disc.json()
+                                _devs = _raw.get("results", []) if isinstance(_raw, dict) else _raw
                                 if isinstance(_devs, list) and _devs:
                                     device_id = _devs[0].get("device_id") or _devs[0].get("id", "")
                                     logger.info(f"🔍 [SEND] Auto-discovered device_id={device_id} from bridge")
