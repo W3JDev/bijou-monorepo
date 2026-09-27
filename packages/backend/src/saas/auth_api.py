@@ -644,6 +644,26 @@ async def signup(request: SignupRequest, http_request: Request = None):
         # — it's the most reliable signal of what really went wrong.
         auth_status = getattr(e, "status", None) if isinstance(e, AuthApiError) else None
         auth_code = getattr(e, "code", None) if isinstance(e, AuthApiError) else None
+        # GoTrue error codes are more precise than status: weak_password is
+        # ALSO a 422 (and supabase-py raises it as AuthWeakPasswordError, not
+        # AuthApiError, so it fell through to a 500), and
+        # over_email_send_rate_limit is the PROJECT-WIDE confirmation-email
+        # cap, not this user going too fast — "wait a minute" was untrue.
+        # Measured on production 2026-09-28: first-ever signup attempt from
+        # a fresh IP got that 429.
+        any_code = getattr(e, "code", None)
+        if any_code == "weak_password":
+            raise HTTPException(
+                status_code=400,
+                detail="That password is too weak. Please use at least 8 characters with a mix of letters and numbers.",
+            )
+        if any_code == "over_email_send_rate_limit":
+            logger.error("Supabase email send rate limit hit during signup for %s", request.email)
+            raise HTTPException(
+                status_code=503,
+                detail="We couldn't send your verification email right now. Please try again in about an hour, or contact support and we'll set you up.",
+                headers={"Retry-After": "3600"},
+            )
 
         if auth_status == 422 or "already registered" in msg or "already been registered" in msg:
             raise HTTPException(

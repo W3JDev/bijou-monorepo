@@ -431,10 +431,8 @@ async def signup_property_agent(request: SignupRequest):
         raise HTTPException(status_code=500, detail=f"Signup failed: {str(e)}")
 
 
-def _resolve_device_id(supabase, tenant_id: str) -> str:
-    """The bridge device id for a tenant: the stored mapping, else the
-    predictable `bijou-{tenant_id}`. Mirrors the QR endpoint's resolution."""
-    device_id = f"bijou-{tenant_id}"
+def _stored_device_id(supabase, tenant_id: str) -> Optional[str]:
+    """The tenant's whatsapp_devices.device_id, or None if there is no row."""
     try:
         dev_row = (
             supabase.table("whatsapp_devices")
@@ -444,10 +442,16 @@ def _resolve_device_id(supabase, tenant_id: str) -> str:
             .execute()
         )
         if dev_row.data and dev_row.data[0].get("device_id"):
-            device_id = dev_row.data[0]["device_id"]
+            return dev_row.data[0]["device_id"]
     except Exception as e:
         logger.warning(f"⚠️ device_id lookup failed for {tenant_id}: {e}")
-    return device_id
+    return None
+
+
+def _resolve_device_id(supabase, tenant_id: str) -> str:
+    """The bridge device id for a tenant: the stored mapping, else the
+    predictable `bijou-{tenant_id}`. Mirrors the QR endpoint's resolution."""
+    return _stored_device_id(supabase, tenant_id) or f"bijou-{tenant_id}"
 
 
 async def _bridge_device_state(device_id: str):
@@ -511,13 +515,13 @@ async def get_onboarding_status(token: str):
         # page sits on "waiting for scan" forever with the phone already linked.
         whatsapp_connected = bool(tenant.get("whatsapp_connected_at"))
         if not whatsapp_connected:
-            state, jid = await _bridge_device_state(
-                _resolve_device_id(supabase, tenant["id"])
-            )
+            device_id = _resolve_device_id(supabase, tenant["id"])
+            state, jid = await _bridge_device_state(device_id)
             if state == "logged_in":
                 whatsapp_connected = True
                 new_jid = jid or tenant.get("whatsapp_jid")
                 tenant["whatsapp_jid"] = new_jid
+                record_connected_device(supabase, tenant["id"], device_id, jid)
                 # Persist so /complete succeeds and we stop re-polling the bridge.
                 try:
                     supabase.table("tenants").update(
@@ -654,23 +658,60 @@ async def get_qr_code(token: str):
         tenant_id = result.data[0]["id"]
         business_name = result.data[0].get("business_name") or f"Bijou {tenant_id[:8]}"
 
-        # Look up the device_id for this tenant. Fall back to the predictable
-        # mapping `bijou-{tenant_id}` if the table lookup misses (e.g. the
-        # signup happened before the table existed, or the device was deleted).
-        device_id = f"bijou-{tenant_id}"
-        try:
-            dev_row = (
-                supabase.table("whatsapp_devices")
-                .select("device_id")
-                .eq("tenant_id", tenant_id)
-                .limit(1)
-                .execute()
-            )
-            if dev_row.data and dev_row.data[0].get("device_id"):
-                device_id = dev_row.data[0]["device_id"]
-        except Exception as lookup_err:
-            logger.warning(f"⚠️ device_id lookup failed for {tenant_id}, using predictable mapping: {lookup_err}")
+        return Response(
+            content=await bridge_qr_png(supabase, tenant_id, business_name),
+            media_type="image/png",
+            headers={
+                "Cache-Control": "no-cache, no-store, must-revalidate",
+                "Pragma": "no-cache",
+                "Expires": "0",
+            },
+        )
 
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"❌ QR fetch failed: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+def record_connected_device(supabase, tenant_id: str, device_id: str, jid: Optional[str]) -> None:
+    """Persist tenant -> (device_id, whatsapp_jid) once the bridge says logged_in.
+
+    Inbound routing (tenant_router.identify_tenant) resolves the tenant by
+    whatsapp_devices.whatsapp_jid first and only then falls back to
+    tenants.whatsapp_jid — which several test tenants share. Connect detection
+    used to write tenants only, so a new client's messages were routed through
+    that ambiguous fallback. Best-effort: never fails the caller.
+    """
+    if not jid:
+        return
+    try:
+        from src.core.jid_utils import normalize_device_jid
+
+        supabase.table("whatsapp_devices").upsert(
+            {
+                "tenant_id": tenant_id,
+                "device_id": device_id,
+                "whatsapp_jid": normalize_device_jid(jid),
+                "updated_at": datetime.utcnow().isoformat(),
+            },
+            on_conflict="tenant_id",
+        ).execute()
+    except Exception as e:
+        logger.warning(f"⚠️ Could not record device mapping for {tenant_id}: {e}")
+
+
+async def bridge_qr_png(supabase, tenant_id: str, business_name: str) -> bytes:
+    """Return a fresh WhatsApp-link QR PNG for tenant_id, provisioning the
+    bridge device if needed. Shared by the onboarding page and the dashboard.
+
+    Raises HTTPException: 503 when the bridge is down/not ready, 409 when the
+    device is already logged in.
+    """
+    stored = _stored_device_id(supabase, tenant_id)
+    device_id = stored or f"bijou-{tenant_id}"
+    try:
         bridge_url = get_whatsapp_bridge_url()
         bridge_headers = get_bridge_auth_headers()
         # GOWA bridge accepts the device_id via X-Device-Id header OR
@@ -714,22 +755,8 @@ async def get_qr_code(token: str):
                 if create_response.status_code in (200, 201):
                     created = (create_response.json().get("results") or {})
                     device_id = created.get("id") or device_id
+                    stored = None  # force the mapping write below
                     logger.info(f"✅ Provisioned bridge device {device_id} for {tenant_id}")
-                    try:
-                        supabase.table("whatsapp_devices").upsert(
-                            {
-                                "tenant_id": tenant_id,
-                                "device_id": device_id,
-                                "device_name": business_name,
-                            },
-                            on_conflict="tenant_id",
-                        ).execute()
-                    except Exception as persist_err:
-                        # Non-fatal: the QR still works this request, we just
-                        # re-provision next time.
-                        logger.warning(
-                            f"⚠️ Could not persist device mapping for {tenant_id}: {persist_err}"
-                        )
                     bridge_headers["X-Device-Id"] = device_id
                     qr_response = await client.get(
                         f"{bridge_url}/app/login",
@@ -741,6 +768,9 @@ async def get_qr_code(token: str):
                         f"❌ Bridge device creation failed for {tenant_id}: "
                         f"{create_response.status_code} {create_response.text[:200]}"
                     )
+
+            if qr_response.status_code == 400 and "ALREADY_LOGGED_IN" in qr_response.text:
+                raise HTTPException(status_code=409, detail="WhatsApp is already connected.")
 
             if qr_response.status_code != 200:
                 logger.error(
@@ -780,22 +810,28 @@ async def get_qr_code(token: str):
                 )
                 img_response.raise_for_status()
                 png_bytes = img_response.content
+    except httpx.TransportError as e:
+        # Bridge container down / not listening ("All connection attempts
+        # failed"). Transient from the user's point of view — never a 500.
+        logger.error(f"❌ Bridge unreachable while fetching QR for {tenant_id}: {e}")
+        raise HTTPException(
+            status_code=503,
+            detail="WhatsApp service is temporarily unavailable. Please try again in a moment.",
+        )
 
-            return Response(
-                content=png_bytes,
-                media_type="image/png",
-                headers={
-                    "Cache-Control": "no-cache, no-store, must-revalidate",
-                    "Pragma": "no-cache",
-                    "Expires": "0",
-                },
-            )
+    # The device exists on the bridge (we just got its QR) but no mapping row
+    # does — freshly provisioned, or wiped. Without the row, routing and the
+    # dashboard cannot find this tenant's device.
+    if not stored:
+        try:
+            supabase.table("whatsapp_devices").upsert(
+                {"tenant_id": tenant_id, "device_id": device_id, "device_name": business_name},
+                on_conflict="tenant_id",
+            ).execute()
+        except Exception as persist_err:
+            logger.warning(f"⚠️ Could not persist device mapping for {tenant_id}: {persist_err}")
 
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"❌ QR fetch failed: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+    return png_bytes
 
 
 @router.post("/complete/{token}")

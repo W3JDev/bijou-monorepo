@@ -172,11 +172,11 @@ async def test_signup_already_registered_returns_409():
 
 @pytest.mark.asyncio
 async def test_signup_rate_limited_returns_429():
-    """AuthApiError(status=429, message="Email rate limit exceeded") → 429."""
+    """AuthApiError(status=429, code=over_request_rate_limit) → 429."""
     with patch("src.saas.auth_api.get_supabase") as gs:
         db = _make_db()
         db.auth.sign_up.side_effect = auth_api.AuthApiError(
-            "Email rate limit exceeded", status=429, code="over_email_send_rate_limit"
+            "Request rate limit reached", status=429, code="over_request_rate_limit"
         )
         gs.return_value = db
         with patch("src.saas.auth_api.TenantManager"):
@@ -189,6 +189,45 @@ async def test_signup_rate_limited_returns_429():
                 ))
     assert ei.value.status_code == 429
     assert "too many" in ei.value.detail.lower() or "rate" in ei.value.detail.lower()
+
+
+async def _signup_raising(sign_up_exc):
+    db = _make_db()
+    db.auth.sign_up.side_effect = sign_up_exc
+    with patch("src.saas.auth_api.get_supabase", return_value=db), patch("src.saas.auth_api.TenantManager"):
+        with pytest.raises(HTTPException) as ei:
+            await signup(SignupRequest(
+                email="x@example.com", password="test1234",
+                business_name="X Co", phone="+60123456789",
+            ))
+    return ei.value
+
+
+@pytest.mark.asyncio
+async def test_signup_email_send_limit_is_503_not_blame_the_user():
+    """over_email_send_rate_limit is Supabase's PROJECT-WIDE confirmation-email
+    cap. Production returned it on a first-ever signup (2026-09-28) and the
+    user was told "wait a minute" — untrue; it resets hourly and is not theirs."""
+    exc = await _signup_raising(auth_api.AuthApiError(
+        "email rate limit exceeded", status=429, code="over_email_send_rate_limit"
+    ))
+    assert exc.status_code == 503
+    assert "verification email" in exc.detail
+    assert "minute" not in exc.detail
+
+
+@pytest.mark.asyncio
+async def test_signup_weak_password_error_subclass_returns_400_not_500():
+    """supabase-py raises AuthWeakPasswordError (a CustomAuthError, NOT an
+    AuthApiError, status 422). It fell through to 500 on production."""
+    class AuthWeakPasswordError(Exception):
+        def __init__(self, message):
+            super().__init__(message)
+            self.status, self.code = 422, "weak_password"
+
+    exc = await _signup_raising(AuthWeakPasswordError("Password should be at least 6 characters."))
+    assert exc.status_code == 400
+    assert "already exists" not in exc.detail
 
 
 @pytest.mark.asyncio

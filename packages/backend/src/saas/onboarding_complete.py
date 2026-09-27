@@ -279,148 +279,30 @@ async def submit_details(tenant_id: str, details: DetailsRequest):
 @router.get("/whatsapp/qr/{tenant_id}", dependencies=SIGNUP_TOKEN_AUTH)
 async def get_whatsapp_qr(tenant_id: str):
     """
-    Step 3: WhatsApp QR Code
-    - Creates device in bridge if it doesn't exist
-    - Returns QR code from bridge for scanning
-    - Fetches and caches QR image immediately (bridge deletes after 30s)
+    Step 3: WhatsApp QR Code, as {code, results:{device_id, qr_link: data URI}}.
+
+    Delegates to the shared helper in onboarding_api. This used to carry its
+    own copy that (a) created the device without our device_id, so GOWA
+    assigned one the status poll below never looked up, and (b) forced
+    https:// onto the internal plain-HTTP bridge, so the image fetch failed and
+    the page got an unreachable http://bridge:3000/... link.
     """
-    try:
-        supabase = get_supabase()
+    from src.saas.onboarding_api import _resolve_device_id, bridge_qr_png
 
-        # Get tenant info for business name
-        tenant_result = supabase.table("tenants").select("business_name").eq("id", tenant_id).execute()
-        if not tenant_result.data:
-            raise HTTPException(status_code=404, detail="Tenant not found")
+    supabase = get_supabase()
+    tenant_result = supabase.table("tenants").select("business_name").eq("id", tenant_id).execute()
+    if not tenant_result.data:
+        raise HTTPException(status_code=404, detail="Tenant not found")
+    business_name = tenant_result.data[0].get("business_name") or f"Bijou-{tenant_id[:8]}"
 
-        business_name = tenant_result.data[0].get("business_name", f"Bijou-{tenant_id[:8]}")
-
-        # Check if device exists in database
-        device_result = supabase.table("whatsapp_devices").select("device_id").eq("tenant_id", tenant_id).execute()
-
-        # Setup bridge client
-        bridge_url = os.getenv("BRIDGE_URL", "https://bijou-bridge-production.fly.dev")
-        # No fallback defaults. The previous hardcoded pair shipped in a public
-        # repo, so an unset env var used to mean "authenticate with a leaked
-        # credential". Missing config must fail loudly instead.
-        bridge_user = os.environ["BRIDGE_USER"]
-        bridge_pass = os.environ["BRIDGE_PASSWORD"]
-
-        # Generate or retrieve device_id
-        if device_result.data:
-            device_id = device_result.data[0]["device_id"]
-            logger.info(f"Using existing device {device_id} for tenant {tenant_id}")
-        else:
-            # Create new device in bridge
-            device_id = f"bijou-{tenant_id}"
-            logger.info(f"Creating new device {device_id} for tenant {tenant_id}")
-
-            bridge_client = WhatsAppBridgeClient(
-                base_url=bridge_url,
-                api_key=f"{bridge_user}:{bridge_pass}"
-            )
-
-            # Create device in bridge
-            create_response = bridge_client.create_device(device_name=business_name)
-
-            if create_response.get("code") != "SUCCESS":
-                # Check if error is "already exists" which is OK
-                error_msg = create_response.get("message", "")
-                error_lower = error_msg.lower()
-                if "already exists" not in error_lower and "duplicate" not in error_lower:
-                    # Bridge is unreachable (refused, timeout, etc). The
-                    # bridge_client swallows the connection error and returns
-                    # it as a dict — so we map it to 503 here, not 500.
-                    if any(s in error_lower for s in [
-                        "no connection", "actively refused", "connection refused",
-                        "timed out", "timeout", "unreachable",
-                        "winerror 10061", "name or service not known",
-                        "all connection attempts failed",
-                    ]):
-                        logger.warning(f"⚠️ Bridge unreachable while creating device for {tenant_id}: {error_msg}")
-                        raise HTTPException(
-                            status_code=503,
-                            detail="WhatsApp bridge is unreachable right now. Please try again in a moment.",
-                        )
-                    raise HTTPException(status_code=500, detail=f"Failed to create device: {error_msg}")
-
-            # Extract actual device_id from bridge response
-            bridge_device_id = create_response.get("results", {}).get("id")
-            if bridge_device_id:
-                device_id = bridge_device_id  # Use bridge-assigned UUID
-                logger.info(f"Bridge assigned device_id: {device_id}")
-
-            # Store mapping in database
-            supabase.table("whatsapp_devices").insert({
-                "tenant_id": tenant_id,
-                "device_id": device_id,
-                "device_name": business_name
-            }).execute()
-
-            logger.info(f"✅ Device {device_id} created and stored for tenant {tenant_id}")
-
-        # Get QR code from bridge
-        bridge_client = WhatsAppBridgeClient(
-            base_url=bridge_url,
-            api_key=f"{bridge_user}:{bridge_pass}",
-            device_id=device_id
-        )
-
-        qr_response = bridge_client.get_qr_code(device_id=device_id)
-
-        if qr_response.get("code") != "SUCCESS":
-            error_msg = qr_response.get("message", "Unknown error")
-            raise HTTPException(status_code=500, detail=f"Failed to get QR code: {error_msg}")
-
-        # CRITICAL: Fetch QR image immediately and convert to base64
-        # GOWA bridge auto-deletes QR files after 30 seconds
-        if qr_response.get("results", {}).get("qr_link"):
-            original_qr_url = qr_response["results"]["qr_link"]
-            # Force HTTPS to avoid redirect
-            original_qr_url = original_qr_url.replace("http://", "https://")
-            auth_header = f"Basic {base64.b64encode(f'{bridge_user}:{bridge_pass}'.encode()).decode()}"
-
-            try:
-                async with httpx.AsyncClient(follow_redirects=True) as client:
-                    img_response = await client.get(
-                        original_qr_url,
-                        headers={"Authorization": auth_header},
-                        timeout=10.0
-                    )
-                    img_response.raise_for_status()
-
-                    # Convert to base64 data URI
-                    qr_base64 = base64.b64encode(img_response.content).decode()
-                    qr_data_uri = f"data:image/png;base64,{qr_base64}"
-
-                    # Return base64 data URI instead of ephemeral URL
-                    qr_response["results"]["qr_link"] = qr_data_uri
-                    logger.info(f"✅ QR code fetched and converted to base64 for tenant {tenant_id}")
-            except Exception as img_error:
-                logger.warning(f"⚠️ Failed to fetch QR image, returning bridge URL: {img_error}")
-                # Fallback to bridge URL if fetch fails
-
-        logger.info(f"✅ QR code generated for tenant {tenant_id}")
-
-        return qr_response
-
-    except HTTPException:
-        raise
-    except Exception as e:
-        # Bridge connection failures (refused/unreachable) should be 503
-        # not 500 — the user's tenant is fine, the bridge just isn't reachable.
-        msg = str(e).lower()
-        if any(s in msg for s in [
-            "no connection", "actively refused", "connection refused",
-            "timed out", "timeout", "unreachable", "name or service not known",
-            "temporary failure in name resolution",
-        ]):
-            logger.warning(f"⚠️ Bridge unreachable while generating QR for {tenant_id}: {e}")
-            raise HTTPException(
-                status_code=503,
-                detail="WhatsApp bridge is unreachable right now. Please try again in a moment.",
-            )
-        logger.error(f"❌ QR generation failed for {tenant_id}: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Failed to generate QR: {str(e)}")
+    png = await bridge_qr_png(supabase, tenant_id, business_name)
+    return {
+        "code": "SUCCESS",
+        "results": {
+            "device_id": _resolve_device_id(supabase, tenant_id),
+            "qr_link": "data:image/png;base64," + base64.b64encode(png).decode(),
+        },
+    }
 
 @router.get("/whatsapp/qr-image/{tenant_id}/{qr_filename}", dependencies=SIGNUP_TOKEN_AUTH)
 async def get_qr_image_proxy(tenant_id: str, qr_filename: str):
@@ -680,7 +562,9 @@ async def get_onboarding_status(tenant_id: str):
                 if not all([bridge_url, bridge_user, bridge_pass]):
                     logger.warning(f"⚠️ Bridge credentials not configured, skipping connection check")
                 else:
-                    device_id = f"bijou-{tenant_id}"
+                    from src.saas.onboarding_api import _resolve_device_id, record_connected_device
+
+                    device_id = _resolve_device_id(supabase, tenant_id)
 
                     bridge_client = WhatsAppBridgeClient(
                         base_url=bridge_url,
@@ -714,11 +598,10 @@ async def get_onboarding_status(tenant_id: str):
 
                             # Update whatsapp_devices with actual JID (GOWA v8 uses "jid", not "device")
                             whatsapp_jid = results.get("jid", "")
-                            if whatsapp_jid:
-                                supabase.table("whatsapp_devices").update({
-                                    "whatsapp_jid": whatsapp_jid,
-                                    "updated_at": datetime.now().isoformat()
-                                }).eq("tenant_id", tenant_id).execute()
+                            # Upsert, not update: with no mapping row the old
+                            # update matched nothing and routing never learnt
+                            # this tenant's JID.
+                            record_connected_device(supabase, tenant_id, device_id, whatsapp_jid)
 
                             logger.info(f"✅ [STATUS CHECK] WhatsApp connected for tenant {tenant_id} (JID: {whatsapp_jid})")
 

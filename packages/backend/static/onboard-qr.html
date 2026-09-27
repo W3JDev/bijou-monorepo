@@ -164,7 +164,7 @@
       // Same-origin API base
       const API_BASE = window.location.origin;
       const POLL_INTERVAL = 3000;       // 3s
-      const QR_REFRESH_INTERVAL = 30000; // 30s
+      const QR_REFRESH_INTERVAL = 20000; // GOWA QR lives qr_duration=30s; refresh before it dies
 
       const content = document.getElementById('content');
       let pollTimer = null;
@@ -196,8 +196,13 @@
               </p>
             </div>
             <div class="qr-wrap">
-              <img id="qr-img" src="${API_BASE}/api/onboarding/qr/${token}?t=${qrRefreshKey}" alt="WhatsApp QR Code" />
+              <img id="qr-img" src="${API_BASE}/api/onboarding/qr/${token}?t=${qrRefreshKey}" alt="WhatsApp QR Code"
+                onload="document.getElementById('qr-err').style.display='none'"
+                onerror="document.getElementById('qr-err').style.display='block'" />
             </div>
+            <p id="qr-err" style="display:none;text-align:center;color:#fca5a5;font-size:13px;margin:8px 0;">
+              Aiyo, WhatsApp linking is having a hiccup on our side. Retrying automatically…
+            </p>
             <div class="help">
               <h3>📱 How to scan:</h3>
               <ol>

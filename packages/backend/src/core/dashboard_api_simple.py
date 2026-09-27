@@ -1935,105 +1935,28 @@ async def claim_escalation(
 
 @router.get("/whatsapp/qr")
 async def get_whatsapp_qr(tenant_id: str = Depends(verify_session)):
-    """Get linking QR code from the bridge using device mapping"""
+    """Get linking QR code from the bridge using device mapping.
+
+    Delegates to the onboarding QR helper, which provisions the bridge device
+    and writes the whatsapp_devices row when missing. This used to 404 "contact
+    support" without a row, so a tenant could never (re)link from the
+    dashboard — including right after /whatsapp/disconnect, which deletes it.
+    """
     import base64
 
-    import httpx
-
-    # Prefer WHATSAPP_BRIDGE_URL (what the compose/onboarding use). BRIDGE_URL is
-    # often unset, and its old default http://localhost:8080 is the BACKEND itself
-    # — so bridge calls hit the app, which has no /app/login and returns
-    # 404 {"detail":"Not Found"}, surfaced in the UI as "Bridge rejected: 404".
-    bridge_url = (
-        os.getenv("WHATSAPP_BRIDGE_URL")
-        or os.getenv("BRIDGE_URL")
-        or "http://localhost:8080"
-    ).strip('"').rstrip("/")
-    bridge_api_key = os.getenv("BRIDGE_API_KEY", "")
+    from src.saas.onboarding_api import bridge_qr_png
 
     try:
-        # Look up device_id from mapping table
         supabase = get_supabase()
-        device_result = supabase.table("whatsapp_devices")\
-            .select("device_id, device_name")\
-            .eq("tenant_id", tenant_id)\
-            .execute()
-
-        if not device_result.data:
-            raise HTTPException(
-                status_code=404,
-                detail="No WhatsApp device configured for this tenant. Please contact support."
-            )
-
-        device_id = device_result.data[0]["device_id"]
-        logger.info(f"📱 Using device {device_id} for tenant {tenant_id}")
-
-        # Auth priority matches the /status endpoint and get_bridge_auth_headers:
-        # BRIDGE_API_KEY 'user:pass' or BRIDGE_USER+BRIDGE_PASSWORD -> Basic.
-        # Previously ONLY BRIDGE_API_KEY was read, so with just BRIDGE_USER/
-        # BRIDGE_PASSWORD set (the local + compose default) the bridge 401'd and
-        # the QR came back as a broken image.
-        headers = {}
-        bridge_user = os.getenv("BRIDGE_USER", "")
-        bridge_password = os.getenv("BRIDGE_PASSWORD", "")
-        if bridge_api_key and ":" in bridge_api_key:
-            headers["Authorization"] = "Basic " + base64.b64encode(bridge_api_key.encode()).decode()
-        elif bridge_user and bridge_password:
-            headers["Authorization"] = "Basic " + base64.b64encode(
-                f"{bridge_user}:{bridge_password}".encode()
-            ).decode()
-        elif bridge_api_key:
-            headers["X-API-Key"] = bridge_api_key
-
-        async with httpx.AsyncClient(timeout=httpx.Timeout(15.0)) as client:
-            # Get QR code using mapped device_id
-            response = await client.get(
-                f"{bridge_url}/app/login",
-                params={"device_id": device_id},
-                headers=headers,
-                timeout=15.0
-            )
-            if response.status_code == 200:
-                ctype = response.headers.get("content-type", "")
-                if "image/" in ctype:
-                    b64_qr = base64.b64encode(response.content).decode("utf-8")
-                    return {"status": "success", "qr": f"data:image/png;base64,{b64_qr}"}
-
-                # JSON: {results:{qr_link}}. That link is an ephemeral PNG served
-                # by the bridge on its INTERNAL host (e.g. http://bridge:3000/...),
-                # which the browser cannot reach. Proxy the bytes ourselves and
-                # return a self-contained data URI — the frontend expects `r.qr`.
-                # (Mirrors the onboarding QR endpoint.)
-                payload = response.json()
-                qr_link = (payload.get("results") or {}).get("qr_link")
-                if not qr_link:
-                    return {
-                        "status": "error",
-                        "message": f"Bridge returned no qr_link: {str(payload)[:150]}",
-                    }
-                from urllib.parse import urlsplit, urlunsplit
-                b, l = urlsplit(bridge_url), urlsplit(qr_link)
-                img_url = (
-                    urlunsplit((b.scheme, b.netloc, l.path, l.query, ""))
-                    if b.scheme and b.netloc else qr_link
-                )
-                img = await client.get(img_url, headers=headers)
-                if img.status_code != 200:
-                    return {
-                        "status": "error",
-                        "message": f"QR image fetch failed: {img.status_code}",
-                    }
-                b64_qr = base64.b64encode(img.content).decode("utf-8")
-                return {"status": "success", "qr": f"data:image/png;base64,{b64_qr}"}
-
-            # Non-200 from /app/login. ALREADY_LOGGED_IN means the number is
-            # already linked — the status poll will flip the UI to "connected".
-            if response.status_code == 400 and "ALREADY_LOGGED_IN" in response.text:
-                return {"status": "already_connected", "message": "WhatsApp is already connected."}
-            return {
-                "status": "error",
-                "message": f"Bridge rejected: {response.status_code} - {response.text}",
-            }
+        t = supabase.table("tenants").select("business_name").eq("id", tenant_id).limit(1).execute()
+        business_name = (t.data[0].get("business_name") if t.data else None) or f"Bijou {tenant_id[:8]}"
+        png = await bridge_qr_png(supabase, tenant_id, business_name)
+        return {"status": "success", "qr": "data:image/png;base64," + base64.b64encode(png).decode()}
+    except HTTPException as e:
+        if e.status_code == 409:
+            # Already linked — the status poll will flip the UI to "connected".
+            return {"status": "already_connected", "message": e.detail}
+        return {"status": "error", "message": e.detail}
     except Exception as e:
         logger.error(f"❌ QR code error: {e}")
         return {"status": "error", "message": str(e)}
@@ -2136,10 +2059,14 @@ async def get_whatsapp_status(tenant_id: str = Depends(verify_session)):
                     "device_id": tenant_device_id,
                     "source": "tenants_table",
                 }
-            return {"connected": False, "status": "not_configured", "whatsapp_jid": None}
-
-        device_id = device_result.data[0]["device_id"]
-        stored_whatsapp_jid = device_result.data[0].get("whatsapp_jid") or tenant_jid
+            # Not linked yet: a QR from /whatsapp/qr provisions `bijou-{tenant_id}`,
+            # so ask the bridge about that id instead of answering
+            # not_configured forever while the phone is already scanned.
+            device_id = f"bijou-{tenant_id}"
+            stored_whatsapp_jid = tenant_jid
+        else:
+            device_id = device_result.data[0]["device_id"]
+            stored_whatsapp_jid = device_result.data[0].get("whatsapp_jid") or tenant_jid
         logger.info(f"✅ Found device {device_id} for tenant {tenant_id}")
 
         # --- Try bridge for live status ---
@@ -2169,6 +2096,11 @@ async def get_whatsapp_status(tenant_id: str = Depends(verify_session)):
                     if is_connected and is_logged_in:
                         live_jid = results.get("jid") or results.get("phone_number")
                         final_jid = live_jid or stored_whatsapp_jid
+                        # Routing needs whatsapp_devices.whatsapp_jid; write it
+                        # once, not on every poll.
+                        if not (device_result.data and device_result.data[0].get("whatsapp_jid")):
+                            from src.saas.onboarding_api import record_connected_device
+                            record_connected_device(supabase, tenant_id, device_id, live_jid)
                         phone = final_jid.split("@")[0] if final_jid else results.get("phone_number")
                         return {
                             "connected": True,
@@ -3613,37 +3545,33 @@ async def disconnect_whatsapp(tenant_id: str = Depends(verify_session)):
     try:
         supabase = get_supabase()
 
-        # Get device_id from whatsapp_devices
-        device_result = (
-            supabase.table("whatsapp_devices")
-            .select("device_id")
-            .eq("tenant_id", tenant_id)
-            .limit(1)
-            .execute()
+        from src.saas.onboarding_api import (
+            _resolve_device_id,
+            get_bridge_auth_headers,
+            get_whatsapp_bridge_url,
         )
 
-        # If device mapping exists, disconnect from bridge
-        if device_result.data:
-            device_id = device_result.data[0]["device_id"]
-            logger.info(f"🔌 Disconnecting WhatsApp device {device_id} for tenant {tenant_id}")
+        # The mapping row, else the predictable id the QR flow provisions. The
+        # row is often missing (keepalive pruning wiped them), and skipping the
+        # bridge then left the phone linked.
+        device_id = _resolve_device_id(supabase, tenant_id)
+        logger.info(f"🔌 Disconnecting WhatsApp device {device_id} for tenant {tenant_id}")
 
-            # Call bridge to delete device
-            bridge_url = os.getenv("BRIDGE_URL", "https://bijou-bridge-production-v2.fly.dev")
-            bridge_user = os.getenv("BRIDGE_USER", "bijou-prod")
-            bridge_password = os.getenv("BRIDGE_PASSWORD", "")
+        bridge_url = get_whatsapp_bridge_url()
+        headers = {**get_bridge_auth_headers(), "X-Device-Id": device_id}
 
-            import base64
-            auth_str = base64.b64encode(f"{bridge_user}:{bridge_password}".encode()).decode()
-
-            # Delete device from bridge
-            async with httpx.AsyncClient(timeout=10.0) as client:
-                bridge_response = await client.delete(
-                    f"{bridge_url}/device/{device_id}",
-                    headers={"Authorization": f"Basic {auth_str}"},
-                )
-                logger.info(f"🌉 Bridge disconnect response: {bridge_response.status_code}")
-        else:
-            logger.warning(f"⚠️ No device mapping found for tenant {tenant_id}, will only update tenant status")
+        # Log the WhatsApp session out, then remove the device. This used to
+        # DELETE /device/{id} — not a GOWA route (400 DEVICE_ID_REQUIRED) — so
+        # the phone stayed linked and kept receiving messages while the
+        # dashboard said "disconnected". GOWA's route is /devices/{id}.
+        # A bridge that is down raises here: we report failure rather than
+        # claim a disconnect that never reached WhatsApp.
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            logout = await client.get(f"{bridge_url}/app/logout", headers=headers)
+            bridge_response = await client.delete(f"{bridge_url}/devices/{device_id}", headers=headers)
+            logger.info(
+                f"🌉 Bridge disconnect: logout={logout.status_code} delete={bridge_response.status_code}"
+            )
 
         # Update tenant status (regardless of bridge response - allow manual recovery)
         supabase.table("tenants").update({

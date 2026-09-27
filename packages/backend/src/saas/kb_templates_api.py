@@ -384,7 +384,7 @@ async def apply_template(
 
             kb_entries.append({
                 "tenant_id": tenant_id,
-                "source_type": "template",
+                "source_type": "manual",
                 "title": f"FAQ – {category.replace('_', ' ').title()}",
                 "content": "\n\n".join(content_lines),
                 "category": category,
@@ -402,7 +402,7 @@ async def apply_template(
                 qual_content += f"  High-value signal: {q.get('high_value_signal', '')}\n\n"
             kb_entries.append({
                 "tenant_id": tenant_id,
-                "source_type": "template",
+                "source_type": "manual",
                 "title": "Lead Qualification – BANT Questions",
                 "content": qual_content,
                 "category": "qualification",
@@ -426,7 +426,7 @@ async def apply_template(
                 esc_content += "\n"
             kb_entries.append({
                 "tenant_id": tenant_id,
-                "source_type": "template",
+                "source_type": "manual",
                 "title": "Escalation Triggers & Playbook",
                 "content": esc_content,
                 "category": "escalation",
@@ -445,7 +445,7 @@ async def apply_template(
                 auto_reply_content += f"AFTER-HOURS MESSAGE:\n{after_hours}"
             kb_entries.append({
                 "tenant_id": tenant_id,
-                "source_type": "template",
+                "source_type": "manual",
                 "title": "Auto-Reply Messages",
                 "content": auto_reply_content.strip(),
                 "category": "auto_reply",
@@ -454,9 +454,14 @@ async def apply_template(
             })
 
         # --- Wipe old template KB entries for this tenant + vertical (idempotent reapply)
+        # 2026-09-28: every apply 500'd on production. source_type="template"
+        # violates knowledge_bases' valid_source_type CHECK (google_sheets |
+        # file_upload | manual | web_scrape), and .containedBy() is not a
+        # supabase-py method. Template rows are "manual" and identified by
+        # their tags instead.
         db.table("knowledge_bases").delete().eq("tenant_id", tenant_id).eq(
-            "source_type", "template"
-        ).containedBy("tags", [vertical]).execute()
+            "source_type", "manual"
+        ).contains("tags", [vertical, "template"]).execute()
 
         # --- Insert new KB entries
         insert_res = db.table("knowledge_bases").insert(kb_entries).execute()
@@ -482,7 +487,8 @@ async def apply_template(
                     "tenant_id": tenant_id,
                     "filename": entry["title"],
                     "file_type": "text/plain",
-                    "file_size_kb": round(len(entry["content"].encode()) / 1024, 2),
+                    # knowledge_documents.file_size_kb is INTEGER; a float like 0.53 is rejected by PostgREST.
+                    "file_size_kb": max(1, int(len(entry["content"].encode()) / 1024)),
                     "content_extracted": entry["content"],
                     "uploaded_by": "kb_template",
                     "uploaded_at": now_iso,
@@ -519,7 +525,10 @@ async def apply_template(
             ).execute()
         else:
             db.table("client_configs").insert(
-                {"tenant_id": tenant_id, "system_prompt_vars": new_vars, "is_active": True}
+                # client_type is NOT NULL. Google-signup tenants have no
+                # client_configs row (only signup() pre-creates one), so this
+                # insert 500'd for them. Same default signup() uses.
+                {"tenant_id": tenant_id, "client_type": "general", "system_prompt_vars": new_vars, "is_active": True}
             ).execute()
 
         # --- Mark instance as applied
