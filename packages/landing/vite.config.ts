@@ -20,6 +20,8 @@ export default defineConfig(({ mode }) => {
       server: {
         port: 3000,
         host: '0.0.0.0',
+        // Local only: scripts/dev-api.mjs runs the api/*.js handlers.
+        proxy: { '/api': 'http://localhost:3002' },
       },
       plugins: [react()],
       define: {

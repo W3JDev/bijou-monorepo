@@ -76,6 +76,7 @@
   var audioCtx       = null;        // AudioContext, created on first user gesture
   var buffers        = {};          // {intro: AudioBuffer, tick: AudioBuffer, ...}
   var buffersReady   = false;       // true after decodeAudioData finishes
+  var decoding       = false;       // true while a decodeAll() batch is in flight
   var decodedUrls    = {};          // {intro: objectURL, ...} for HTMLAudioElement fallback
   var unlocked       = false;       // true once user gesture happened
   var lastTickAt     = 0;           // performance.now() of last tick play
@@ -131,16 +132,21 @@
     unlocked = (ctx.state === 'running');
     if (unlocked) {
       // Pre-decode all cues into AudioBuffers for instant playback.
-      decodeAll();
+      // Skip while muted: muted-by-default is the shipped state, and this is
+      // ~1.7MB of MP3 we would otherwise fetch on the user's first click even
+      // if they never turn sound on. play() kicks the decode off on first real
+      // cue instead.
+      if (!isMuted()) { decodeAll(); }
       // Drain any cues that were queued before unlock.
       flushPending();
     }
   }
 
   function decodeAll() {
-    if (buffersReady) { return; }
+    if (buffersReady || decoding) { return; }
     var ctx = ensureContext();
     if (!ctx) { return; }
+    decoding = true;
     var fetches = Object.keys(DEFAULTS.volumes)
       .filter(function (k) { return k !== 'mute-toggle'; })
       .map(function (name) {
@@ -150,7 +156,7 @@
           .then(function (audioBuf) { buffers[name] = audioBuf; })
           .catch(function () { /* fall back to HTMLAudioElement at play-time */ });
       });
-    Promise.all(fetches).then(function () { buffersReady = true; });
+    Promise.all(fetches).then(function () { buffersReady = true; decoding = false; });
   }
 
   // ---------------------------------------------------------------------------
@@ -216,6 +222,12 @@
       unlock();
       return false;
     }
+
+    // Lazy decode: muted sessions skipped decodeAll() in unlock(), so the first
+    // real cue starts the fetch here. That cue itself falls through to the
+    // HTMLAudioElement path (no buffer yet), which is fine — every cue after
+    // this one is instant.
+    if (!buffersReady) { decodeAll(); }
 
     var ok = playWithWebAudio(name, opts);
     if (!ok) { ok = playWithHtmlAudio(name, opts); }

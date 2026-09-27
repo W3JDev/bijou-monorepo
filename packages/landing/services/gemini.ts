@@ -1,8 +1,21 @@
+// Present when the agent is ready to book: prefills the inline slot picker.
+export interface BookingContact {
+  name: string;
+  email: string;
+  phone?: string;
+  company?: string;
+}
+
+export interface BijouReply {
+  text: string;
+  booking?: BookingContact;
+}
+
 // SECURITY: Secure backend proxy implementation - no client-side API keys
 export const sendMessageToBijou = async (
   history: { role: 'user' | 'model'; content: string }[],
   newMessage: string
-): Promise<string> => {
+): Promise<BijouReply> => {
   try {
     // Call secure backend API instead of client-side Gemini
     const response = await fetch('/api/chat', {
@@ -21,7 +34,10 @@ export const sendMessageToBijou = async (
     }
 
     const data = await response.json();
-    return data.response || "Sorry, my connection dropped for a second there. Could you say that again?";
+    return {
+      text: data.response || "Sorry, my connection dropped for a second there. Could you say that again?",
+      booking: data.booking,
+    };
 
   } catch (error) {
     console.error("Error talking to Bijou:", error);
@@ -34,6 +50,6 @@ export const sendMessageToBijou = async (
       "Technical problem on our side. You can also message us on WhatsApp: wa.me/60174106981"
     ];
     
-    return fallbacks[Math.floor(Math.random() * fallbacks.length)] ?? fallbacks[0]!;
+    return { text: fallbacks[Math.floor(Math.random() * fallbacks.length)] ?? fallbacks[0]! };
   }
 };

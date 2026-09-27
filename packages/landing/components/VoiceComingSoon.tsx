@@ -1,6 +1,34 @@
 import { motion } from "framer-motion";
 import { Phone, Mic, Send } from "lucide-react";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
+
+// Telnyx AI Assistant "Bijou Sales Concierge" (packages/voice/scripts/setup-telnyx-assistant.mjs).
+// The id is public by design: the widget needs only this, and the assistant has
+// supports_unauthenticated_web_calls enabled. No credential reaches the browser.
+const VOICE_AGENT_ID = "assistant-a50eb00d-262b-450f-be62-aca2839069fa";
+const WIDGET_SRC = "https://unpkg.com/@telnyx/ai-agent-widget@0.36.0/dist/bundle.min.js";
+const SALES_LINE_TEL = "+13079999692";
+const SALES_LINE_DISPLAY = "+1 (307) 999-9692";
+
+// Load the ~550KB widget only once the section is on screen, and only once.
+let widgetPromise: Promise<void> | null = null;
+function loadWidget(): Promise<void> {
+  if (!widgetPromise) {
+    widgetPromise = new Promise((resolve, reject) => {
+      const el = document.createElement("script");
+      el.src = WIDGET_SRC;
+      el.async = true;
+      el.onload = () => resolve();
+      el.onerror = () => {
+        widgetPromise = null;
+        reject(new Error("voice widget failed to load"));
+      };
+      document.head.appendChild(el);
+    });
+  }
+  return widgetPromise;
+}
 
 const callScript = [
   { speaker: "Customer", text: "Hi, is anyone available to help me?" },
@@ -21,6 +49,16 @@ const callScript = [
 ];
 
 export const VoiceComingSoon: React.FC = () => {
+  const { t } = useTranslation();
+  const [inView, setInView] = useState(false);
+  const [widget, setWidget] = useState<"idle" | "ready" | "failed">("idle");
+  useEffect(() => {
+    if (!inView) return;
+    loadWidget().then(
+      () => setWidget("ready"),
+      () => setWidget("failed"),
+    );
+  }, [inView]);
   const [email, setEmail] = useState("");
   // Three explicit states: idle, submitted (server said ok), failed
   // (server said no OR network error). Fixes audit finding #37 — the
@@ -73,7 +111,7 @@ export const VoiceComingSoon: React.FC = () => {
         >
           <div className="inline-flex items-center gap-2 px-3 py-1 mb-4 rounded-full bg-gold-500/10 border border-gold-500/20 text-gold-400 text-xs font-bold uppercase tracking-wider">
             <Mic className="w-3 h-3" />
-            Coming Q4 2026
+            {t("voice.live.badge")}
           </div>
           <h2 className="text-3xl md:text-5xl font-black text-white mb-4">
             Bijou speaks.{" "}
@@ -106,10 +144,10 @@ export const VoiceComingSoon: React.FC = () => {
                   </div>
                   <div>
                     <div className="text-white text-sm font-bold">
-                      Incoming Call
+                      {t("voice.live.callerLabel")}
                     </div>
                     <div className="text-gold-300 text-xs">
-                      +1 (555) XXX-XXXX
+                      {SALES_LINE_DISPLAY}
                     </div>
                   </div>
                 </div>
@@ -169,10 +207,43 @@ export const VoiceComingSoon: React.FC = () => {
             viewport={{ once: true }}
             transition={{ duration: 0.5, delay: 0.1 }}
             className="space-y-6"
+            onViewportEnter={() => setInView(true)}
           >
+            {/* Primary: live voice call with the Bijou Sales Concierge */}
+            <div className="glass-panel-3d rounded-2xl border border-gold-500/40 p-6 space-y-4 shadow-[0_0_30px_rgba(227,180,87,0.15)]">
+              <h3 className="text-2xl font-black text-white flex items-center gap-2">
+                <Mic className="w-5 h-5 text-gold-400" />
+                {t("voice.live.title")}
+              </h3>
+              <p className="text-gray-400 text-sm">{t("voice.live.body")}</p>
+              <div className="min-h-[56px]" data-testid="voice-widget-slot">
+                {widget === "ready" &&
+                  React.createElement("telnyx-ai-agent", {
+                    "agent-id": VOICE_AGENT_ID,
+                    position: "static",
+                  })}
+                {widget === "idle" && (
+                  <p className="text-gray-500 text-sm">{t("voice.live.loading")}</p>
+                )}
+              </div>
+              {widget !== "failed" && (
+                <p className="text-gray-600 text-xs">{t("voice.live.mic")}</p>
+              )}
+              <div className="flex flex-wrap items-center gap-2 text-sm text-gray-300">
+                <span>{t("voice.live.orCall")}</span>
+                <a
+                  href={`tel:${SALES_LINE_TEL}`}
+                  className="inline-flex items-center gap-1.5 font-bold text-gold-300 hover:text-gold-200 underline-offset-4 hover:underline"
+                >
+                  <Phone className="w-4 h-4" />
+                  {SALES_LINE_DISPLAY}
+                </a>
+              </div>
+            </div>
+
             <div className="space-y-4">
-              <h3 className="text-2xl font-black text-white">
-                Get early access.
+              <h3 className="text-lg font-bold text-white">
+                {t("voice.waitlist.title")}
               </h3>
               <p className="text-gray-400">
                 Voice AI for US & EU businesses — WhatsApp already works. Your phone

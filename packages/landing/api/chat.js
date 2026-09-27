@@ -1,4 +1,36 @@
 import { captureServer, distinctIdFromReq } from "../lib/posthog-server.js";
+import { extractContact, notifyOwner, upsertLead } from "../lib/leads.js";
+import { checkRateLimit } from "../lib/rateLimit.js";
+
+const BOOK_MARKER = "[[BOOK]]";
+
+// Demo-chat → lead. Runs alongside the LLM call; never throws, never blocks
+// the reply. Returns the extracted contact so the booking widget can prefill.
+async function captureChatLead(req, turns) {
+  const contact = extractContact(turns);
+  if (!contact.email && !contact.phone) return contact;
+  try {
+    // Separate bucket from /api/leads: a normal chat upserts once per turn.
+    const rl = await checkRateLimit(req, { bucket: "chat_leads" });
+    if (!rl.ok) return contact;
+    const transcript = turns
+      .map((t) => `${t.role === "user" ? "Visitor" : "Bijou"}: ${String(t.content).slice(0, 500)}`)
+      .join("\n")
+      .slice(-4000);
+    const lead = { ...contact, source: "demo_chat" };
+    const r = await upsertLead({ ...lead, transcript });
+    if (r.error) console.warn("[chat] lead not saved:", r.error);
+    const last = String(turns[turns.length - 1]?.content || "");
+    // Notify on a new row, or once for a phone-only visitor (no row possible:
+    // leads.email is NOT NULL) on the turn the number first appears.
+    if (r.isNew || (r.error === "email_required" && last.replace(/\D/g, "").includes(contact.phone))) {
+      await notifyOwner({ title: "🎯 NEW DEMO-CHAT LEAD!", lead, extra: transcript.slice(-1500) });
+    }
+  } catch (e) {
+    console.warn("[chat] lead capture failed:", e?.message || e);
+  }
+  return contact;
+}
 
 export default async function handler(req, res) {
   // SECURITY (2026-07-20): CORS tightened from wildcard to same-origin /
@@ -55,8 +87,14 @@ export default async function handler(req, res) {
          - Fully done-for-you: we build, deploy, and manage the agent for you on WhatsApp AND Telegram
          - $2,500 one-time setup + $499/month managed — far less than a full-time hire, working around the clock
          - Books appointments, qualifies leads, follows up — all automatically
-      5. COLLECT CONTACT naturally: "So we can follow up, [name], what's the best number and email to reach you?"
-      6. CLOSE WARMLY: "All set! Our team will reach out to you shortly. Talk soon!"
+      5. COLLECT CONTACT before offering a call: "So we can follow up, [name], what's your email — and your WhatsApp number with country code, if you'd like?" Email is needed to send a calendar invite.
+      6. OFFER A CALL: once you have their name AND email, offer a free 30-minute call with the founder.
+
+      BOOKING A CALL (you can do this right here in the chat):
+      - Only when the visitor wants to book AND you already have their name and email, reply with one short sentence like "Pick a time that suits you below 👇" and end the message with the exact token ${BOOK_MARKER}
+      - If they want to book but you don't have their email yet, ask for it first. Do not output ${BOOK_MARKER} without an email.
+      - Never state or confirm a date/time yourself, and never say a call is booked — the booking widget confirms it.
+      - If they'd rather talk to a person now, give the WhatsApp link.
 
       PRICING KNOWLEDGE (use when asked, answer confidently):
       - DONE-FOR-YOU MANAGED SERVICE: $2,500 one-time setup + $499/month managed. We build, deploy, and run your AI agent for you.
@@ -103,7 +141,7 @@ export default async function handler(req, res) {
       NEVER DO THIS:
       - Never sound robotic or overly formal ("Certainly, I can assist you with that request")
       - Never ask for name twice in one conversation
-      - Never invent pricing, results, or client names — stick to the facts above
+      - Never invent pricing, results, client names, features, integrations, or availability — stick to the facts above. If you don't know, say so and offer the WhatsApp link or email.
       - Never use filler slang that undermines a professional tone
 
       RESPONSE FORMAT:
@@ -127,6 +165,11 @@ export default async function handler(req, res) {
       { role: "user", content: message || "Hello" },
     ];
 
+    const leadPromise = captureChatLead(req, [
+      ...(history || []),
+      { role: "user", content: message || "" },
+    ]);
+
     const r = await callAI({
       task: "chat",
       payload: {
@@ -136,11 +179,21 @@ export default async function handler(req, res) {
         temperature: 0.7,
       },
     });
+    const contact = await leadPromise;
     if (!r.ok) throw new Error(r.error || "all router providers failed");
+
+    const text = (r.text || "").replaceAll(BOOK_MARKER, "").trim();
+    // The slot picker needs an email for the Cal.com invite; without one the
+    // marker is dropped (the prompt tells the model to ask for it first).
+    const booking =
+      (r.text || "").includes(BOOK_MARKER) && contact.email
+        ? { name: contact.name, email: contact.email, phone: contact.phone, company: contact.company }
+        : undefined;
 
     return res.status(200).json({
       success: true,
-      response: r.text || "Sorry, my connection dropped for a second there. Could you say that again?",
+      response: text || "Sorry, my connection dropped for a second there. Could you say that again?",
+      booking,
       model_used: r.model_used,
       provider_used: r.provider_used,
       fallback_chain: r.fallback_chain,

@@ -2,35 +2,14 @@
 // Saves lead to Supabase + sends confirmation email via Resend
 // Fires server-side PostHog events on success/failure.
 
-import { createClient } from "@supabase/supabase-js";
 import { Resend } from "resend";
 import { checkRateLimit } from "../lib/rateLimit.js";
 import { normalizePhone } from "../utils/phone.js";
 import { logTypoWarning } from "../lib/env.js";
+import { EMAIL_RE, getSupabase, normaliseSource, notifyOwner } from "../lib/leads.js";
 import { captureServer, identifyServer, distinctIdFromReq } from "../lib/posthog-server.js";
 
 logTypoWarning();
-
-// Map any incoming source to a valid DB source value
-const VALID_SOURCES = [
-  "hero_form",
-  "cal_booking",
-  "waitlist",
-  "whatsapp_cta",
-  "website",
-  "referral",
-];
-function normaliseSource(raw) {
-  if (!raw) return "website";
-  const s = raw.toLowerCase();
-  if (VALID_SOURCES.includes(s)) return s;
-  if (s.includes("hero")) return "hero_form";
-  if (s.includes("wait")) return "waitlist";
-  if (s.includes("whats")) return "whatsapp_cta";
-  if (s.includes("cal")) return "cal_booking";
-  if (s.includes("referral")) return "referral";
-  return "website";
-}
 
 const LOGO_URL = "https://mybijou.xyz/brand/logo.png";
 const QR_URL = "https://mybijou.xyz/brand/qr.png";
@@ -260,8 +239,7 @@ export default async function handler(req, res) {
     // Email regex. Allows `+` in the local part (e.g. john+test@gmail.com),
     // escapes the dash in the middle of a char class, and requires a 2+
     // char TLD. Matches the pattern used in api/onboarding/signup.js.
-    const emailRegex = /^[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}$/;
-    if (!emailRegex.test(email)) {
+    if (!EMAIL_RE.test(email)) {
       return res.status(400).json({
         error: "Please provide a valid email address",
         code: "INVALID_EMAIL",
@@ -297,14 +275,10 @@ export default async function handler(req, res) {
     // ── 1. Save to Supabase ──────────────────────────────────────────────────
     let leadId = null;
     let supabaseError = null;
-    const supabaseUrl =
-      process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
-    const supabaseKey =
-      process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
+    const supabase = getSupabase();
 
-    if (supabaseUrl && supabaseKey) {
+    if (supabase) {
       try {
-        const supabase = createClient(supabaseUrl, supabaseKey);
         const { data, error } = await supabase
           .from("leads")
           .insert(leadData)
@@ -351,29 +325,8 @@ export default async function handler(req, res) {
         });
         console.log("✅ Confirmation email sent to:", leadData.email);
 
-        // Notification to owner
-        const notifyEmail = process.env.EMAIL_NOTIFY;
-        if (notifyEmail) {
-          await resend.emails
-            .send({
-              from: emailFrom,
-              to: notifyEmail,
-              subject: `🎯 New Lead: ${leadData.name} (${leadData.company || leadData.source})`,
-              html: `<p><strong>Name:</strong> ${leadData.name}</p>
-<p><strong>Email:</strong> ${leadData.email}</p>
-<p><strong>Phone:</strong> ${leadData.phone || "N/A"}</p>
-<p><strong>Company:</strong> ${leadData.company || "N/A"}</p>
-<p><strong>Source:</strong> ${leadData.source}</p>
-<p><strong>Time:</strong> ${new Date().toLocaleString("en-MY", { timeZone: "Asia/Kuala_Lumpur" })} MYT</p>`,
-            })
-            .catch((e) =>
-              console.warn("Owner notify email failed:", e.message),
-            );
-        }
-
         // Mark email sent in DB
-        if (leadId && supabaseUrl && supabaseKey) {
-          const supabase = createClient(supabaseUrl, supabaseKey);
+        if (leadId && supabase) {
           await supabase
             .from("leads")
             .update({ email_sent_at: new Date().toISOString() })
@@ -386,33 +339,8 @@ export default async function handler(req, res) {
       console.warn("⚠️  RESEND_API_KEY not set — skipping confirmation email");
     }
 
-    // ── 3. Notify owner via WhatsApp (server-to-server, non-blocking) ───────
-    // SECURITY (2026-07-20): Previously this called the public /api/send
-    // endpoint, which was an unauthenticated open proxy. We now go directly
-    // to the Fly.io backend with the shared `INTERNAL_API_TOKEN` secret.
-    // See audit-report.md finding #1.
-    const internalToken = process.env.INTERNAL_API_TOKEN;
-    if (internalToken) {
-      try {
-        await fetch("https://bijou-production.fly.dev/api/send", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "X-Internal-Token": internalToken,
-          },
-          body: JSON.stringify({
-            to: "60174106981@s.whatsapp.net",
-            message: `🎯 NEW LEAD!\n\nName: ${leadData.name}\nEmail: ${leadData.email}\nPhone: ${leadData.phone || "N/A"}\nCompany: ${leadData.company || "N/A"}\nSource: ${leadData.source}\n\nCheck Supabase dashboard for full details.`,
-          }),
-        });
-      } catch (notifErr) {
-        console.warn("WhatsApp notification skipped:", notifErr.message);
-      }
-    } else {
-      console.warn(
-        "⚠️  INTERNAL_API_TOKEN not set — skipping WhatsApp owner-notify",
-      );
-    }
+    // ── 3. Notify owner (WhatsApp + email, see lib/leads.js) ─────────────────
+    await notifyOwner({ title: "🎯 NEW LEAD!", lead: leadData });
 
     // Fire PostHog events (server-side, after Supabase + Resend so the
     // `lead_id` is real and the funnel reads correctly).

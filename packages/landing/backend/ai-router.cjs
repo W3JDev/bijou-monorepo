@@ -269,8 +269,12 @@ async function callProvider(name, model, payload, timeoutMs) {
         },
         body: JSON.stringify({
           model: actualModel,
-          messages: payload.messages || [],
-          ...(payload.system ? { system: payload.system } : {}),
+          // OpenAI-compat APIs ignore a top-level `system` field — it must be
+          // the first message, or the model runs with no persona at all.
+          messages: [
+            ...(payload.system ? [{ role: 'system', content: payload.system }] : []),
+            ...(payload.messages || []),
+          ],
           max_tokens: payload.max_tokens || 800,
           temperature: payload.temperature ?? 0.7,
         }),
@@ -336,7 +340,7 @@ async function callProvider(name, model, payload, timeoutMs) {
         if (!r.ok) {
           const errTxt = (await r.text()).slice(0, 200);
           lastErr = `gemini ${r.status} ${errTxt}`;
-          if (r.status === 429 || r.status === 403) continue; // try next key
+          if ([401, 402, 403, 404, 429].includes(r.status)) continue; // dead/limited/wrong-project key — try next
           return { ok: false, error: lastErr, latency_ms: latency };
         }
         const data = await r.json();

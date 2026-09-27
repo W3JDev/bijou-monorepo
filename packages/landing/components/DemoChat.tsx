@@ -1,13 +1,106 @@
 import { motion } from "framer-motion";
-import { Loader2, Send, User, Zap } from "lucide-react";
+import { Calendar, Loader2, MessageCircle, Send, User, Zap } from "lucide-react";
 import React, { useEffect, useRef, useState } from "react";
-import { sendMessageToBijou } from "../services/gemini";
+import { BookingContact, sendMessageToBijou } from "../services/gemini";
 import { track as trackPostHog } from "../services/posthog";
 
 interface Message {
   role: "user" | "model";
   content: string;
+  booking?: BookingContact; // agent is ready to book → render the slot picker
 }
+
+const WHATSAPP_URL =
+  "https://api.whatsapp.com/send/?phone=60174106981&text=" +
+  encodeURIComponent("Hi Bijou! I was chatting with your AI demo on mybijou.xyz and would like to continue here.");
+
+// Inline Cal.com slot picker (GET/POST /api/book). Native date input, no picker lib.
+const SlotPicker: React.FC<{ contact: BookingContact; onBooked: (confirmation: string) => void }> = ({
+  contact,
+  onBooked,
+}) => {
+  const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || "Asia/Kuala_Lumpur";
+  const today = new Date().toLocaleDateString("en-CA"); // YYYY-MM-DD, local
+  const [date, setDate] = useState(() => new Date(Date.now() + 86400000).toLocaleDateString("en-CA"));
+  const [slots, setSlots] = useState<string[] | null>(null);
+  const [bookingStart, setBookingStart] = useState<string | null>(null);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    let cancelled = false;
+    setSlots(null);
+    setError("");
+    fetch(`/api/book?date=${date}&tz=${encodeURIComponent(tz)}`)
+      .then((r) => r.json())
+      .then((d) => {
+        if (cancelled) return;
+        if (!d.ok) throw new Error(d.error);
+        setSlots(d.slots);
+      })
+      .catch(() => !cancelled && setError("Aiyo, couldn't load the calendar. Try another date or WhatsApp us."));
+    return () => {
+      cancelled = true;
+    };
+  }, [date, tz]);
+
+  const fmt = (iso: string, opts: Intl.DateTimeFormatOptions) =>
+    new Date(iso).toLocaleString([], { timeZone: tz, ...opts });
+
+  const book = async (start: string) => {
+    setBookingStart(start);
+    setError("");
+    try {
+      const r = await fetch("/api/book", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...contact, start, timeZone: tz, source: "demo_chat" }),
+      });
+      const d = await r.json();
+      if (!r.ok || !d.ok) throw new Error(d.error || "Booking failed");
+      trackPostHog("cal_booking_completed", { source: "demo_chat" });
+      onBooked(
+        `You're booked for ${fmt(d.booking.start, { weekday: "long", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" })} ✅\n\n` +
+          `The calendar invite${d.booking.meetingUrl ? " and Google Meet link" : ""} is on its way to ${contact.email}.`,
+      );
+    } catch (e) {
+      setError(`Couldn't book that slot (${(e as Error).message}). Please pick another time.`);
+      setBookingStart(null);
+    }
+  };
+
+  return (
+    <div className="mt-4 pt-4 border-t border-white/10 space-y-3">
+      <label className="flex items-center gap-2 text-sm text-emerald-300">
+        <Calendar className="w-4 h-4" />
+        <input
+          type="date"
+          value={date}
+          min={today}
+          onChange={(e) => e.target.value && setDate(e.target.value)}
+          className="bg-black/40 border border-white/10 rounded-lg px-3 py-1.5 text-white focus:outline-none focus:border-emerald-500/50 [color-scheme:dark]"
+        />
+        <span className="text-xs text-gray-400">{tz}</span>
+      </label>
+      {slots === null && !error && <Loader2 className="w-4 h-4 text-emerald-400 animate-spin" />}
+      {slots?.length === 0 && <p className="text-sm text-gray-400">No free slots that day — try another date.</p>}
+      {slots && slots.length > 0 && (
+        <div className="flex flex-wrap gap-2 max-h-40 overflow-y-auto">
+          {slots.map((s) => (
+            <button
+              key={s}
+              disabled={bookingStart !== null}
+              onClick={() => book(s)}
+              className="px-3 py-1.5 bg-white/10 hover:bg-white/15 border border-emerald-500/20 rounded-full text-sm text-emerald-300 hover:text-emerald-200 transition-all disabled:opacity-50"
+            >
+              {bookingStart === s ? "Booking…" : fmt(s, { hour: "numeric", minute: "2-digit" })}
+            </button>
+          ))}
+        </div>
+      )}
+      {error && <p className="text-sm text-amber-300">{error}</p>}
+    </div>
+  );
+};
 
 interface DemoChatProps {
   onOpenModal: () => void;
@@ -121,9 +214,9 @@ export const DemoChat: React.FC<DemoChatProps> = ({ onOpenModal }) => {
     });
 
     // Call Gemini API
-    const responseText = await sendMessageToBijou(history, userMsg.content);
+    const { text: responseText, booking } = await sendMessageToBijou(history, userMsg.content);
 
-    setMessages((prev) => [...prev, { role: "model", content: responseText }]);
+    setMessages((prev) => [...prev, { role: "model", content: responseText, booking }]);
     setIsLoading(false);
 
     // Signal Gem: trigger the excited glow + speaking pulse (which
@@ -193,6 +286,17 @@ export const DemoChat: React.FC<DemoChatProps> = ({ onOpenModal }) => {
                 Online • Replies Instantly
               </div>
             </div>
+            <a
+              href={WHATSAPP_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => trackPostHog("whatsapp_cta_clicked", { source: "demo_chat" })}
+              className="ml-auto inline-flex items-center gap-2 px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-dark-900 rounded-full text-sm font-bold transition-colors shadow-[0_0_15px_rgba(16,185,129,0.3)]"
+            >
+              <MessageCircle className="w-4 h-4" />
+              <span className="hidden sm:inline">Continue on WhatsApp</span>
+              <span className="sm:hidden">WhatsApp</span>
+            </a>
           </div>
 
           {/* Chat Messages */}
@@ -224,6 +328,17 @@ export const DemoChat: React.FC<DemoChatProps> = ({ onOpenModal }) => {
                   <p className="text-base leading-relaxed whitespace-pre-wrap">
                     {msg.content}
                   </p>
+                  {msg.booking && (
+                    <SlotPicker
+                      contact={msg.booking}
+                      onBooked={(confirmation) =>
+                        setMessages((prev) => [
+                          ...prev.map((m, i) => (i === idx ? { ...m, booking: undefined } : m)),
+                          { role: "model", content: confirmation },
+                        ])
+                      }
+                    />
+                  )}
                 </div>
               </motion.div>
             ))}

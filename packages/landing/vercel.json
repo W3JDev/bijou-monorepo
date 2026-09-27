@@ -49,7 +49,7 @@
         },
         {
           "key": "Permissions-Policy",
-          "value": "camera=(), microphone=(), geolocation=(), payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer=()"
+          "value": "camera=(), microphone=(self), geolocation=(), payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer=()"
         },
         {
           "key": "Cross-Origin-Opener-Policy",
@@ -61,7 +61,7 @@
         },
         {
           "key": "Content-Security-Policy",
-          "value": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com https://cdn.tailwindcss.com https://us-assets.i.posthog.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: https: blob:; connect-src 'self' https://ai-gateway-bufxd.sprites.app https://lrwzlujomukzjykafmic.supabase.co https://bijou-production.fly.dev https://www.google-analytics.com https://us.i.posthog.com https://us-assets.i.posthog.com; frame-src https://cal.com; frame-ancestors 'none'; form-action 'self' https://wa.me https://cal.com https://app.mybijou.xyz; base-uri 'self'; object-src 'none'; manifest-src 'self'; worker-src 'self' blob:"
+          "value": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com https://cdn.tailwindcss.com https://us-assets.i.posthog.com https://unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: https: blob:; connect-src 'self' https://ai-gateway-bufxd.sprites.app https://lrwzlujomukzjykafmic.supabase.co https://bijou-production.fly.dev https://www.google-analytics.com https://us.i.posthog.com https://us-assets.i.posthog.com https://rtc.telnyx.com wss://rtc.telnyx.com https://*.rtc.telnyx.com wss://*.rtc.telnyx.com; frame-src https://cal.com; frame-ancestors 'none'; form-action 'self' https://wa.me https://cal.com https://app.mybijou.xyz; base-uri 'self'; object-src 'none'; manifest-src 'self'; worker-src 'self' blob:"
         }
       ]
     }

@@ -266,6 +266,17 @@ const resources = {
       "pricing.ea.b2": "New customers pay more",
       "pricing.ea.b3": "Cancel anytime, no trap",
       "pricing.ea.b4": "Free add-ons when they ship",
+
+      // Voice section — live AI voice line (Telnyx web call + phone)
+      "voice.live.badge": "Live now: talk to Bijou",
+      "voice.live.title": "Talk to our AI (voice)",
+      "voice.live.body":
+        "Hear it for yourself. Bijou answers our own sales line: ask about pricing, tell it about your business, and it will set up a call with our founder.",
+      "voice.live.loading": "Loading voice call…",
+      "voice.live.mic": "Uses your microphone. Works in Chrome, Edge and Safari.",
+      "voice.live.orCall": "Or call from any phone:",
+      "voice.live.callerLabel": "Bijou Sales Line",
+      "voice.waitlist.title": "Want Bijou Voice on your own number?",
     },
   },
   ms: {
