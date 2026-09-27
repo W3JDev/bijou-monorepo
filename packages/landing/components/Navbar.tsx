@@ -67,6 +67,12 @@ export const Navbar: React.FC<NavbarProps> = ({
               Features
             </a>
             <a
+              href="#pricing"
+              className="text-sm font-medium text-gray-300 hover:text-gold-400 transition-colors"
+            >
+              Pricing
+            </a>
+            <a
               href="#roadmap"
               className="text-sm font-medium text-gray-300 hover:text-gold-400 transition-colors"
             >
@@ -129,6 +135,13 @@ export const Navbar: React.FC<NavbarProps> = ({
                 onClick={() => setIsMenuOpen(false)}
               >
                 Features
+              </a>
+              <a
+                href="#pricing"
+                className="block text-base font-medium text-gray-300 hover:text-gold-400 py-3 border-b border-white/5"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Pricing
               </a>
               <a
                 href="#roadmap"

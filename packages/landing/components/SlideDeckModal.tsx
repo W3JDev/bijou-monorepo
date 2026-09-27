@@ -81,7 +81,7 @@ export const SlideDeckModal: React.FC<SlideDeckModalProps> = ({
     },
     {
       icon: <Rocket className="w-5 h-5" />,
-      label: "Start Free Trial",
+      label: "Get Started",
       desc: "30-day money-back · No credit card · 5-min setup",
       url: "https://app.mybijou.xyz/signup",
       color: "from-amber-700 to-yellow-500",

@@ -637,7 +637,7 @@ export const ViralPillars: React.FC<ViralPillarsProps> = ({ onOpenModal }) => {
             onClick={onOpenModal}
             className="bg-emerald-500 hover:bg-emerald-400 text-dark-900 font-bold py-4 px-8 rounded-xl shadow-[0_0_20px_rgba(16,185,129,0.3)] transition-all flex items-center gap-2 mx-auto group"
           >
-            Try Bijou Free for 14 Days
+            Book a Free Strategy Call
             <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
           </button>
         </div>

@@ -488,7 +488,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
       case "demo":
         return "Book Your Personal Demo";
       default:
-        return "Start Your Free Trial";
+        return "Get Started with Bijou";
     }
   };
 
@@ -844,7 +844,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
                     ? "Book My Demo"
                     : mode === "waitlist"
                       ? "Join VIP List"
-                      : "Start Free Trial"}
+                      : "Get Started"}
                   <ArrowRight className="w-5 h-5" />
                 </motion.button>
 

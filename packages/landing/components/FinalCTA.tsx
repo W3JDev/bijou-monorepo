@@ -56,11 +56,11 @@ export const FinalCTA: React.FC<FinalCTAProps> = ({
           <div>
             <h4 className="font-bold text-white mb-2 flex items-center gap-2">
               <span className="w-1.5 h-1.5 rounded-full bg-gold-400" />
-              What happens after the trial?
+              What does it cost?
             </h4>
             <p className="text-sm text-gray-400 leading-relaxed">
-              It's $499/month managed (plus a one-time $2,500 setup). You can
-              cancel anytime. No long-term contracts.
+              $2,500 one-time setup + $499/month managed, with a 30-day
+              money-back guarantee. Cancel anytime. No long-term contracts.
             </p>
           </div>
           <div>
@@ -134,7 +134,7 @@ export const FinalCTA: React.FC<FinalCTAProps> = ({
                       </div>
                       <div>
                         <h4 className="text-xl font-bold text-white">
-                          Quick Start Trial
+                          Quick Start
                         </h4>
                         <p className="text-gold-400 text-sm">
                           Get instant access

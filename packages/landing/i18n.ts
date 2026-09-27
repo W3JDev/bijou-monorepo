@@ -282,7 +282,7 @@ const resources = {
         "Bijou ialah AI Malaysia untuk WhatsApp & Telegram. Balas segera dalam Manglish, tempah temujanji Cal.com, kelayakan leads automatik —",
       "hero.subtitle.roi": "semasa anda tidur.",
       "hero.subtitle.part2": "",
-      "hero.cta.trial": "Mulakan Percuma — RM0",
+      "hero.cta.trial": "Tempah Panggilan Strategi Percuma",
       "hero.cta.demo": "Tempah Demo",
       "hero.trustFooter":
         "✅ Wang dikembalikan dalam 30 hari · ✅ Tiada WABA diperlukan · ✅ Batal bila-bila masa",
@@ -345,7 +345,7 @@ const resources = {
       "pricing.addons.subtitle":
         "Setiap ciri baharu = peluang hasil. Pelanggan Pro dapat akses awal percuma.",
 
-      "pricing.cta.trial": "Mulakan Percubaan 30 Hari",
+      "pricing.cta.trial": "Tempah Panggilan Strategi Percuma",
       "pricing.cta.enterprise": "Hubungi kami →",
       "pricing.cta.enterprisePrompt":
         "Perlukan berbilang pengguna, nombor, atau setup tersuai?",
@@ -549,7 +549,7 @@ const resources = {
         "Bijou是针对WhatsApp和Telegram的马来西AI。用Manglish即时回复，预约Cal.com资讯，自动筛选潜在客户 —",
       "hero.subtitle.roi": "当您熟睡时。",
       "hero.subtitle.part2": "",
-      "hero.cta.trial": "免费开始 — RM0",
+      "hero.cta.trial": "预约免费策略咨询",
       "hero.cta.demo": "预约演示",
       "hero.trustFooter": "✅ 30天退款保证 · ✅ 无需WABA · ✅ 随时取消",
       "hero.trust.pdpa": "符合PDPA规范",
@@ -606,7 +606,7 @@ const resources = {
       "pricing.addons.subtitle":
         "每项新功能 = 一次收入机会。Pro客户优先免费体验。",
 
-      "pricing.cta.trial": "开始30天试用",
+      "pricing.cta.trial": "预约免费策略咨询",
       "pricing.cta.enterprise": "联系我们 →",
       "pricing.cta.enterprisePrompt": "需要多用户、多号码或自定义方案？",
 
@@ -800,7 +800,7 @@ const resources = {
         "Bijou மலேசிய WhatsApp & Telegram-க்கான AI. Manglish-இல் தக்ஷணமாக பதில், Cal.com சந்திப்புகளை பதிவு செய்கிறது, leads தானாக தெரிவு செய்கிறது —",
       "hero.subtitle.roi": "நீங்கள் தூங்கும்போது.",
       "hero.subtitle.part2": "",
-      "hero.cta.trial": "இலவசமாக தொடங்குங்கள் — RM0",
+      "hero.cta.trial": "இலவச உத்தி அழைப்பை முன்பதிவு செய்யுங்கள்",
       "hero.cta.demo": "டெமோ பதிவு செய்யவும்",
       "hero.trustFooter":
         "✅ 30 நாள் பண திரும்பி உத்தரவாதம் · ✅ WABA தேவையில்லை · ✅ எப்போதும் ரத்து செய்யலாம்",
@@ -866,7 +866,7 @@ const resources = {
       "pricing.addons.subtitle":
         "ஒவ்வொரு புதிய அம்சமும் = வருவாய் நிகழ்வு. Pro வாடிக்கையாளர்கள் முதலில் இலவசமாக பெறுவார்கள்.",
 
-      "pricing.cta.trial": "30 நாள் சோதனை தொடங்கவும்",
+      "pricing.cta.trial": "இலவச உத்தி அழைப்பை முன்பதிவு செய்யுங்கள்",
       "pricing.cta.enterprise": "எங்களை தொடர்பு கொள்ளுங்கள் →",
       "pricing.cta.enterprisePrompt":
         "பல பயனர்கள், பல எண்கள், அல்லது தனிப்பயன் அமைப்பு தேவையா?",

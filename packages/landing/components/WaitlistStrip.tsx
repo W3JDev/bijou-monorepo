@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
-import { ArrowRight, MessageCircle, Zap } from "lucide-react";
-import React, { useState } from "react";
+import { ArrowRight, Zap } from "lucide-react";
+import React from "react";
 import { useTranslation } from "react-i18next";
 
 interface WaitlistStripProps {
@@ -13,31 +13,6 @@ export const WaitlistStrip: React.FC<WaitlistStripProps> = ({
   onOpenModal,
 }) => {
   const { t } = useTranslation();
-  const [email, setEmail] = useState("");
-  const [submitting, setSubmitting] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
-
-  const handleChat = async () => {
-    const waUrl = `https://api.whatsapp.com/send/?phone=60174106981&text=${encodeURIComponent("Hi! I want to learn more about Bijou AI")}`;
-    if (email.trim() && !submitted) {
-      setSubmitting(true);
-      try {
-        await fetch("/api/leads", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            email: email.trim(),
-            source: "waitlist",
-            name: "",
-          }),
-        });
-        setSubmitted(true);
-      } catch {}
-      setSubmitting(false);
-    }
-    window.open(waUrl, "_blank", "noopener,noreferrer");
-  };
-
   const pills = [
     { icon: "✅", text: t("waitlist.pill1") },
     { icon: "⚡", text: t("waitlist.pill2") },
@@ -106,57 +81,8 @@ export const WaitlistStrip: React.FC<WaitlistStripProps> = ({
               </p>
             </div>
 
-            {/* CTA area: email input + chat button + claim button */}
+            {/* Single sticky action — chat is the floating WhatsApp bubble */}
             <div className="flex-shrink-0 flex items-center gap-2">
-              {/* Email input — sm+ only */}
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleChat()}
-                placeholder="your@email.com"
-                className="hidden sm:block w-40 lg:w-48 bg-black/50 border border-emerald-500/30 rounded-xl px-3 py-2.5 text-white text-xs placeholder-gray-500 focus:outline-none focus:border-emerald-500/60 focus:ring-1 focus:ring-emerald-500/30 transition-all"
-              />
-
-              {/* Chat icon button with pulsing flash animation */}
-              <div className="relative flex-shrink-0">
-                {/* Outer pulse ring */}
-                <motion.div
-                  animate={{ scale: [1, 1.6, 1], opacity: [0.5, 0, 0.5] }}
-                  transition={{
-                    repeat: Infinity,
-                    duration: 2,
-                    ease: "easeOut",
-                  }}
-                  className="absolute inset-0 rounded-xl bg-emerald-400/30 pointer-events-none"
-                />
-                <motion.button
-                  onClick={handleChat}
-                  disabled={submitting}
-                  whileHover={{
-                    scale: 1.07,
-                    boxShadow: "0 0 28px rgba(16,185,129,0.55)",
-                  }}
-                  whileTap={{ scale: 0.94 }}
-                  className="relative flex items-center gap-1.5 px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl font-bold text-xs sm:text-sm whitespace-nowrap bg-black/60 border border-emerald-500/40 text-emerald-400 shadow-[0_0_14px_rgba(16,185,129,0.25)] transition-all disabled:opacity-60"
-                >
-                  <motion.div
-                    animate={{ rotate: [0, -8, 8, 0] }}
-                    transition={{
-                      repeat: Infinity,
-                      duration: 3,
-                      ease: "easeInOut",
-                      repeatDelay: 1,
-                    }}
-                  >
-                    <MessageCircle className="w-4 h-4" />
-                  </motion.div>
-                  <span className="hidden sm:inline">
-                    {submitted ? "✓ Noted!" : submitting ? "..." : "Chat"}
-                  </span>
-                </motion.button>
-              </div>
-
               {/* Claim My Spot button */}
               <motion.button
                 onClick={onOpenModal}

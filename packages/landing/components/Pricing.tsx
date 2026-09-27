@@ -657,8 +657,7 @@ export const Pricing: React.FC<PricingProps> = ({ onOpenModal }) => {
 
           <div className="mt-6 flex flex-col sm:flex-row items-center justify-between gap-3 pt-5 border-t border-white/5">
             <p className="text-emerald-400 text-xs font-semibold">
-              ✅ Pro customers get first access — free during trial period when
-              each feature ships
+              ✅ Pro customers get first access when each feature ships
             </p>
             <p className="text-gray-500 text-xs">
               Roadmap subject to change. No delivery dates guaranteed.

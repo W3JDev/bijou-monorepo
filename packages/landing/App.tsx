@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { CaseStudies } from "./components/CaseStudies";
 import { Changelog } from "./components/Changelog";
-import { ComparisonTable } from "./components/ComparisonTable";
 import { DemoChat } from "./components/DemoChat";
 import { FAQ } from "./components/FAQ";
 import { Features } from "./components/Features";
@@ -116,7 +115,6 @@ export default function App() {
           {/* Fix 6 Hook B: Lunch Rush Clinic story — after Hook A */}
           <StoryLunchRushClinic />
           <Features />
-          <ComparisonTable />
           <ViralPillars
             onOpenModal={() => openModal("signup", "viral_pillars")}
           />
