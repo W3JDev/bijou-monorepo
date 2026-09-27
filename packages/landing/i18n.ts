@@ -76,9 +76,9 @@ const resources = {
         "Same job, different trade-offs. Verified 2026-08 against each competitor's public pricing page.",
 
       // Add-ons Roadmap
-      "pricing.addons.title": "Coming Q2–Q4 2026 (Paid Add-ons)",
+      "pricing.addons.title": "Coming Next (Paid Add-ons)",
       "pricing.addons.subtitle":
-        "Every feature that ships = a revenue event. Pro customers get early access free.",
+        "Optional add-ons as your business grows. Pro customers get early access free.",
 
       // CTA + Enterprise footnote
       "pricing.cta.trial": "Book a Free Strategy Call",
@@ -174,7 +174,7 @@ const resources = {
       "features.tg.b1": "Included in Pro — no extra fee",
       "features.tg.b2": "Same TRACE engine and knowledge base",
       "features.tg.b3": "Independent channel, unified setup",
-      "features.trace.badge": "Production · v300 · Live on bijou-production.fly.dev",
+      "features.trace.badge": "Live in production",
       "features.trace.title": "Gemini 2.5 Flash with smart context. Plus automatic handover when AI hits its limit.",
       "features.trace.subtitle": "Fast LLM. Smart escalation. No fake pipeline.",
       "features.trace.desc":
@@ -352,7 +352,7 @@ const resources = {
       "pricing.compare.subtitle":
         "Kerja yang sama, pertimbangan berbeza. Disahkan pada 2026-08 berdasarkan halaman harga awam setiap pesaing.",
 
-      "pricing.addons.title": "Akan Datang Q2–Q4 2026 (Tambahan Berbayar)",
+      "pricing.addons.title": "Akan Datang (Tambahan Berbayar)",
       "pricing.addons.subtitle":
         "Setiap ciri baharu = peluang hasil. Pelanggan Pro dapat akses awal percuma.",
 
@@ -448,7 +448,7 @@ const resources = {
       "features.tg.b1": "Termasuk dalam Pro — tiada bayaran tambahan",
       "features.tg.b2": "Enjin TRACE dan pangkalan pengetahuan yang sama",
       "features.tg.b3": "Saluran bebas, persediaan bersatu",
-      "features.trace.badge": "Production · v300 · Live di bijou-production.fly.dev",
+      "features.trace.badge": "Aktif dalam produksi",
       "features.trace.title": "Gemini 2.5 Flash dengan konteks pintar. Plus auto-handover bila AI sampai had.",
       "features.trace.subtitle": "LLM laju. Eskalasi pintar. Tiada pipeline tipu.",
       "features.trace.desc":
@@ -613,7 +613,7 @@ const resources = {
       "pricing.compare.subtitle":
         "同样的工作，不同的取舍。已于 2026-08 对照各竞争对手的公开定价页面核实。",
 
-      "pricing.addons.title": "2026年Q2–Q4即将推出（付费插件）",
+      "pricing.addons.title": "即将推出（付费插件）",
       "pricing.addons.subtitle":
         "每项新功能 = 一次收入机会。Pro客户优先免费体验。",
 
@@ -705,7 +705,7 @@ const resources = {
       "features.tg.b2": "相同TRACE引擎和知识库",
       "features.tg.b3": "独立频道，统一设置",
       // TODO(translate-zh): Honest copy translated below — verify with native speaker before publishing.
-      "features.trace.badge": "Production · v300 · Live on bijou-production.fly.dev",
+      "features.trace.badge": "Live in production",
       "features.trace.title": "Gemini 2.5 Flash with smart context. Plus automatic handover when AI hits its limit.",
       "features.trace.subtitle": "Fast LLM. Smart escalation. No fake pipeline.",
       "features.trace.desc":
@@ -873,7 +873,7 @@ const resources = {
       "pricing.compare.subtitle":
         "ஒரே வேலை, வெவ்வேறு சமரசங்கள். ஒவ்வொரு போட்டியாளரின் பொது விலைப் பக்கத்துடன் 2026-08-இல் சரிபார்க்கப்பட்டது.",
 
-      "pricing.addons.title": "Q2–Q4 2026-இல் வரவிருக்கும் (கட்டண சேர்க்கைகள்)",
+      "pricing.addons.title": "விரைவில் வரவிருக்கும் (கட்டண சேர்க்கைகள்)",
       "pricing.addons.subtitle":
         "ஒவ்வொரு புதிய அம்சமும் = வருவாய் நிகழ்வு. Pro வாடிக்கையாளர்கள் முதலில் இலவசமாக பெறுவார்கள்.",
 
@@ -974,7 +974,7 @@ const resources = {
       "features.tg.b2": "அதே TRACE என்ஜின் மற்றும் அறிவுத் தளம்",
       "features.tg.b3": "சுதந்திர சேனல், ஒருங்கிணைந்த அமைப்பு",
       // TODO(translate-ta): Honest copy translated below — verify with native speaker before publishing.
-      "features.trace.badge": "Production · v300 · Live on bijou-production.fly.dev",
+      "features.trace.badge": "Live in production",
       "features.trace.title": "Gemini 2.5 Flash with smart context. Plus automatic handover when AI hits its limit.",
       "features.trace.subtitle": "Fast LLM. Smart escalation. No fake pipeline.",
       "features.trace.desc":

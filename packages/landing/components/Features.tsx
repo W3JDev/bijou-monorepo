@@ -234,7 +234,7 @@ const features = [
   {
     icon: <Brain className="w-5 h-5" />,
     color: "purple",
-    badge: "Production · v300 · Live on bijou-production.fly.dev",
+    badge: "Live in production",
     title: "Gemini 2.5 Flash with smart context. Plus automatic handover when AI hits its limit.",
     subtitle: "Fast LLM. Smart escalation. No fake pipeline.",
     description:

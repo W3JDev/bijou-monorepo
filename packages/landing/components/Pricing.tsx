@@ -21,18 +21,18 @@ interface PricingProps {
 }
 
 const addOns = [
-  { name: "Extra WhatsApp number", when: "Q2 2026", price: "+$80/mo" },
-  { name: "Extra Telegram bot", when: "Q2 2026", price: "+$60/mo" },
-  { name: "Multi-user seats", when: "Q2 2026", price: "+$80/seat" },
+  { name: "Extra WhatsApp number", when: "Next", price: "+$80/mo" },
+  { name: "Extra Telegram bot", when: "Next", price: "+$60/mo" },
+  { name: "Multi-user seats", when: "Next", price: "+$80/seat" },
   {
     name: "Appointment reminders (WhatsApp push)",
-    when: "Q2 2026",
+    when: "Next",
     price: "+$60/mo",
   },
-  { name: "Facebook Messenger", when: "Q3 2026", price: "+$60/mo" },
-  { name: "Advanced PDF parsing", when: "Q3 2026", price: "+$100/mo" },
-  { name: "Larger context window (128K)", when: "Q3 2026", price: "+$80/mo" },
-  { name: "Loan calculator", when: "Q4 2026", price: "+$150/mo" },
+  { name: "Facebook Messenger", when: "Then", price: "+$60/mo" },
+  { name: "Advanced PDF parsing", when: "Then", price: "+$100/mo" },
+  { name: "Larger context window (128K)", when: "Then", price: "+$80/mo" },
+  { name: "Loan calculator", when: "Later", price: "+$150/mo" },
 ];
 
 export const Pricing: React.FC<PricingProps> = ({ onOpenModal }) => {
@@ -458,9 +458,9 @@ export const Pricing: React.FC<PricingProps> = ({ onOpenModal }) => {
                   { row: "ai_reasoning", bij: true, wati: false, rio: "partial", sleek: false, tidi: false },
                   { row: "ai_setup_time", bij: "5 min", wati: "30 min", rio: "30 min", sleek: "1 hour", tidi: "1 hour" },
                   { row: "telegram", bij: true, wati: false, rio: true, sleek: true, tidi: false },
-                  { row: "voice_calls", bij: "Q4 2026 (Telnyx)", wati: true, rio: "Advanced+", sleek: false, tidi: false },
+                  { row: "voice_calls", bij: true, wati: true, rio: "Advanced+", sleek: false, tidi: false },
                   { row: "cal_booking", bij: true, wati: false, rio: false, sleek: false, tidi: "Shopify only" },
-                  { row: "lead_score", bij: "Q3 2026", wati: false, rio: true, sleek: true, tidi: true },
+                  { row: "lead_score", bij: "Coming soon", wati: false, rio: true, sleek: true, tidi: true },
                   { row: "eu_ai_act", bij: "Q3 2026 (in progress)", wati: false, rio: false, sleek: false, tidi: false },
                   { row: "pdpa_export", bij: "Q3 2026 (in progress)", wati: false, rio: false, sleek: false, tidi: false },
                   { row: "msg_markup", bij: "None", wati: "Markup", rio: "None (Advanced+)", sleek: "Small", tidi: "Pass-through" },
@@ -575,22 +575,22 @@ export const Pricing: React.FC<PricingProps> = ({ onOpenModal }) => {
                 border: "border-emerald-400/40",
               },
               {
-                phase: "Q2 2026",
-                label: "Phase 5",
+                phase: "Coming soon",
+                label: "Next",
                 color: "bg-gold-300",
                 text: "text-gold-300",
                 border: "border-gold-300/40",
               },
               {
-                phase: "Q3 2026",
-                label: "Phase 6",
+                phase: "Planned",
+                label: "Then",
                 color: "bg-gold-400",
                 text: "text-gold-400",
                 border: "border-gold-400/40",
               },
               {
-                phase: "Q4 2026",
-                label: "Phase 7",
+                phase: "Planned",
+                label: "Later",
                 color: "bg-gold-500",
                 text: "text-gold-500",
                 border: "border-gold-500/40",
@@ -619,14 +619,14 @@ export const Pricing: React.FC<PricingProps> = ({ onOpenModal }) => {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             {addOns.map((addon, i) => {
               const phaseColors: Record<string, string> = {
-                "Q2 2026": "border-gold-300/20 hover:border-gold-300/40",
-                "Q3 2026": "border-gold-400/20 hover:border-gold-400/40",
-                "Q4 2026": "border-gold-500/20 hover:border-gold-500/40",
+                "Next": "border-gold-300/20 hover:border-gold-300/40",
+                "Then": "border-gold-400/20 hover:border-gold-400/40",
+                "Later": "border-gold-500/20 hover:border-gold-500/40",
               };
               const timeBadge: Record<string, string> = {
-                "Q2 2026": "text-gold-300",
-                "Q3 2026": "text-gold-400",
-                "Q4 2026": "text-gold-500",
+                "Next": "text-gold-300",
+                "Then": "text-gold-400",
+                "Later": "text-gold-500",
               };
               return (
                 <motion.div

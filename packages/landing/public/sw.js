@@ -64,6 +64,12 @@ self.addEventListener("fetch", (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
+  // Cross-origin requests (Tailwind CDN, Google Fonts, GTM) are left to the
+  // browser. A fetch() made from this worker is governed by the CSP's
+  // connect-src, which does not list those hosts, so re-fetching them here
+  // failed and every returning visitor got an unstyled page. 2026-09-28.
+  if (url.origin !== self.location.origin || request.method !== "GET") return;
+
   // Handle navigation requests (page loads)
   if (request.mode === "navigate") {
     event.respondWith(
@@ -81,8 +87,10 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Handle static assets with cache-first strategy
-  event.respondWith(cacheFirstStrategy(request));
+  // Handle static assets with cache-first strategy. If CacheStorage itself
+  // throws (quota, private mode, corrupt profile), fall back to the network
+  // instead of failing the request and blanking the page.
+  event.respondWith(cacheFirstStrategy(request).catch(() => fetch(request)));
 });
 
 // Network-first strategy for API calls

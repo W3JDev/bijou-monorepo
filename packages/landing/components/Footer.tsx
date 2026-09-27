@@ -192,14 +192,6 @@ export const Footer: React.FC = () => {
                     Integrations
                   </button>
                 </li>
-                <li>
-                  <a
-                    href="#case-studies"
-                    className="hover:text-gold-400 transition-colors"
-                  >
-                    Case Studies
-                  </a>
-                </li>
               </ul>
             </div>
 

@@ -1,7 +1,5 @@
 import { useEffect, useState } from "react";
 import { ErrorBoundary } from "./components/ErrorBoundary";
-import { CaseStudies } from "./components/CaseStudies";
-import { Changelog } from "./components/Changelog";
 import { DemoChat } from "./components/DemoChat";
 import { FAQ } from "./components/FAQ";
 import { Features } from "./components/Features";
@@ -126,14 +124,8 @@ export default function App() {
           <VoiceComingSoon />
           <HowItWorks onOpenModal={() => openModal("signup", "how_it_works")} />
           <Playbooks onOpenModal={() => openModal("signup", "playbooks")} />
-          <CaseStudies
-            onOpenModal={() => openModal("signup", "case_studies")}
-          />
           <DemoChat onOpenModal={() => openModal("demo", "demo_chat")} />
           <FAQ />
-          {/* 2026-08-23: Public changelog — recent shipped changes. Anchored
-              at #changelog for shareable links. */}
-          <Changelog />
           <FinalCTA
             onOpenModal={() => openModal("signup", "final_cta")}
             onOpenSlideDeck={() => setSlideDeckOpen(true)}
